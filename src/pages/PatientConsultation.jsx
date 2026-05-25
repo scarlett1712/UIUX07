@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video } from 'lucide-react';
+import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock } from 'lucide-react';
 
 const INITIAL_PATIENT_CONVS = [
   {
@@ -51,8 +51,46 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
     if (!text.trim()) return;
 
     // Append user message
-    const updatedMessages = [...activeConv.messages, { sender: 'patient', text, time: '22:20 pm' }];
+    const updatedMessages = [...activeConv.messages, { sender: 'patient', text, time: 'Vừa xong' }];
     
+    if (isConsultingDoctor) {
+      // Direct Patient - Doctor Chat (No AI Bot intervention)
+      const updatedConvs = conversations.map(c => {
+        if (c.id === activeConvId) {
+          return {
+            ...c,
+            messages: updatedMessages
+          };
+        }
+        return c;
+      });
+      setConversations(updatedConvs);
+      setInputText('');
+
+      // Simulate doctor replying after 1.5 seconds
+      setTimeout(() => {
+        const doctorReplies = [
+          "Chào bạn, tôi đã nhận được tin nhắn. Triệu chứng cúm virus thông thường cần được theo dõi sát sao, bạn nhớ uống nhiều nước ấm nhé.",
+          "Nếu bạn bị sốt cao trên 38.5 độ C, bạn hãy uống 1 viên Paracetamol 500mg và chườm ấm nhé. Khoảng cách giữa các lần uống là 4-6 tiếng.",
+          "Tôi đang xem qua bệnh sử của bạn. Bạn nên ăn cháo loãng hoặc súp ấm để dễ tiêu hóa và nâng cao sức đề kháng.",
+          "Phiên tư vấn chuyên sâu của chúng ta có hiệu lực trong vòng 24h. Bạn cứ theo dõi sức khỏe và nhắn tin cập nhật cho tôi bất kỳ lúc nào nếu thấy mệt mỏi tăng lên nhé."
+        ];
+        const randomReply = doctorReplies[Math.floor(Math.random() * doctorReplies.length)];
+        
+        setConversations(prevConvs => prevConvs.map(c => {
+          if (c.id === activeConvId) {
+            return {
+              ...c,
+              messages: [...c.messages, { sender: 'doctor', text: randomReply, time: 'Vừa xong' }]
+            };
+          }
+          return c;
+        }));
+      }, 1500);
+
+      return;
+    }
+
     // Simulate AI response
     let botResponse = '';
     let newSymptoms = [...activeConv.symptoms];
@@ -252,6 +290,25 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
             </div>
           )}
         </div>
+
+        {/* 24h consult session banner */}
+        {isConsultingDoctor && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            backgroundColor: '#fffbeb',
+            borderBottom: '1px solid #fef3c7',
+            color: '#b45309',
+            fontSize: '0.8rem',
+            fontWeight: '500'
+          }}>
+            <Clock size={14} />
+            <span>Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút)</span>
+          </div>
+        )}
 
         {/* Chat Message Scroll */}
         <div style={{ flexGrow: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -454,7 +511,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
               </span>
               
               <button
-                onClick={() => onNavigate('patient-schedule')}
+                onClick={() => onNavigate('patient-schedule-create')}
                 className="btn btn-outline animate-fade-in"
                 style={{
                   padding: '8px',

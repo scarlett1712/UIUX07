@@ -250,17 +250,6 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
                 <span>Dữ liệu y tế</span>
               </a>
             </div>
-
-            {/* Cài đặt */}
-            <div className="sidebar-item">
-              <a
-                className={`sidebar-link ${currentView === 'profile' ? 'active' : ''}`}
-                onClick={() => onNavigate('profile')}
-              >
-                <Users size={20} />
-                <span>Cài đặt</span>
-              </a>
-            </div>
           </>
         ) : (
           /* DOCTOR ROLE MENU */

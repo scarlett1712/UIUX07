@@ -18,8 +18,14 @@ const TIME_SLOTS = [
   '16:00 - 17:00'
 ];
 
-export default function PatientSchedule({ appointments = [], setAppointments, triggerToast }) {
-  const [activeTab, setActiveTab] = useState('booked'); // 'booked' or 'create'
+export default function PatientSchedule({ appointments = [], setAppointments, triggerToast, defaultTab }) {
+  const [activeTab, setActiveTab] = useState(defaultTab || 'booked'); // 'booked' or 'create'
+  
+  React.useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
   const [selectedAptId, setSelectedAptId] = useState(null);
 
   // Booking Form State

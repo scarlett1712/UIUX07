@@ -400,11 +400,12 @@ function App() {
             />
           )}
 
-          {role === 'patient' && currentView === 'patient-schedule' && (
+          {role === 'patient' && (currentView === 'patient-schedule' || currentView === 'patient-schedule-create') && (
             <PatientSchedule
               appointments={appointments}
               setAppointments={setAppointments}
               triggerToast={triggerToast}
+              defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
             />
           )}
 
