@@ -13,11 +13,6 @@ export default function PatientConsultation({
   const [inputText, setInputText] = useState('');
   
   const messagesEndRef = useRef(null);
-
-  // Auto scroll to bottom when messages list updates
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConv?.messages]);
   
   // Payment Flow states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -34,6 +29,11 @@ export default function PatientConsultation({
   const [callDuration, setCallDuration] = useState('00:00');
 
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0];
+
+  // Auto scroll to bottom when messages list updates
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeConv?.messages]);
 
   // Auto open a new conversation if none exist
   useEffect(() => {
