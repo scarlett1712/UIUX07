@@ -326,10 +326,17 @@ function App() {
   };
 
   const handleNavigate = (view) => {
-    setCurrentView(view);
+    let actualView = view;
+    let keepActiveConv = false;
+    if (view === 'patient-consultation-keep') {
+      actualView = 'patient-consultation';
+      keepActiveConv = true;
+    }
+    
+    setCurrentView(actualView);
     
     // Auto open a new conversation when clicking "Tư vấn sức khỏe" (patient-consultation)
-    if (view === 'patient-consultation') {
+    if (actualView === 'patient-consultation' && !keepActiveConv) {
       const newId = `PCONV${Date.now()}`;
       const newChat = {
         id: newId,
@@ -352,26 +359,26 @@ function App() {
 
     // Reset selectedId only when returning to dashboards, main lists, or profiles
     if (
-      view.endsWith('-list') || 
-      view === 'dashboard' || 
-      view === 'manager-dashboard' ||
-      view === 'doctor-dashboard' ||
-      view === 'patient-dashboard' ||
-      view === 'patient-consultation' ||
-      view === 'patient-schedule' ||
-      view === 'patient-medical-data' ||
-      view === 'profile' || 
-      view === 'chatbot-scenarios' || 
-      view === 'ai-evaluation' ||
-      view === 'clinic-info' ||
-      view === 'clinic-feedback' ||
-      view === 'appointment-calendar' ||
-      view === 'doctor-shifts' ||
-      view === 'reports-analytics' ||
-      view === 'doctor-schedule' ||
-      view === 'doctor-appointments' ||
-      view === 'doctor-messages' ||
-      view === 'doctor-medicines'
+      actualView.endsWith('-list') || 
+      actualView === 'dashboard' || 
+      actualView === 'manager-dashboard' ||
+      actualView === 'doctor-dashboard' ||
+      actualView === 'patient-dashboard' ||
+      actualView === 'patient-consultation' ||
+      actualView === 'patient-schedule' ||
+      actualView === 'patient-medical-data' ||
+      actualView === 'profile' || 
+      actualView === 'chatbot-scenarios' || 
+      actualView === 'ai-evaluation' ||
+      actualView === 'clinic-info' ||
+      actualView === 'clinic-feedback' ||
+      actualView === 'appointment-calendar' ||
+      actualView === 'doctor-shifts' ||
+      actualView === 'reports-analytics' ||
+      actualView === 'doctor-schedule' ||
+      actualView === 'doctor-appointments' ||
+      actualView === 'doctor-messages' ||
+      actualView === 'doctor-medicines'
     ) {
       setSelectedId(null);
     }

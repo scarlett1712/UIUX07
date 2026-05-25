@@ -221,7 +221,7 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
             {/* Tư vấn sức khỏe */}
             <div className="sidebar-item">
               <a
-                className={`sidebar-link ${currentView === 'patient-consultation' ? 'active' : ''}`}
+                className={`sidebar-link ${currentView === 'patient-consultation' || currentView === 'patient-schedule-create' ? 'active' : ''}`}
                 onClick={() => onNavigate('patient-consultation')}
               >
                 <Bot size={20} />

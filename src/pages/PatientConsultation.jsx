@@ -505,7 +505,7 @@ export default function PatientConsultation({
 
         {/* Quick Suggestions */}
         {!isConsultingDoctor && activeConv.status === 'Đang tư vấn' && (
-          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflowX: 'auto', borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflow: 'hidden', borderTop: '1px solid var(--border-color)' }}>
             {['Sốt', 'Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
               <button
                 key={s}

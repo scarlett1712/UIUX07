@@ -127,7 +127,7 @@ export default function PatientSchedule({
 
     // Redirect to consultation chat
     if (onNavigate) {
-      onNavigate('patient-consultation');
+      onNavigate('patient-consultation-keep');
     }
   };
 
@@ -449,7 +449,7 @@ export default function PatientSchedule({
               type="button"
               onClick={() => {
                 if (defaultTab === 'create' && onNavigate) {
-                  onNavigate('patient-consultation');
+                  onNavigate('patient-consultation-keep');
                 } else {
                   setActiveTab('booked');
                 }

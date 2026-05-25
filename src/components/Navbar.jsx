@@ -108,6 +108,9 @@ export default function Navbar({
         crumbs.push({ text: 'Tư vấn sức khỏe', view: 'patient-consultation' });
       } else if (currentView === 'patient-schedule') {
         crumbs.push({ text: 'Lịch khám', view: 'patient-schedule' });
+      } else if (currentView === 'patient-schedule-create') {
+        crumbs.push({ text: 'Tư vấn sức khỏe', view: 'patient-consultation-keep' });
+        crumbs.push({ text: 'Đặt lịch khám', view: 'patient-schedule-create' });
       } else if (currentView === 'patient-medical-data') {
         crumbs.push({ text: 'Dữ liệu y tế', view: 'patient-medical-data' });
       }
