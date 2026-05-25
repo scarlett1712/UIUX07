@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle } from 'lucide-react';
 
 export default function PatientConsultation({ 
@@ -11,6 +11,13 @@ export default function PatientConsultation({
   setActiveConvId
 }) {
   const [inputText, setInputText] = useState('');
+  
+  const messagesEndRef = useRef(null);
+
+  // Auto scroll to bottom when messages list updates
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeConv?.messages]);
   
   // Payment Flow states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -354,7 +361,8 @@ export default function PatientConsultation({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          backgroundColor: isConsultingDoctor ? '#eff6ff' : 'transparent'
+          backgroundColor: isConsultingDoctor ? '#eff6ff' : 'transparent',
+          flexShrink: 0
         }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: '700', color: 'var(--primary)' }}>
@@ -401,7 +409,8 @@ export default function PatientConsultation({
             borderBottom: '1px solid #fef3c7',
             color: '#b45309',
             fontSize: '0.8rem',
-            fontWeight: '500'
+            fontWeight: '500',
+            flexShrink: 0
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Clock size={14} />
@@ -501,11 +510,13 @@ export default function PatientConsultation({
               </div>
             );
           })}
+          {/* Empty element to scroll to bottom */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Quick Suggestions */}
         {!isConsultingDoctor && activeConv.status === 'Đang tư vấn' && (
-          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflow: 'hidden', borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflow: 'hidden', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
             {['Sốt', 'Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
               <button
                 key={s}
@@ -536,7 +547,7 @@ export default function PatientConsultation({
         )}
 
         {/* Input Bar */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
             <Paperclip size={18} />
           </button>
