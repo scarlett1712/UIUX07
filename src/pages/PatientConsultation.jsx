@@ -1,42 +1,15 @@
-import React, { useState } from 'react';
-import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle } from 'lucide-react';
 
-const INITIAL_PATIENT_CONVS = [
-  {
-    id: 'PCONV001',
-    topic: 'Triệu chứng sốt, đau đầu, ho',
-    date: 'Hôm nay 21:50',
-    status: 'Đang tư vấn',
-    messages: [
-      { sender: 'bot', text: 'Chào bạn, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe?', time: '21:50 pm' },
-      { sender: 'patient', text: 'Mình bị sốt từ hôm qua, người mệt mỏi với đau đầu khá rõ. Hôm nay vẫn chưa đỡ, còn đau họng với hơi ho.', time: '21:57 pm' },
-      { sender: 'bot', text: 'Bạn đã đo nhiệt độ chưa, khoảng bao nhiêu độ? Ngoài ra có bị ớn lạnh hay đau nhức người không?', time: '21:58 pm' },
-      { sender: 'patient', text: 'Sốt khoảng gần 39 độ, có ớn lạnh với đau người. Người khá mệt, ăn uống cũng kém.', time: '22:15 pm' },
-      { sender: 'bot', text: 'Triệu chứng của bạn có thể liên quan đến cúm hoặc nhiễm virus đường hô hấp hô hấp. Do sốt cao và kéo dài, bạn nên đi khám để được kiểm tra và điều trị phù hợp. \n\nĐể hỗ trợ bạn tốt nhất, tôi khuyên bạn nên **Đặt lịch khám trực tiếp** tại phòng khám hoặc đăng ký **Tư vấn chuyên sâu trực tuyến (video/chat)** với bác sĩ chuyên khoa. Bạn muốn thực hiện phương án nào?', time: '22:16 pm' }
-    ],
-    symptoms: ['Sốt, đau đầu, mệt mỏi', 'Đau họng', 'Ho'],
-    diagnosis: ['Nghi cúm / nhiễm virus hô hấp', 'Nên đi khám'],
-    showActions: true
-  },
-  {
-    id: 'PCONV002',
-    topic: 'Khó tiêu và đau bụng thượng vị',
-    date: '18/05/2026',
-    status: 'Hoàn thành',
-    messages: [
-      { sender: 'bot', text: 'Chào bạn. Tôi có thể giúp gì cho sức khỏe của bạn?', time: '09:00 am' },
-      { sender: 'patient', text: 'Tôi hay bị đầy bụng khó tiêu sau khi ăn, thi thoảng hơi đau rát vùng trên rốn.', time: '09:02 am' },
-      { sender: 'bot', text: 'Triệu chứng đau rát vùng thượng vị và khó tiêu sau ăn gợi ý tình trạng kích ứng niêm mạc dạ dày hoặc trào ngược. Bạn nên hạn chế ăn đồ cay nóng, nhiều mỡ và không nằm ngay sau khi ăn.', time: '09:04 am' }
-    ],
-    symptoms: ['Khó tiêu', 'Đau bụng thượng vị'],
-    diagnosis: ['Kích ứng dạ dày nhẹ', 'Thay đổi lối sống'],
-    showActions: false
-  }
-];
-
-export default function PatientConsultation({ onNavigate, setAppointments, triggerToast }) {
-  const [conversations, setConversations] = useState(INITIAL_PATIENT_CONVS);
-  const [activeConvId, setActiveConvId] = useState('PCONV001');
+export default function PatientConsultation({ 
+  onNavigate, 
+  setAppointments, 
+  triggerToast,
+  conversations = [],
+  setConversations,
+  activeConvId,
+  setActiveConvId
+}) {
   const [inputText, setInputText] = useState('');
   
   // Payment Flow states
@@ -44,7 +17,55 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
   const [paymentStep, setPaymentStep] = useState(1); // 1: QR screen, 2: Verification, 3: Success
   const [isConsultingDoctor, setIsConsultingDoctor] = useState(false); // Switch to Doctor chat after payment
 
+  // Simulated call modal state
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [callType, setCallType] = useState('video'); // 'voice' or 'video'
+  const [callState, setCallState] = useState('connecting'); // 'connecting' or 'connected'
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCamOff, setIsCamOff] = useState(false);
+  const [callDuration, setCallDuration] = useState('00:00');
+
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0];
+
+  // Auto open a new conversation if none exist
+  useEffect(() => {
+    if (conversations.length === 0) {
+      handleStartNewChat();
+    } else {
+      // Restore doctor consult status based on active conversation
+      const currentActive = conversations.find(c => c.id === activeConvId) || conversations[0];
+      if (currentActive) {
+        setIsConsultingDoctor(!!currentActive.activeDoctorConsult);
+      }
+    }
+  }, []);
+
+  // Timer simulation for calls
+  useEffect(() => {
+    let timer;
+    if (showCallModal && callState === 'connected') {
+      let secs = 0;
+      timer = setInterval(() => {
+        secs++;
+        const m = Math.floor(secs / 60).toString().padStart(2, '0');
+        const s = (secs % 60).toString().padStart(2, '0');
+        setCallDuration(`${m}:${s}`);
+      }, 1000);
+    } else {
+      setCallDuration('00:00');
+    }
+    return () => clearInterval(timer);
+  }, [showCallModal, callState]);
+
+  const handleStartCall = (type) => {
+    setCallType(type);
+    setCallState('connecting');
+    setShowCallModal(true);
+    // Transition to connected after 2.5s
+    setTimeout(() => {
+      setCallState('connected');
+    }, 2500);
+  };
 
   const handleSendMessage = (textToSend) => {
     const text = textToSend || inputText;
@@ -97,15 +118,20 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
     let newDiagnosis = [...activeConv.diagnosis];
     
     const lowerText = text.toLowerCase();
-    if (lowerText.includes('đau đầu') || lowerText.includes('buồn nôn') || lowerText.includes('chóng mặt')) {
-      botResponse = 'Tôi ghi nhận thêm các triệu chứng này. Sốt cao kèm đau đầu dữ dội hoặc buồn nôn có thể báo hiệu tình trạng mất nước hoặc phản ứng viêm mạnh. Bạn có muốn kết nối với bác sĩ chuyên khoa ngay lập tức không?';
+    if (lowerText.includes('đau đầu') || lowerText.includes('buồn nôn') || lowerText.includes('chóng mặt') || lowerText.includes('sốt')) {
+      botResponse = 'Tôi ghi nhận thêm các triệu chứng này. Sốt cao kèm mệt mỏi có thể do virus. Bạn có muốn kết nối với bác sĩ chuyên khoa ngay lập tức để tư vấn sâu không?';
       if (lowerText.includes('chóng mặt') && !newSymptoms.includes('Chóng mặt')) newSymptoms.push('Chóng mặt');
       if (lowerText.includes('buồn nôn') && !newSymptoms.includes('Buồn nôn')) newSymptoms.push('Buồn nôn');
+      if (lowerText.includes('sốt') && !newSymptoms.includes('Sốt')) newSymptoms.push('Sốt');
+      if (!newDiagnosis.includes('Nghi cúm / nhiễm virus')) {
+        newDiagnosis.push('Nghi cúm / nhiễm virus');
+        newDiagnosis.push('Nên đi khám');
+      }
     } else {
       botResponse = 'Tôi đã nhận được thông tin. Để giúp bạn nhanh chóng chẩn đoán chuyên sâu, hãy cân nhắc đặt lịch khám trực tiếp với bác sĩ hoặc kết nối tư vấn trực tuyến có trả phí với chúng tôi.';
     }
 
-    const nextMessages = [...updatedMessages, { sender: 'bot', text: botResponse, time: '22:21 pm' }];
+    const nextMessages = [...updatedMessages, { sender: 'bot', text: botResponse, time: 'Vừa xong' }];
 
     const updatedConvs = conversations.map(c => {
       if (c.id === activeConvId) {
@@ -142,20 +168,10 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
       diagnosis: [],
       showActions: false
     };
-    setConversations([newChat, ...conversations]);
+    // Avoid duplicate blank chats, filter out old blank ones
+    setConversations([newChat, ...conversations.filter(c => c.messages.length > 1)]);
     setActiveConvId(newId);
     setIsConsultingDoctor(false);
-  };
-
-  const handleEndChat = () => {
-    const updatedConvs = conversations.map(c => {
-      if (c.id === activeConvId) {
-        return { ...c, status: 'Hoàn thành', showActions: false };
-      }
-      return c;
-    });
-    setConversations(updatedConvs);
-    triggerToast('Đã kết thúc cuộc tư vấn sức khỏe với AI', 'info');
   };
 
   // Payment confirmation simulation
@@ -168,11 +184,12 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
         setIsConsultingDoctor(true); // Switch chat console to Doctor
         triggerToast('Thanh toán thành công! Bạn đang được kết nối với Bác sĩ Dương Gia Huy.', 'success');
         
-        // Add doctor connection message to chat
+        // Add doctor connection message to chat and mark activeDoctorConsult as true
         const updatedConvs = conversations.map(c => {
           if (c.id === activeConvId) {
             return {
               ...c,
+              activeDoctorConsult: true,
               messages: [
                 ...c.messages,
                 { sender: 'doctor', text: 'Xin chào bạn Giang, tôi là Bác sĩ Dương Gia Huy - chuyên khoa Nội tổng quát. Tôi đã đọc qua bảng tóm tắt triệu chứng của bạn từ Trợ lý AI. Chúng ta có thể nhắn tin hoặc thực hiện Cuộc gọi Video ngay bây giờ để tôi tư vấn cụ thể.', time: 'Vừa xong' }
@@ -184,6 +201,45 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
         setConversations(updatedConvs);
       }, 1500);
     }, 1800);
+  };
+
+  // Home Care Instructions logic based on symptoms
+  const getHomeCareInstructions = () => {
+    if (!activeConv || !activeConv.symptoms || activeConv.symptoms.length === 0) {
+      return [
+        "Nghỉ ngơi hợp lý, tránh làm việc quá sức.",
+        "Ăn thức ăn mềm, ấm và dễ tiêu như cháo súp.",
+        "Uống đủ nước (1.5 - 2 lít nước ấm mỗi ngày)."
+      ];
+    }
+    
+    const instructions = [];
+    const symptomsText = activeConv.symptoms.join(', ').toLowerCase();
+    
+    if (symptomsText.includes('sốt')) {
+      instructions.push("Uống nước ấm hoặc Oresol để bù nước nhanh chóng.");
+      instructions.push("Mặc quần áo thoáng mát, chườm ấm vùng trán, nách, bẹn.");
+      instructions.push("Nếu sốt cao trên 38.5°C, uống Paracetamol 500mg cách nhau 4-6h.");
+    }
+    if (symptomsText.includes('đau đầu') || symptomsText.includes('mệt mỏi')) {
+      instructions.push("Nghỉ ngơi tĩnh dưỡng trong phòng tối và yên tĩnh.");
+      instructions.push("Tránh nhìn màn hình điện thoại, máy tính hoặc làm việc nặng.");
+    }
+    if (symptomsText.includes('ho') || symptomsText.includes('đau họng')) {
+      instructions.push("Súc họng bằng nước muối sinh lý ấm 2-3 lần mỗi ngày.");
+      instructions.push("Sử dụng mật ong gừng chanh ấm hoặc ngậm quất chưng đường phèn.");
+    }
+    if (symptomsText.includes('đau bụng') || symptomsText.includes('khó tiêu')) {
+      instructions.push("Chườm túi ấm lên vùng bụng để giảm bớt cơn đau rát.");
+      instructions.push("Kiêng các đồ dầu mỡ, đồ chua cay hoặc sữa chứa lactose.");
+    }
+    
+    if (instructions.length === 0) {
+      instructions.push("Nghỉ ngơi đầy đủ, giữ ấm cơ thể.");
+      instructions.push("Ăn uống đủ chất dinh dưỡng, uống nước đều đặn.");
+    }
+    
+    return instructions;
   };
 
   return (
@@ -216,7 +272,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
               key={c.id}
               onClick={() => {
                 setActiveConvId(c.id);
-                setIsConsultingDoctor(false); // Reset doctor console view
+                setIsConsultingDoctor(!!c.activeDoctorConsult);
               }}
               style={{
                 padding: '10px',
@@ -239,7 +295,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
                   textOverflow: 'ellipsis',
                   maxWidth: '150px'
                 }}>
-                  {c.topic}
+                  {c.messages[1] ? c.messages[1].text : c.topic}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -276,13 +332,19 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
           {isConsultingDoctor && (
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
-                onClick={() => triggerToast('Đang khởi tạo cuộc gọi thoại...', 'info')}
+                onClick={() => {
+                  handleStartCall('voice');
+                  triggerToast('Đang kết nối cuộc gọi thoại...', 'info');
+                }}
                 style={{ padding: '6px', borderRadius: '50%', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <PhoneCall size={14} style={{ color: 'var(--primary)' }} />
               </button>
               <button 
-                onClick={() => triggerToast('Đang khởi tạo cuộc gọi Video...', 'info')}
+                onClick={() => {
+                  handleStartCall('video');
+                  triggerToast('Đang kết nối cuộc gọi Video...', 'info');
+                }}
                 style={{ padding: '6px', borderRadius: '50%', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Video size={14} style={{ color: '#10b981' }} />
@@ -296,7 +358,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             gap: '8px',
             padding: '8px 16px',
             backgroundColor: '#fffbeb',
@@ -305,8 +367,45 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
             fontSize: '0.8rem',
             fontWeight: '500'
           }}>
-            <Clock size={14} />
-            <span>Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={14} />
+              <span>Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút)</span>
+            </div>
+            {/* Expiry simulator button */}
+            <button
+              onClick={() => {
+                setIsConsultingDoctor(false);
+                triggerToast('Phiên tư vấn với bác sĩ đã kết thúc. Bạn đã quay lại kênh hội thoại với AI.', 'info');
+                
+                // Append AI back message and set activeDoctorConsult to false
+                const updatedConvs = conversations.map(c => {
+                  if (c.id === activeConvId) {
+                    return {
+                      ...c,
+                      activeDoctorConsult: false,
+                      messages: [
+                        ...c.messages,
+                        { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc sau 24h. Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
+                      ]
+                    };
+                  }
+                  return c;
+                });
+                setConversations(updatedConvs);
+              }}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: '#b45309',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '0.72rem',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              Hết hạn (Simulate)
+            </button>
           </div>
         )}
 
@@ -315,6 +414,40 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
           {activeConv.messages.map((msg, index) => {
             const isBot = msg.sender === 'bot';
             const isDoc = msg.sender === 'doctor';
+            
+            // Check if this is a custom appointment card
+            if (msg.isAptCard) {
+              const lines = msg.text.split('\n');
+              const doctorText = lines[1]?.replace('👨‍⚕️ Bác sĩ:', '') || '';
+              const timeText = lines[2]?.replace('⏰ Thời gian:', '') || '';
+              const locText = lines[3]?.replace('📍 Địa điểm:', '') || '';
+              const feeText = lines[4]?.replace('💰 Chi phí:', '') || '';
+
+              return (
+                <div key={index} style={{ alignSelf: 'flex-start', width: '100%', maxWidth: '85%', margin: '8px 0' }}>
+                  <div style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: '2px solid #22c55e',
+                    backgroundColor: '#f0fdf4',
+                    color: '#14532d',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', borderBottom: '1px solid #bbf7d0', paddingBottom: '6px' }}>
+                      <CheckCircle size={18} style={{ color: '#22c55e' }} />
+                      <strong style={{ fontSize: '0.88rem' }}>ĐẶT LỊCH HẸN THÀNH CÔNG</strong>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.82rem' }}>
+                      <div><strong>👨‍⚕️ Bác sĩ:</strong> {doctorText}</div>
+                      <div><strong>⏰ Thời gian:</strong> {timeText}</div>
+                      <div><strong>📍 Địa điểm:</strong> {locText}</div>
+                      <div><strong>💰 Chi phí:</strong> {feeText}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div 
                 key={index} 
@@ -370,7 +503,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
         {/* Quick Suggestions */}
         {!isConsultingDoctor && activeConv.status === 'Đang tư vấn' && (
           <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflowX: 'auto', borderTop: '1px solid var(--border-color)' }}>
-            {['Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
+            {['Sốt', 'Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
               <button
                 key={s}
                 onClick={() => handleQuickReply(s)}
@@ -493,6 +626,18 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
           </div>
         </div>
 
+        {/* Hướng dẫn chăm sóc tại nhà */}
+        <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#166534', display: 'block', marginBottom: '6px' }}>
+            Hướng dẫn chăm sóc tại nhà
+          </span>
+          <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.78rem', color: '#14532d', display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: '1.4' }}>
+            {getHomeCareInstructions().map((inst, idx) => (
+              <li key={idx}>{inst}</li>
+            ))}
+          </ul>
+        </div>
+
         {/* Action Panel */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {activeConv.showActions && activeConv.status === 'Đang tư vấn' && !isConsultingDoctor && (
@@ -504,7 +649,7 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
               borderRadius: '8px',
               backgroundColor: '#eff6ff',
               border: '1px solid #bfdbfe',
-              marginBottom: '10px'
+              margin: 0
             }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--primary)', textAlign: 'center', display: 'block' }}>
                 Hỗ trợ tiếp theo
@@ -549,38 +694,6 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
               </button>
             </div>
           )}
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={handleEndChat}
-              disabled={activeConv.status === 'Hoàn thành'}
-              className="btn btn-cancel"
-              style={{
-                flex: 1,
-                padding: '8px',
-                fontSize: '0.8rem',
-                margin: 0,
-                borderRadius: '8px',
-                opacity: activeConv.status === 'Hoàn thành' ? 0.5 : 1
-              }}
-            >
-              Kết thúc
-            </button>
-            
-            <button
-              onClick={handleStartNewChat}
-              className="btn btn-save"
-              style={{
-                flex: 1,
-                padding: '8px',
-                fontSize: '0.8rem',
-                margin: 0,
-                borderRadius: '8px'
-              }}
-            >
-              Tạo mới
-            </button>
-          </div>
         </div>
 
       </div>
@@ -779,6 +892,296 @@ export default function PatientConsultation({ onNavigate, setAppointments, trigg
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* SIMULATED VIDEO/VOICE CALL MODAL */}
+      {showCallModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          color: '#fff',
+          padding: '20px'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '640px',
+            backgroundColor: '#1e293b',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '480px',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                Cuộc gọi {callType === 'video' ? 'Video' : 'Thoại'} tư vấn chuyên sâu
+              </span>
+              <span style={{ fontSize: '0.85rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#10b981', 
+                  display: 'inline-block',
+                  animation: 'pulseGlow 1.5s infinite'
+                }} />
+                Thời gian: {callDuration}
+              </span>
+            </div>
+
+            {/* Call Body */}
+            <div style={{ flexGrow: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' }}>
+              {callState === 'connecting' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', animation: 'pulseGlow 2s infinite' }}>
+                  <div style={{
+                    width: '90px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    backgroundColor: callType === 'video' ? '#059669' : '#0284c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 30px rgba(56, 189, 248, 0.6)',
+                    position: 'relative'
+                  }}>
+                    {callType === 'video' ? (
+                      <Video size={40} color="#fff" />
+                    ) : (
+                      <PhoneCall size={40} color="#fff" />
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>BS. Dương Gia Huy</h4>
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginTop: '6px' }}>
+                      Đang kết nối cuộc gọi {callType === 'video' ? 'Video' : 'Thoại'}...
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Connected State
+                callType === 'video' ? (
+                  <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                    {/* Muted overlay badge */}
+                    {isMuted && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        left: '16px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '600',
+                        zIndex: 10,
+                        boxShadow: 'var(--shadow-md)'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path></svg>
+                        Đã tắt tiếng mic của bạn
+                      </div>
+                    )}
+
+                    {/* Doctor feed */}
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg viewBox="0 0 100 100" width="100" height="100">
+                        <circle cx="50" cy="50" r="50" fill="#38bdf8" />
+                        <circle cx="50" cy="40" r="20" fill="#0369a1" />
+                        <path d="M20,80 C20,60 80,60 80,80" fill="#0369a1" />
+                      </svg>
+                      <span style={{ marginTop: '12px', fontSize: '1rem', fontWeight: '700' }}>BS. Dương Gia Huy</span>
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Đang chia sẻ màn hình video tư vấn...</span>
+                    </div>
+
+                    {/* Patient Preview */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '16px',
+                      right: '16px',
+                      width: '120px',
+                      height: '90px',
+                      backgroundColor: '#334155',
+                      borderRadius: '8px',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'var(--shadow-lg)'
+                    }}>
+                      {isCamOff ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10l-2.33-1.75-2.33-1.75"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                          <span style={{ fontSize: '0.6rem', color: '#94a3b8' }}>Cam tắt</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg viewBox="0 0 100 100" width="32" height="32">
+                            <circle cx="50" cy="50" r="50" fill="#818cf8" />
+                            <circle cx="50" cy="40" r="20" fill="#3730a3" />
+                            <path d="M20,80 C20,60 80,60 80,80" fill="#3730a3" />
+                          </svg>
+                          <span style={{ fontSize: '0.65rem', color: '#fff', marginTop: '2px' }}>Bạn</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', position: 'relative', width: '100%', height: '100%', justifyContent: 'center' }}>
+                    {/* Muted overlay badge */}
+                    {isMuted && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        left: '16px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '600',
+                        zIndex: 10,
+                        boxShadow: 'var(--shadow-md)'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path></svg>
+                        Đã tắt tiếng mic của bạn
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      backgroundColor: '#334155',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '3px solid #475569',
+                      boxShadow: '0 0 16px rgba(56, 189, 248, 0.4)'
+                    }}>
+                      <svg viewBox="0 0 100 100" width="70" height="70">
+                        <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                        <circle cx="50" cy="40" r="20" fill="#db2777" />
+                        <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+                      </svg>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <h4 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>BS. Dương Gia Huy</h4>
+                      <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Đang kết nối thoại...</span>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Controls */}
+            <div style={{
+              padding: '20px',
+              backgroundColor: '#0f172a',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '24px',
+              borderTop: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              {/* Mic toggle */}
+              <button
+                onClick={() => {
+                  setIsMuted(!isMuted);
+                  triggerToast(isMuted ? 'Đã bật Micro' : 'Đã tắt Micro', 'info');
+                }}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: isMuted ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isMuted ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                )}
+              </button>
+
+              {/* Cam toggle */}
+              {callType === 'video' && (
+                <button
+                  onClick={() => {
+                    setIsCamOff(!isCamOff);
+                    triggerToast(isCamOff ? 'Đã bật Camera' : 'Đã tắt Camera', 'info');
+                  }}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: isCamOff ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {isCamOff ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10l-2.33-1.75-2.33-1.75"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                  )}
+                </button>
+              )}
+
+              {/* End Call */}
+              <button
+                onClick={() => {
+                  setShowCallModal(false);
+                  triggerToast('Cuộc gọi đã được ngắt kết nối', 'info');
+                }}
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: '#ef4444',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
+              </button>
+            </div>
           </div>
         </div>
       )}

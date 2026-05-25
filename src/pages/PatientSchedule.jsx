@@ -18,7 +18,7 @@ const TIME_SLOTS = [
   '16:00 - 17:00'
 ];
 
-export default function PatientSchedule({ appointments = [], setAppointments, triggerToast, defaultTab }) {
+export default function PatientSchedule({ appointments = [], setAppointments, triggerToast, defaultTab, onBookSuccess, onNavigate }) {
   const [activeTab, setActiveTab] = useState(defaultTab || 'booked'); // 'booked' or 'create'
   
   React.useEffect(() => {
@@ -29,9 +29,9 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
   const [selectedAptId, setSelectedAptId] = useState(null);
 
   // Booking Form State
-  const [selectedDoctorId, setSelectedDoctorId] = useState(MOCK_DOCTORS[0].id);
-  const [bookingDate, setBookingDate] = useState('2026-06-20');
-  const [bookingTime, setBookingTime] = useState(TIME_SLOTS[0]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState('');
   const [bookingSymptoms, setBookingSymptoms] = useState('');
 
   // Get active appointments for Lương Hương Giang
@@ -58,6 +58,19 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
 
   const handleBookAppointment = (e) => {
     e.preventDefault();
+    if (!selectedDoctorId) {
+      triggerToast('Vui lòng chọn bác sĩ khám và chuyên khoa!', 'error');
+      return;
+    }
+    if (!bookingDate) {
+      triggerToast('Vui lòng chọn ngày hẹn khám!', 'error');
+      return;
+    }
+    if (!bookingTime) {
+      triggerToast('Vui lòng chọn khung giờ khám!', 'error');
+      return;
+    }
+
     const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
     
     // Create new appointment object
@@ -80,8 +93,21 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
     setSelectedAptId(newApt.id);
     setActiveTab('booked');
     
+    // Trigger callback to add appointment to chat history
+    if (onBookSuccess) {
+      onBookSuccess(newApt);
+    }
+
     // Reset booking state
+    setSelectedDoctorId('');
+    setBookingDate('');
+    setBookingTime('');
     setBookingSymptoms('');
+
+    // Redirect to consultation chat
+    if (onNavigate) {
+      onNavigate('patient-consultation');
+    }
   };
 
   return (
@@ -302,6 +328,7 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
                   className="form-input"
                   style={{ width: '100%', height: '42px', padding: '8px 12px' }}
                 >
+                  <option value="">--- Chọn bác sĩ & chuyên khoa ---</option>
                   {MOCK_DOCTORS.map(d => (
                     <option key={d.id} value={d.id}>
                       {d.name} ({d.specialty}) - Phí: {d.fee}đ
@@ -368,18 +395,31 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
               </div>
 
               {/* Booking Summary Check sheet */}
-              <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#166534', borderBottom: '1px solid #bbf7d0', paddingBottom: '4px' }}>
-                  Xem lại chi tiết lịch hẹn
-                </span>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#14532d' }}>
-                  <div><strong>Bác sĩ khám:</strong> {MOCK_DOCTORS.find(d => d.id === selectedDoctorId).name} ({MOCK_DOCTORS.find(d => d.id === selectedDoctorId).specialty})</div>
-                  <div><strong>Thời gian:</strong> {bookingTime} | Ngày {bookingDate}</div>
-                  <div><strong>Địa điểm:</strong> {MOCK_DOCTORS.find(d => d.id === selectedDoctorId).location}</div>
-                  <div><strong>Chi phí dịch vụ:</strong> <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{MOCK_DOCTORS.find(d => d.id === selectedDoctorId).fee} VND</span></div>
+              {selectedDoctorId && bookingDate && bookingTime ? (
+                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#166534', borderBottom: '1px solid #bbf7d0', paddingBottom: '4px' }}>
+                    Xem lại chi tiết lịch hẹn
+                  </span>
+                  
+                  {(() => {
+                    const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#14532d' }}>
+                        <div><strong>Bác sĩ khám:</strong> {doctor?.name} ({doctor?.specialty})</div>
+                        <div><strong>Thời gian:</strong> {bookingTime} | Ngày {bookingDate}</div>
+                        <div><strong>Địa điểm:</strong> {doctor?.location}</div>
+                        <div><strong>Chi phí dịch vụ:</strong> <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{doctor?.fee} VND</span></div>
+                      </div>
+                    );
+                  })()}
                 </div>
-              </div>
+              ) : (
+                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    Vui lòng chọn bác sĩ, ngày hẹn khám và khung giờ để hiển thị thông tin xem trước.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

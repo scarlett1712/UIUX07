@@ -220,6 +220,40 @@ const INITIAL_REMINDERS = [
   { id: 'REM007', title: 'Nhắc tái khám', target: 'Bệnh nhân', time: 'Theo ngày tái khám 09:00', channel: 'SMS', status: 'Đang hoạt động', messageContent: 'Nhắc lịch hẹn tái khám định kỳ.' }
 ];
 
+// Initial Mock Patient Conversations
+const INITIAL_PATIENT_CONVS = [
+  {
+    id: 'PCONV001',
+    topic: 'Triệu chứng sốt, đau đầu, ho',
+    date: 'Hôm nay 21:50',
+    status: 'Đang tư vấn',
+    messages: [
+      { sender: 'bot', text: 'Chào bạn, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe?', time: '21:50 pm' },
+      { sender: 'patient', text: 'Mình bị sốt từ hôm qua, người mệt mỏi với đau đầu khá rõ. Hôm nay vẫn chưa đỡ, còn đau họng với hơi ho.', time: '21:57 pm' },
+      { sender: 'bot', text: 'Bạn đã đo nhiệt độ chưa, khoảng bao nhiêu độ? Ngoài ra có bị ớn lạnh hay đau nhức người không?', time: '21:58 pm' },
+      { sender: 'patient', text: 'Sốt khoảng gần 39 độ, có ớn lạnh với đau người. Người khá mệt, ăn uống cũng kém.', time: '22:15 pm' },
+      { sender: 'bot', text: 'Triệu chứng của bạn có thể liên quan đến cúm hoặc nhiễm virus đường hô hấp hô hấp. Do sốt cao và kéo dài, bạn nên đi khám để được kiểm tra và điều trị phù hợp. \n\nĐể hỗ trợ bạn tốt nhất, tôi khuyên bạn nên **Đặt lịch khám trực tiếp** tại phòng khám hoặc đăng ký **Tư vấn chuyên sâu trực tuyến (video/chat)** với bác sĩ chuyên khoa. Bạn muốn thực hiện phương án nào?', time: '22:16 pm' }
+    ],
+    symptoms: ['Sốt, đau đầu, mệt mỏi', 'Đau họng', 'Ho'],
+    diagnosis: ['Nghi cúm / nhiễm virus hô hấp', 'Nên đi khám'],
+    showActions: true
+  },
+  {
+    id: 'PCONV002',
+    topic: 'Khó tiêu và đau bụng thượng vị',
+    date: '18/05/2026',
+    status: 'Hoàn thành',
+    messages: [
+      { sender: 'bot', text: 'Chào bạn. Tôi có thể giúp gì cho sức khỏe của bạn?', time: '09:00 am' },
+      { sender: 'patient', text: 'Tôi hay bị đầy bụng khó tiêu sau khi ăn, thi thoảng hơi đau rát vùng trên rốn.', time: '09:02 am' },
+      { sender: 'bot', text: 'Triệu chứng đau rát vùng thượng vị và khó tiêu sau ăn gợi ý tình trạng kích ứng niêm mạc dạ dày hoặc trào ngược. Bạn nên hạn chế ăn đồ cay nóng, nhiều mỡ và không nằm ngay sau khi ăn.', time: '09:04 am' }
+    ],
+    symptoms: ['Khó tiêu', 'Đau bụng thượng vị'],
+    diagnosis: ['Kích ứng dạ dày nhẹ', 'Thay đổi lối sống'],
+    showActions: false
+  }
+];
+
 function App() {
   const [role, setRole] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
@@ -248,6 +282,10 @@ function App() {
 
   // State to handle placeholder views for other roles
   const [underDevRole, setUnderDevRole] = useState(null);
+
+  // Patient Conversations Shared States
+  const [patientConversations, setPatientConversations] = useState(INITIAL_PATIENT_CONVS);
+  const [activePatientConvId, setActivePatientConvId] = useState('PCONV001');
 
   // Floating Chatbot Widget states (Patient specific)
   const [showFloatingChat, setShowFloatingChat] = useState(false);
@@ -289,6 +327,29 @@ function App() {
 
   const handleNavigate = (view) => {
     setCurrentView(view);
+    
+    // Auto open a new conversation when clicking "Tư vấn sức khỏe" (patient-consultation)
+    if (view === 'patient-consultation') {
+      const newId = `PCONV${Date.now()}`;
+      const newChat = {
+        id: newId,
+        topic: 'Cuộc trò chuyện mới',
+        date: 'Vừa xong',
+        status: 'Đang tư vấn',
+        messages: [
+          { sender: 'bot', text: 'Chào bạn, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe?', time: 'Vừa xong' }
+        ],
+        symptoms: [],
+        diagnosis: [],
+        showActions: false,
+        activeDoctorConsult: false
+      };
+      
+      // Filter out any blank conversations (where messages length <= 1) to avoid cluttering the list
+      setPatientConversations(prev => [newChat, ...prev.filter(c => c.messages && c.messages.length > 1)]);
+      setActivePatientConvId(newId);
+    }
+
     // Reset selectedId only when returning to dashboards, main lists, or profiles
     if (
       view.endsWith('-list') || 
@@ -397,6 +458,10 @@ function App() {
               onNavigate={handleNavigate}
               setAppointments={setAppointments}
               triggerToast={triggerToast}
+              conversations={patientConversations}
+              setConversations={setPatientConversations}
+              activeConvId={activePatientConvId}
+              setActiveConvId={setActivePatientConvId}
             />
           )}
 
@@ -405,7 +470,27 @@ function App() {
               appointments={appointments}
               setAppointments={setAppointments}
               triggerToast={triggerToast}
+              onNavigate={handleNavigate}
               defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
+              onBookSuccess={(aptDetails) => {
+                setPatientConversations(prev => prev.map(c => {
+                  if (c.id === activePatientConvId) {
+                    return {
+                      ...c,
+                      messages: [
+                        ...c.messages,
+                        {
+                          sender: 'bot',
+                          text: `**XÁC NHẬN ĐẶT LỊCH THÀNH CÔNG**\n👨‍⚕️ Bác sĩ: ${aptDetails.doctorName}\n⏰ Thời gian: ${aptDetails.time} - ${aptDetails.date}\n📍 Địa điểm: ${aptDetails.location}\n💰 Chi phí: ${aptDetails.fee} VND`,
+                          isAptCard: true,
+                          time: 'Vừa xong'
+                        }
+                      ]
+                    };
+                  }
+                  return c;
+                }));
+              }}
             />
           )}
 
