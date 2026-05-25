@@ -1,0 +1,551 @@
+import React, { useState } from 'react';
+import LandingPage from './pages/LandingPage';
+import Sidebar from './components/Sidebar';
+import Navbar from './components/Navbar';
+import Dashboard from './pages/Dashboard';
+import MedicalData from './pages/MedicalData';
+import ChatbotScenarios from './pages/ChatbotScenarios';
+import AIEvaluation, { INITIAL_CONVERSATIONS } from './pages/AIEvaluation';
+import AccountProfile from './pages/AccountProfile';
+
+// Import Manager pages
+import ManagerDashboard from './pages/ManagerDashboard';
+import ClinicManagement from './pages/ClinicManagement';
+import DoctorCoordinator from './pages/DoctorCoordinator';
+import ReminderAlerts from './pages/ReminderAlerts';
+import ReportAnalytics from './pages/ReportAnalytics';
+
+// Import Doctor pages
+import DoctorDashboard from './pages/DoctorDashboard';
+import DoctorSchedule from './pages/DoctorSchedule';
+import DoctorAppointments from './pages/DoctorAppointments';
+import DoctorMessages from './pages/DoctorMessages';
+import DoctorMedicalRecords from './pages/DoctorMedicalRecords';
+import DoctorMedicines from './pages/DoctorMedicines';
+
+import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+
+// Initial Mock Diseases
+const INITIAL_DISEASES = [
+  {
+    id: 'D001',
+    name: 'Cảm lạnh',
+    desc: 'Nhiễm virus đường hô hấp trên, thường tự khỏi sau vài ngày.',
+    danger: 'Thấp',
+    department: 'Tai Mũi Họng',
+    symptoms: [
+      { stt: 1, name: 'Số mũi', desc: 'Chảy nước mũi liên tục, có thể trong hoặc đặc', duration: 'Ngày 1-3 của bệnh', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Hắt hơi', desc: 'Hắt hơi nhiều, nhất là giai đoạn đầu', duration: 'Ngày 1-2', frequency: 'Thường xuyên' },
+      { stt: 3, name: 'Đau họng', desc: 'Rát họng, khó chịu khi nuốt', duration: 'Ngày 1-2', frequency: 'Trung bình' },
+      { stt: 4, name: 'Ho nhẹ', desc: 'Ho khan hoặc ít đờm, xuất hiện sau', duration: 'Ngày 2-4', frequency: 'Thỉnh thoảng' }
+    ]
+  },
+  {
+    id: 'D002',
+    name: 'Cúm',
+    desc: 'Nhiễm virus cúm cấp tính, có thể gây sốt cao, đau đầu và mệt mỏi toàn thân.',
+    danger: 'Trung bình',
+    department: 'Nội tổng quát',
+    symptoms: [
+      { stt: 1, name: 'Sốt cao', desc: 'Sốt đột ngột từ 38.5 độ C trở lên', duration: 'Ngày 1-4', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Đau cơ', desc: 'Đau nhức các cơ khớp, mệt mỏi rã rời', duration: 'Ngày 1-5', frequency: 'Thường xuyên' },
+      { stt: 3, name: 'Mệt mỏi', desc: 'Kiệt sức, không muốn ăn uống vận động', duration: 'Ngày 1-7', frequency: 'Thường xuyên' }
+    ]
+  },
+  {
+    id: 'D003',
+    name: 'Viêm phổi',
+    desc: 'Nhiễm trùng phế nang phổi do vi khuẩn, virus hoặc nấm gây ra, dẫn đến ho có đờm, sốt.',
+    danger: 'Cao',
+    department: 'Hô hấp',
+    symptoms: [
+      { stt: 1, name: 'Ho nặng tiếng', desc: 'Ho sâu từ ngực, có đờm xanh hoặc vàng đục', duration: 'Suốt thời gian bệnh', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Khó thở', desc: 'Thở khò khè, hụt hơi khi đi lại, tức ngực khi ho', duration: 'Ngày 2 trở đi', frequency: 'Thường xuyên' },
+      { stt: 3, name: 'Sốt cao', desc: 'Sốt lạnh run kèm theo vã mồ hôi', duration: 'Ngày 1-5', frequency: 'Trung bình' }
+    ]
+  },
+  {
+    id: 'D004',
+    name: 'Tiểu đường',
+    desc: 'Rối loạn chuyển hóa glucose trong máu do thiếu hụt insulin hoặc đề kháng insulin kéo dài.',
+    danger: 'Cao',
+    department: 'Nội tiết',
+    symptoms: [
+      { stt: 1, name: 'Khát nước', desc: 'Cảm giác khô miệng, khát nước liên tục dù uống nhiều', duration: 'Mạn tính', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Tiểu nhiều', desc: 'Đặc biệt là đi tiểu nhiều vào ban đêm', duration: 'Mạn tính', frequency: 'Thường xuyên' }
+    ]
+  },
+  {
+    id: 'D005',
+    name: 'Tăng huyết áp',
+    desc: 'Huyết áp cao kéo dài, có thể dẫn đến nguy cơ đột quỵ hoặc suy tim nếu không kiểm soát.',
+    danger: 'Cao',
+    department: 'Tim mạch',
+    symptoms: [
+      { stt: 1, name: 'Đau đầu', desc: 'Đau nhức ê ẩm vùng chẩm (sau gáy) vào sáng sớm', duration: 'Thường xuyên', frequency: 'Trung bình' },
+      { stt: 2, name: 'Đau đầu', desc: 'Hoa mắt, chóng mark khi đứng lên ngồi xuống', duration: 'Thỉnh thoảng', frequency: 'Thỉnh thoảng' }
+    ]
+  },
+  {
+    id: 'D006',
+    name: 'Viêm dạ dày',
+    desc: 'Tổn thương niêm mạc dạ dày gây đau thượng vị, đầy hơi, ợ chua.',
+    danger: 'Trung bình',
+    department: 'Tiêu hóa',
+    symptoms: [
+      { stt: 1, name: 'Đau bụng', desc: 'Đau tức vùng thượng vị (trên rốn), đau tăng khi đói hoặc quá no', duration: 'Sau ăn 1-2 tiếng', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Phát ban', desc: 'Buồn nôn, ợ hơi chua gây rát cổ họng', duration: 'Mỗi ngày', frequency: 'Thường xuyên' }
+    ]
+  },
+  {
+    id: 'D007',
+    name: 'Sốt xuất huyết',
+    desc: 'Bệnh truyền nhiễm cấp tính do virus Dengue truyền qua muỗi vằn, có thể gây nguy hiểm.',
+    danger: 'Cao',
+    department: 'Truyền nhiễm',
+    symptoms: [
+      { stt: 1, name: 'Sốt cao', desc: 'Sốt cao liên tục 39-40 độ C, khó hạ sốt bằng thuốc', duration: 'Ngày 1-5', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Phát ban', desc: 'Xuất hiện các chấm xuất huyết dưới da, chảy máu cam', duration: 'Ngày 3-7', frequency: 'Trung bình' }
+    ]
+  }
+];
+
+// Initial Mock Medicines
+const INITIAL_MEDICINES = [
+  {
+    id: 'M001',
+    name: 'Paracetamol 500mg',
+    desc: 'Thuốc hạ sốt và giảm các cơn đau từ nhẹ đến trung bình.',
+    activeIngredient: 'Paracetamol',
+    indication: 'Hạ sốt do mọi nguyên nhân, giảm đau đầu, đau răng, đau cơ khớp do cảm cúm.',
+    contraindication: 'Bệnh nhân mẫn cảm với Paracetamol, suy gan nặng, thiếu hụt men G6PD.',
+    dosage: 'Người lớn: 1-2 viên/lần, cách nhau 4-6 giờ. Tối đa 8 viên/ngày.',
+    sideEffects: 'Mẩn ngứa da, tăng men gan khi sử dụng liều cao kéo dài.'
+  },
+  {
+    id: 'M002',
+    name: 'Amoxicillin 500mg',
+    desc: 'Kháng sinh nhóm penicillin điều trị nhiễm khuẩn nhạy cảm.',
+    activeIngredient: 'Amoxicillin',
+    indication: 'Nhiễm khuẩn đường hô hấp trên (viêm họng, viêm xoang), hô hấp dưới (viêm phế quản), nhiễm khuẩn da.',
+    contraindication: 'Dị ứng với kháng sinh nhóm Beta-lactam (Penicillin, Cephalosporin).',
+    dosage: 'Người lớn: 1 viên/lần, ngày 3 lần. Uống sau ăn.',
+    sideEffects: 'Tiêu chảy nhẹ, mẩn đỏ da, buồn nôn.'
+  },
+  {
+    id: 'M003',
+    name: 'Ibuprofen 400mg',
+    desc: 'Thuốc kháng viêm không steroid (NSAID) giảm đau, hạ sốt.',
+    activeIngredient: 'Ibuprofen',
+    indication: 'Giảm đau xương khớp, đau răng, đau bụng kinh, hạ sốt khi dùng Paracetamol không hiệu quả.',
+    contraindication: 'Loét dạ dày tá tràng tiến triển, suy thận nặng, dị ứng với Aspirin.',
+    dosage: 'Người lớn: 1 viên/lần, ngày 2-3 lần. Uống ngay sau khi ăn no.',
+    sideEffects: 'Kích ứng dạ dày, ợ chua, nhức đầu.'
+  },
+  {
+    id: 'M004',
+    name: 'Metformin 850mg',
+    desc: 'Thuốc điều trị đái tháo đường đường uống nhóm Biguanide.',
+    activeIngredient: 'Metformin',
+    indication: 'Điều trị đái tháo đường tuýp 2 khi chế độ ăn uống và tập luyện không kiểm soát được đường huyết.',
+    contraindication: 'Suy gan, suy thận nặng, nhiễm toan ceton cấp tính.',
+    dosage: 'Uống 1 viên/ngày vào bữa ăn sáng. Có thể tăng liều theo chỉ định bác sĩ.',
+    sideEffects: 'Đầy hơi, chướng bụng, rối loạn tiêu hóa nhẹ khi mới bắt đầu dùng.'
+  },
+  {
+    id: 'M005',
+    name: 'Amlodipine 5mg',
+    desc: 'Thuốc hạ huyết áp nhóm chẹn kênh calci.',
+    activeIngredient: 'Amlodipine',
+    indication: 'Điều trị tăng huyết áp vô căn, dự phòng đau thắt ngực ổn định.',
+    contraindication: 'Huyết áp quá thấp (suy tim mất bù, sốc tim).',
+    dosage: 'Uống 1 viên/ngày vào một giờ cố định (thường là sáng sớm).',
+    sideEffects: 'Phù cổ chân, đau đầu nhẹ, đỏ bừng mặt.'
+  }
+];
+
+// Initial Mock Appointments for Manager Calendar (Image 2)
+const INITIAL_APPOINTMENTS = [
+  { id: 'APT001', patientName: 'Đỗ Minh Tú', patientId: 'P001', doctorName: 'Bs. Huy', date: '2026-05-03', time: '11:30 - 12:30', specialty: 'Ngoại tổng quát', status: 'Đã xác nhận', symptoms: 'Đau bụng âm ỉ vùng hố chậu phải' },
+  { id: 'APT002', patientName: 'Nguyễn Minh Anh', patientId: 'P002', doctorName: 'Bs. B', date: '2026-05-06', time: '08:00 - 09:00', specialty: 'Nhi khoa', status: 'Đã xác nhận', symptoms: 'Sốt nhẹ, ho khan kéo dài' },
+  { id: 'APT003', patientName: 'Văn Thị Trinh', patientId: 'P003', doctorName: 'Bs. C', date: '2026-05-10', time: '14:00 - 15:00', specialty: 'Tai mũi họng', status: 'Đang xử lý', symptoms: 'Nghẹt mũi, ù tai trái' }
+];
+
+// Initial Mock Patients Database
+const INITIAL_PATIENTS = [
+  { id: 'P001', name: 'Đỗ Minh Tú', dob: '1995-04-12', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', medicalHistory: [
+    { date: '12/04/2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid' }
+  ] },
+  { id: 'P002', name: 'Nguyễn Minh Anh', dob: '2000-08-25', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [] },
+  { id: 'P003', name: 'Văn Thị Trinh', dob: '1988-11-05', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
+    { date: '01/05/2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi, kháng histamin 7 ngày' }
+  ] }
+];
+
+// Initial Mock Doctors
+const INITIAL_DOCTORS = [
+  { id: 'DOC001', name: 'Bs. Huy', specialty: 'Ngoại tổng quát', phone: '0966112233', email: 'huy.ngoai@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', biography: 'Hơn 10 năm kinh nghiệm phẫu thuật ngoại khoa và nội soi tiêu hóa tại bệnh viện Bạch Mai.' },
+  { id: 'DOC002', name: 'Bs. B', specialty: 'Nhi khoa', phone: '0977223344', email: 'binh.nhi@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ chuyên khoa I', biography: 'Chuyên khoa Nhi, tận tâm và giàu kinh nghiệm chăm sóc trẻ sơ sinh.' },
+  { id: 'DOC003', name: 'Bs. C', specialty: 'Tai mũi họng', phone: '0988334455', email: 'cuc.tmh@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ chuyên khoa II', biography: 'Chuyên gia điều trị các bệnh lý đường hô hấp trên, viêm tai giữa trẻ em.' }
+];
+
+// Initial Mock Reminders (Image 4)
+const INITIAL_REMINDERS = [
+  { id: 'REM001', title: 'Nhắc lịch trước 1 ngày', target: 'Bệnh nhân', time: 'Trước 1 ngày 08:00', channel: 'SMS', status: 'Đang hoạt động', messageContent: 'MediConsult nhắc: Lịch khám của quý khách với [Tên bác sĩ] vào ngày mai lúc [Giờ khám]. Vui lòng đến trước 10 phút.' },
+  { id: 'REM002', title: 'Nhắc lịch trước 2 giờ', target: 'Bệnh nhân', time: 'Trước 2 giờ 08:00', channel: 'App', status: 'Đang hoạt động', messageContent: 'Lịch khám sắp tới! Lịch hẹn của bạn sẽ bắt đầu sau 2 giờ.' },
+  { id: 'REM003', title: 'Nhắc lịch trước 30 phút', target: 'Bệnh nhân', time: 'Trước 30 phút 09:30', channel: 'App', status: 'Đang hoạt động', messageContent: 'Bạn có lịch hẹn sau 30 phút tại MediConsult. Vui lòng check-in tại quầy đón tiếp.' },
+  { id: 'REM004', title: 'Nhắc tái khám', target: 'Bệnh nhân', time: 'Theo ngày tái khám 09:00', channel: 'SMS', status: 'Tạm dừng', messageContent: 'MediConsult nhắc: Đến lịch hẹn tái khám của quý khách. Liên hệ 19006039 để đặt lịch.' },
+  { id: 'REM005', title: 'Nhắc ca trực ngày mai', target: 'Bác sĩ', time: 'Trước 1 ngày 17:00', channel: 'App', status: 'Đang hoạt động', messageContent: 'Thông báo ca trực ngày mai: Bác sĩ có lịch trực ca ngày mai từ [Giờ khám].' },
+  { id: 'REM006', title: 'Chúc mừng sinh nhật', target: 'Bệnh nhân', time: 'Đúng ngày 08:00', channel: 'SMS', status: 'Đang hoạt động', messageContent: 'Chúc mừng sinh nhật quý khách! MediConsult kính chúc quý khách nhiều sức khỏe và hạnh phúc.' },
+  { id: 'REM007', title: 'Nhắc tái khám', target: 'Bệnh nhân', time: 'Theo ngày tái khám 09:00', channel: 'SMS', status: 'Đang hoạt động', messageContent: 'Nhắc lịch hẹn tái khám định kỳ.' }
+];
+
+function App() {
+  const [role, setRole] = useState(null);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedId, setSelectedId] = useState(null);
+
+  // Popup Toast Notification State
+  const [toasts, setToasts] = useState([]);
+
+  // Database states to make forms functional
+  const [diseases, setDiseases] = useState(INITIAL_DISEASES);
+  const [medicines, setMedicines] = useState(INITIAL_MEDICINES);
+  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
+
+  // Scenarios state at App root level for CRUD functional state
+  const [scenarios, setScenarios] = useState([
+    { id: 'SC001', name: 'Tư vấn cảm cúm & đặt lịch khám', status: 'Hoạt động', lastUpdated: '05/05/2026 - 15:40', nodeCount: 11 },
+    { id: 'SC002', name: 'Tra cứu thông tin thuốc & liều lượng', status: 'Nháp', lastUpdated: '05/05/2026 - 08:20', nodeCount: 6 },
+    { id: 'SC003', name: 'Đăng ký khám bệnh ban đầu', status: 'Hoạt động', lastUpdated: '04/05/2026 - 16:17', nodeCount: 8 }
+  ]);
+
+  // Manager Specific State databases
+  const [appointments, setAppointments] = useState(INITIAL_APPOINTMENTS);
+  const [patients, setPatients] = useState(INITIAL_PATIENTS);
+  const [doctors, setDoctors] = useState(INITIAL_DOCTORS);
+  const [reminders, setReminders] = useState(INITIAL_REMINDERS);
+
+  // State to handle placeholder views for other roles
+  const [underDevRole, setUnderDevRole] = useState(null);
+
+  // Trigger Toast popup
+  const triggerToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  const handleSelectRole = (selectedRole) => {
+    if (selectedRole === 'expert') {
+      setRole('expert');
+      setCurrentView('dashboard');
+      triggerToast('Đăng nhập thành công với vai trò Chuyên gia y tế', 'info');
+    } else if (selectedRole === 'manager') {
+      setRole('manager');
+      setCurrentView('manager-dashboard');
+      triggerToast('Đăng nhập thành công với vai trò Quản lý phòng khám', 'info');
+    } else if (selectedRole === 'doctor') {
+      setRole('doctor');
+      setCurrentView('doctor-dashboard');
+      triggerToast('Đăng nhập thành công với vai trò Bác sĩ', 'info');
+    } else {
+      setUnderDevRole(selectedRole);
+    }
+  };
+
+  const handleNavigate = (view) => {
+    setCurrentView(view);
+    // Reset selectedId only when returning to dashboards, main lists, or profiles
+    if (
+      view.endsWith('-list') || 
+      view === 'dashboard' || 
+      view === 'manager-dashboard' ||
+      view === 'doctor-dashboard' ||
+      view === 'profile' || 
+      view === 'chatbot-scenarios' || 
+      view === 'ai-evaluation' ||
+      view === 'clinic-info' ||
+      view === 'clinic-feedback' ||
+      view === 'appointment-calendar' ||
+      view === 'doctor-shifts' ||
+      view === 'reports-analytics' ||
+      view === 'doctor-schedule' ||
+      view === 'doctor-appointments' ||
+      view === 'doctor-messages' ||
+      view === 'doctor-medicines'
+    ) {
+      setSelectedId(null);
+    }
+  };
+
+  const handleLogout = () => {
+    setRole(null);
+    setCurrentView('dashboard');
+    setUnderDevRole(null);
+    triggerToast('Đã đăng xuất khỏi hệ thống', 'info');
+  };
+
+  // --- RENDERING VIEWS ---
+
+  if (underDevRole) {
+    const roleNames = {
+      patient: 'Người cần tư vấn / Người cần khám bệnh',
+      doctor: 'Bác sĩ'
+    };
+    return (
+      <div className="landing-container animate-fade-in">
+        <div className="card text-center" style={{ maxWidth: '500px', padding: '40px' }}>
+          <div className="role-icon-wrapper" style={{ margin: '0 auto 24px auto' }}>
+            <svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" strokeWidth="2" fill="none">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <h2 style={{ marginBottom: '16px' }}>Giao diện đang được phát triển</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.6 }}>
+            Hệ thống đang ưu tiên xây dựng giao diện tối ưu cho vai trò <strong>{roleNames[underDevRole]}</strong>. 
+            Vui lòng chọn vai trò <strong>Chuyên gia y tế</strong> hoặc <strong>Quản lý phòng khám</strong> để trải nghiệm toàn bộ các tính năng chuẩn UI/UX.
+          </p>
+          <button className="btn btn-primary" onClick={() => setUnderDevRole(null)}>
+            Quay lại chọn vai trò
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!role) {
+    return <LandingPage onSelectRole={handleSelectRole} />;
+  }
+
+  // Choose layouts based on role
+  return (
+    <div className="app-wrapper">
+      <Sidebar
+        role={role}
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+      />
+      <div className="main-content">
+        <Navbar
+          role={role}
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          onSelectId={setSelectedId}
+          diseases={diseases}
+          medicines={medicines}
+          patients={patients}
+          doctors={doctors}
+          reminders={reminders}
+          appointments={appointments}
+        />
+        <main className="content-body">
+          {/* EXPERT PAGES */}
+          {role === 'expert' && currentView === 'dashboard' && (
+            <Dashboard
+              onNavigate={handleNavigate}
+              onSelectConversation={setSelectedId}
+              onSelectId={setSelectedId}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'expert' && currentView.includes('disease') && (
+            <MedicalData
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              diseases={diseases}
+              setDiseases={setDiseases}
+              medicines={medicines}
+              setMedicines={setMedicines}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'expert' && currentView.includes('medicine') && (
+            <MedicalData
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              diseases={diseases}
+              setDiseases={setDiseases}
+              medicines={medicines}
+              setMedicines={setMedicines}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'expert' && currentView.includes('chatbot') && (
+            <ChatbotScenarios
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              scenarios={scenarios}
+              setScenarios={setScenarios}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'expert' && currentView.includes('ai-evaluation') && (
+            <AIEvaluation
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              conversations={conversations}
+              setConversations={setConversations}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {/* MANAGER PAGES */}
+          {role === 'manager' && currentView === 'manager-dashboard' && (
+            <ManagerDashboard
+              onNavigate={handleNavigate}
+              onSelectId={setSelectedId}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'manager' && (
+            currentView === 'clinic-info' || 
+            currentView === 'clinic-feedback' ||
+            currentView.includes('appointment') ||
+            currentView.includes('patient')
+          ) && (
+            <ClinicManagement
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              appointments={appointments}
+              setAppointments={setAppointments}
+              patients={patients}
+              setPatients={setPatients}
+              doctors={doctors}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'manager' && currentView.includes('doctor') && (
+            <DoctorCoordinator
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              doctors={doctors}
+              setDoctors={setDoctors}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'manager' && currentView.includes('reminder') && (
+            <ReminderAlerts
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              reminders={reminders}
+              setReminders={setReminders}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'manager' && currentView === 'reports-analytics' && (
+            <ReportAnalytics
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {/* DOCTOR PAGES */}
+          {role === 'doctor' && currentView === 'doctor-dashboard' && (
+            <DoctorDashboard
+              onNavigate={handleNavigate}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'doctor' && currentView === 'doctor-schedule' && (
+            <DoctorSchedule
+              onNavigate={handleNavigate}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'doctor' && currentView === 'doctor-appointments' && (
+            <DoctorAppointments
+              onNavigate={handleNavigate}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'doctor' && currentView === 'doctor-messages' && (
+            <DoctorMessages
+              onNavigate={handleNavigate}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'doctor' && (
+            currentView === 'doctor-medical-records' ||
+            currentView === 'doctor-patient-details' ||
+            currentView === 'doctor-patient-diagnose'
+          ) && (
+            <DoctorMedicalRecords
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              patients={patients}
+              setPatients={setPatients}
+              medicines={medicines}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'doctor' && (
+            currentView === 'doctor-medicines' ||
+            currentView === 'doctor-medicine-details'
+          ) && (
+            <DoctorMedicines
+              currentView={currentView}
+              onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+              medicines={medicines}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {/* GLOBAL PAGES */}
+          {currentView === 'profile' && (
+            <AccountProfile role={role} />
+          )}
+        </main>
+      </div>
+
+      {/* Floating Popup Toast Notifications Overlay */}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast-notification toast-${toast.type}`}>
+            {toast.type === 'success' && <CheckCircle2 size={18} />}
+            {toast.type === 'error' && <AlertTriangle size={18} />}
+            {toast.type === 'info' && <Info size={18} />}
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,411 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Bell, Activity, Pill, Bot, User, Stethoscope, Clock, BellRing } from 'lucide-react';
+
+export default function Navbar({
+  role,
+  currentView,
+  onNavigate,
+  onSelectId,
+  diseases,
+  medicines,
+  patients = [],
+  doctors = [],
+  reminders = [],
+  appointments = []
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Compute breadcrumbs and their corresponding navigation destinations
+  const getBreadcrumbs = () => {
+    const crumbs = [{ text: 'Pages', view: role === 'expert' ? 'dashboard' : role === 'manager' ? 'manager-dashboard' : 'doctor-dashboard' }];
+    
+    if (role === 'expert') {
+      if (currentView === 'dashboard') {
+        crumbs.push({ text: 'Trang chủ', view: 'dashboard' });
+      } else if (currentView.includes('disease')) {
+        crumbs.push({ text: 'Dữ liệu y tế', view: 'disease-list' });
+        crumbs.push({ text: 'Bệnh', view: 'disease-list' });
+        if (currentView === 'disease-list') crumbs.push({ text: 'Danh sách bệnh', view: 'disease-list' });
+        if (currentView === 'disease-details') crumbs.push({ text: 'Chi tiết bệnh', view: 'disease-details' });
+        if (currentView === 'disease-edit') crumbs.push({ text: 'Chỉnh sửa thông tin bệnh', view: 'disease-edit' });
+        if (currentView === 'disease-add') crumbs.push({ text: 'Thêm thông tin bệnh', view: 'disease-add' });
+      } else if (currentView.includes('medicine')) {
+        crumbs.push({ text: 'Dữ liệu y tế', view: 'medicine-list' });
+        crumbs.push({ text: 'Thuốc', view: 'medicine-list' });
+        if (currentView === 'medicine-list') crumbs.push({ text: 'Danh sách thuốc', view: 'medicine-list' });
+        if (currentView === 'medicine-details') crumbs.push({ text: 'Chi tiết thuốc', view: 'medicine-details' });
+        if (currentView === 'medicine-edit') crumbs.push({ text: 'Chỉnh sửa thông tin thuốc', view: 'medicine-edit' });
+        if (currentView === 'medicine-add') crumbs.push({ text: 'Thêm thông tin thuốc', view: 'medicine-add' });
+      } else if (currentView.includes('chatbot')) {
+        crumbs.push({ text: 'Kịch bản Chatbot', view: 'chatbot-scenarios' });
+        if (currentView === 'chatbot-scenarios') crumbs.push({ text: 'Danh sách kịch bản', view: 'chatbot-scenarios' });
+        if (currentView === 'chatbot-scenario-edit') crumbs.push({ text: 'Chỉnh sửa kịch bản', view: 'chatbot-scenario-edit' });
+        if (currentView === 'chatbot-scenario-add') crumbs.push({ text: 'Thêm kịch bản', view: 'chatbot-scenario-add' });
+        if (currentView === 'chatbot-scenario-test') crumbs.push({ text: 'Kiểm thử kịch bản', view: 'chatbot-scenario-test' });
+      } else if (currentView.includes('ai-evaluation')) {
+        crumbs.push({ text: 'Đánh giá & kiểm duyệt AI', view: 'ai-evaluation' });
+        if (currentView === 'ai-evaluation') crumbs.push({ text: 'Danh sách hội thoại', view: 'ai-evaluation' });
+        if (currentView === 'ai-evaluation-analysis') crumbs.push({ text: 'Phân tích hội thoại', view: 'ai-evaluation-analysis' });
+      }
+    } else if (role === 'manager') {
+      // MANAGER crumbs
+      if (currentView === 'manager-dashboard') {
+        crumbs.push({ text: 'Trang chủ', view: 'manager-dashboard' });
+      } else if (currentView === 'clinic-info' || currentView === 'clinic-feedback') {
+        crumbs.push({ text: 'Quản lý', view: 'clinic-info' });
+        crumbs.push({ text: 'Phòng khám', view: 'clinic-info' });
+      } else if (currentView.includes('appointment')) {
+        crumbs.push({ text: 'Quản lý', view: 'appointment-calendar' });
+        crumbs.push({ text: 'Lịch khám', view: 'appointment-calendar' });
+        if (currentView === 'appointment-edit') crumbs.push({ text: 'Chỉnh sửa lịch hẹn', view: 'appointment-edit' });
+        if (currentView === 'appointment-add') crumbs.push({ text: 'Thêm lịch hẹn mới', view: 'appointment-add' });
+      } else if (currentView.includes('patient')) {
+        crumbs.push({ text: 'Quản lý', view: 'patient-list' });
+        crumbs.push({ text: 'Bệnh nhân', view: 'patient-list' });
+        if (currentView === 'patient-list') crumbs.push({ text: 'Danh sách bệnh nhân', view: 'patient-list' });
+        if (currentView === 'patient-details') crumbs.push({ text: 'Chi tiết hồ sơ bệnh nhân', view: 'patient-details' });
+        if (currentView === 'patient-edit') crumbs.push({ text: 'Chỉnh sửa bệnh nhân', view: 'patient-edit' });
+        if (currentView === 'patient-add') crumbs.push({ text: 'Thêm bệnh nhân', view: 'patient-add' });
+      } else if (currentView.includes('doctor')) {
+        crumbs.push({ text: 'Điều phối bác sĩ', view: 'doctor-list' });
+        if (currentView === 'doctor-list') crumbs.push({ text: 'Danh sách bác sĩ', view: 'doctor-list' });
+        if (currentView === 'doctor-shifts') crumbs.push({ text: 'Lịch trực bác sĩ', view: 'doctor-shifts' });
+        if (currentView === 'doctor-details') crumbs.push({ text: 'Chi tiết năng lực', view: 'doctor-details' });
+        if (currentView === 'doctor-edit') crumbs.push({ text: 'Chỉnh sửa bác sĩ', view: 'doctor-edit' });
+        if (currentView === 'doctor-add') crumbs.push({ text: 'Thêm bác sĩ mới', view: 'doctor-add' });
+      } else if (currentView.includes('reminder')) {
+        crumbs.push({ text: 'Nhắc lịch', view: 'reminder-list' });
+        if (currentView === 'reminder-list') crumbs.push({ text: 'Danh sách nhắc lịch tự động', view: 'reminder-list' });
+        if (currentView === 'reminder-details') crumbs.push({ text: 'Chi tiết kịch bản', view: 'reminder-details' });
+        if (currentView === 'reminder-edit') crumbs.push({ text: 'Chỉnh sửa kịch bản', view: 'reminder-edit' });
+        if (currentView === 'reminder-add') crumbs.push({ text: 'Tạo nhắc lịch mới', view: 'reminder-add' });
+      } else if (currentView === 'reports-analytics') {
+        crumbs.push({ text: 'Báo cáo, phân tích', view: 'reports-analytics' });
+      }
+    } else {
+      // DOCTOR crumbs
+      if (currentView === 'doctor-dashboard') {
+        crumbs.push({ text: 'Trang chủ', view: 'doctor-dashboard' });
+      } else if (currentView === 'doctor-schedule') {
+        crumbs.push({ text: 'Lịch khám', view: 'doctor-schedule' });
+      } else if (currentView === 'doctor-appointments') {
+        crumbs.push({ text: 'Quản lý lịch hẹn', view: 'doctor-appointments' });
+      } else if (currentView === 'doctor-messages') {
+        crumbs.push({ text: 'Tin nhắn', view: 'doctor-messages' });
+      } else if (currentView === 'doctor-medical-records' || currentView.includes('doctor-patient-')) {
+        crumbs.push({ text: 'Hồ sơ bệnh án', view: 'doctor-medical-records' });
+        if (currentView === 'doctor-medical-records') crumbs.push({ text: 'Danh sách bệnh nhân', view: 'doctor-medical-records' });
+        if (currentView === 'doctor-patient-details') crumbs.push({ text: 'Chi tiết bệnh án', view: 'doctor-patient-details' });
+        if (currentView === 'doctor-patient-diagnose') crumbs.push({ text: 'Chẩn đoán & kê đơn', view: 'doctor-patient-diagnose' });
+      } else if (currentView === 'doctor-medicines' || currentView.includes('doctor-medicine-')) {
+        crumbs.push({ text: 'Tra cứu thuốc', view: 'doctor-medicines' });
+        if (currentView === 'doctor-medicines') crumbs.push({ text: 'Danh sách thuốc', view: 'doctor-medicines' });
+        if (currentView === 'doctor-medicine-details') crumbs.push({ text: 'Chi tiết thuốc', view: 'doctor-medicine-details' });
+      }
+    }
+
+    if (currentView === 'profile') {
+      crumbs.push({ text: 'Thông tin tài khoản', view: 'profile' });
+    }
+
+    return crumbs;
+  };
+
+  const crumbs = getBreadcrumbs();
+
+  // Search filter logic across database entities
+  const getSearchResults = () => {
+    if (!searchQuery.trim()) return { diseases: [], medicines: [], patients: [], doctors: [], reminders: [], appointments: [] };
+    const query = searchQuery.toLowerCase();
+    
+    // Expert matches
+    const matchedDiseases = diseases.filter(d => 
+      d.name.toLowerCase().includes(query) || d.desc.toLowerCase().includes(query)
+    );
+    const matchedMedicines = medicines.filter(m => 
+      m.name.toLowerCase().includes(query) || m.activeIngredient.toLowerCase().includes(query)
+    );
+
+    // Manager matches
+    const matchedPatients = patients.filter(p =>
+      p.name.toLowerCase().includes(query) || p.phone.includes(query) || p.id.toLowerCase().includes(query)
+    );
+    const matchedDoctors = doctors.filter(doc =>
+      doc.name.toLowerCase().includes(query) || doc.specialty.toLowerCase().includes(query)
+    );
+    const matchedReminders = reminders.filter(r =>
+      r.title.toLowerCase().includes(query) || r.channel.toLowerCase().includes(query)
+    );
+    const matchedAppointments = appointments.filter(apt =>
+      apt.patientName.toLowerCase().includes(query) || apt.doctorName.toLowerCase().includes(query)
+    );
+
+    return {
+      diseases: matchedDiseases,
+      medicines: matchedMedicines,
+      patients: matchedPatients,
+      doctors: matchedDoctors,
+      reminders: matchedReminders,
+      appointments: matchedAppointments
+    };
+  };
+
+  const results = getSearchResults();
+  const hasResults =
+    results.diseases.length > 0 ||
+    results.medicines.length > 0 ||
+    results.patients.length > 0 ||
+    results.doctors.length > 0 ||
+    results.reminders.length > 0 ||
+    results.appointments.length > 0;
+
+  const handleSearchResultClick = (type, id) => {
+    setSearchQuery('');
+    setShowDropdown(false);
+    if (type === 'disease') {
+      if (role !== 'doctor') {
+        onSelectId(id);
+        onNavigate('disease-details');
+      }
+    } else if (type === 'medicine') {
+      onSelectId(id);
+      onNavigate(role === 'doctor' ? 'doctor-medicine-details' : 'medicine-details');
+    } else if (type === 'patient') {
+      onSelectId(id);
+      onNavigate(role === 'doctor' ? 'doctor-patient-details' : 'patient-details');
+    } else if (type === 'doctor') {
+      if (role === 'manager') {
+        onSelectId(id);
+        onNavigate('doctor-details');
+      }
+    } else if (type === 'reminder') {
+      if (role === 'manager') {
+        onSelectId(id);
+        onNavigate('reminder-details');
+      }
+    } else if (type === 'appointment') {
+      if (role === 'manager') {
+        onSelectId(id);
+        onNavigate('appointment-calendar');
+      } else if (role === 'doctor') {
+        onNavigate('doctor-schedule');
+      }
+    }
+  };
+
+  return (
+    <header className="navbar">
+      {/* Clickable Breadcrumbs */}
+      <div className="navbar-breadcrumbs">
+        {crumbs.map((crumb, idx) => {
+          const isLast = idx === crumbs.length - 1;
+          return (
+            <React.Fragment key={idx}>
+              {idx > 0 && <span style={{ margin: '0 6px' }}>/</span>}
+              {isLast ? (
+                <span className="active-crumb">{crumb.text}</span>
+              ) : (
+                <a
+                  className="breadcrumb-link"
+                  onClick={() => onNavigate(crumb.view)}
+                >
+                  {crumb.text}
+                </a>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Right Navbar elements */}
+      <div className="navbar-right">
+        {/* Global Search */}
+        <div className="navbar-search" ref={dropdownRef}>
+          <Search size={16} className="navbar-search-icon" />
+          <input
+            type="text"
+            placeholder={role === 'expert' ? "Tìm bệnh, thuốc..." : role === 'manager' ? "Tìm bệnh nhân, bác sĩ, lịch hẹn..." : "Tìm bệnh nhân, thuốc..."}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+          />
+
+          {/* Search Dropdown Panel */}
+          {showDropdown && searchQuery.trim() && (
+            <div className="search-results-dropdown">
+              {role === 'expert' ? (
+                <>
+                  {/* Diseases section */}
+                  {results.diseases.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bệnh ({results.diseases.length})</div>
+                      {results.diseases.map(d => (
+                        <div
+                          key={d.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('disease', d.id)}
+                        >
+                          <span>{d.name}</span>
+                          <span className="search-results-type-badge"><Activity size={10} style={{ marginRight: '2px' }} /> Bệnh</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Medicines section */}
+                  {results.medicines.length > 0 && (
+                    <>
+                      <div className="search-results-section">Thuốc ({results.medicines.length})</div>
+                      {results.medicines.map(m => (
+                        <div
+                          key={m.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('medicine', m.id)}
+                        >
+                          <span>{m.name}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#ecfdf5', color: '#10b981' }}><Pill size={10} style={{ marginRight: '2px' }} /> Thuốc</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Patients section */}
+                  {results.patients.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bệnh nhân ({results.patients.length})</div>
+                      {results.patients.map(p => (
+                        <div
+                          key={p.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('patient', p.id)}
+                        >
+                          <span>{p.name} ({p.id})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#fdf2f8', color: '#db2777' }}><User size={10} style={{ marginRight: '2px' }} /> Hồ sơ</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Doctors section */}
+                  {results.doctors.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bác sĩ ({results.doctors.length})</div>
+                      {results.doctors.map(doc => (
+                        <div
+                          key={doc.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('doctor', doc.id)}
+                        >
+                          <span>{doc.name} - {doc.specialty}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#f0fdf4', color: '#15803d' }}><Stethoscope size={10} style={{ marginRight: '2px' }} /> Bác sĩ</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Appointments section */}
+                  {results.appointments.length > 0 && (
+                    <>
+                      <div className="search-results-section">Lịch hẹn ({results.appointments.length})</div>
+                      {results.appointments.map(apt => (
+                        <div
+                          key={apt.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('appointment', apt.id)}
+                        >
+                          <span>{apt.patientName} - {apt.doctorName} ({apt.time})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}><Clock size={10} style={{ marginRight: '2px' }} /> Lịch</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Reminders section */}
+                  {results.reminders.length > 0 && (
+                    <>
+                      <div className="search-results-section">Nhắc lịch ({results.reminders.length})</div>
+                      {results.reminders.map(r => (
+                        <div
+                          key={r.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('reminder', r.id)}
+                        >
+                          <span>{r.title} ({r.channel})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#fffbeb', color: '#b45309' }}><BellRing size={10} style={{ marginRight: '2px' }} /> Nhắc</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+
+              {!hasResults && (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  Không tìm thấy kết quả phù hợp
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Bell */}
+        <div className="navbar-bell">
+          <Bell size={18} />
+        </div>
+
+        {/* Profile Pill */}
+        <div className="navbar-profile-pill" style={{ cursor: 'pointer' }} onClick={() => onNavigate('profile')}>
+          <div className="profile-pill-text">
+            <div className="profile-pill-name">
+              {role === 'expert' ? 'Mai Thùy Linh' : role === 'manager' ? 'Nguyễn Nhật Linh' : 'Dương Gia Huy'}
+            </div>
+            <div className="profile-pill-role">
+              {role === 'expert' ? 'Chuyên gia' : role === 'manager' ? 'Quản lý' : 'Bác sĩ'}
+            </div>
+          </div>
+          <div className="profile-pill-avatar">
+            {role === 'expert' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                <circle cx="50" cy="40" r="20" fill="#db2777" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+              </svg>
+            ) : role === 'manager' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#fef3c7" />
+                <circle cx="50" cy="40" r="20" fill="#d97706" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#dbeafe" />
+                <circle cx="50" cy="40" r="20" fill="#2563eb" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
+              </svg>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
