@@ -18,7 +18,16 @@ const TIME_SLOTS = [
   '16:00 - 17:00'
 ];
 
-export default function PatientSchedule({ appointments = [], setAppointments, triggerToast, defaultTab, onBookSuccess, onNavigate }) {
+export default function PatientSchedule({ 
+  appointments = [], 
+  setAppointments, 
+  triggerToast, 
+  defaultTab, 
+  onBookSuccess, 
+  onNavigate,
+  patientConversations = [],
+  activePatientConvId
+}) {
   const [activeTab, setActiveTab] = useState(defaultTab || 'booked'); // 'booked' or 'create'
   
   React.useEffect(() => {
@@ -33,6 +42,18 @@ export default function PatientSchedule({ appointments = [], setAppointments, tr
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState('');
   const [bookingSymptoms, setBookingSymptoms] = useState('');
+
+  // Auto-fill symptoms if booking from chat
+  React.useEffect(() => {
+    if (defaultTab === 'create') {
+      const activeConv = patientConversations.find(c => c.id === activePatientConvId);
+      if (activeConv && activeConv.symptoms && activeConv.symptoms.length > 0) {
+        setBookingSymptoms(`Triệu chứng ghi nhận: ${activeConv.symptoms.join(', ')}`);
+      } else {
+        setBookingSymptoms('');
+      }
+    }
+  }, [defaultTab, patientConversations, activePatientConvId]);
 
   // Get active appointments for Lương Hương Giang
   const myAppointments = appointments.filter(

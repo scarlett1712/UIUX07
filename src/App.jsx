@@ -472,6 +472,8 @@ function App() {
               triggerToast={triggerToast}
               onNavigate={handleNavigate}
               defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
+              patientConversations={patientConversations}
+              activePatientConvId={activePatientConvId}
               onBookSuccess={(aptDetails) => {
                 setPatientConversations(prev => prev.map(c => {
                   if (c.id === activePatientConvId) {
