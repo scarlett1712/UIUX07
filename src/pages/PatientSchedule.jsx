@@ -447,7 +447,13 @@ export default function PatientSchedule({
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
             <button
               type="button"
-              onClick={() => setActiveTab('booked')}
+              onClick={() => {
+                if (defaultTab === 'create' && onNavigate) {
+                  onNavigate('patient-consultation');
+                } else {
+                  setActiveTab('booked');
+                }
+              }}
               className="btn btn-outline"
               style={{ padding: '10px 32px', margin: 0 }}
             >

@@ -16,6 +16,7 @@ export default function PatientConsultation({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStep, setPaymentStep] = useState(1); // 1: QR screen, 2: Verification, 3: Success
   const [isConsultingDoctor, setIsConsultingDoctor] = useState(false); // Switch to Doctor chat after payment
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(120); // 2 minutes (120s) for demo auto-expiry
 
   // Simulated call modal state
   const [showCallModal, setShowCallModal] = useState(false);
@@ -56,6 +57,41 @@ export default function PatientConsultation({
     }
     return () => clearInterval(timer);
   }, [showCallModal, callState]);
+
+  // Auto-expiry simulation for doctor consult session
+  useEffect(() => {
+    let timer;
+    if (isConsultingDoctor) {
+      timer = setInterval(() => {
+        setSessionTimeLeft(prev => {
+          if (prev <= 1) {
+            setIsConsultingDoctor(false);
+            triggerToast('Phiên tư vấn với bác sĩ đã hết hạn. Bạn đã quay lại kênh hội thoại với AI.', 'info');
+            
+            // Append AI back message and update conversation status
+            setConversations(prevConvs => prevConvs.map(c => {
+              if (c.id === activeConvId) {
+                return {
+                  ...c,
+                  activeDoctorConsult: false,
+                  messages: [
+                    ...c.messages,
+                    { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc sau 24h. Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
+                  ]
+                };
+              }
+              return c;
+            }));
+            return 120;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setSessionTimeLeft(120);
+    }
+    return () => clearInterval(timer);
+  }, [isConsultingDoctor, activeConvId]);
 
   const handleStartCall = (type) => {
     setCallType(type);
@@ -369,43 +405,10 @@ export default function PatientConsultation({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Clock size={14} />
-              <span>Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút)</span>
+              <span>
+                Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút, Demo tự động kết thúc sau: <strong>{Math.floor(sessionTimeLeft / 60).toString().padStart(2, '0')}:{ (sessionTimeLeft % 60).toString().padStart(2, '0') }</strong>)
+              </span>
             </div>
-            {/* Expiry simulator button */}
-            <button
-              onClick={() => {
-                setIsConsultingDoctor(false);
-                triggerToast('Phiên tư vấn với bác sĩ đã kết thúc. Bạn đã quay lại kênh hội thoại với AI.', 'info');
-                
-                // Append AI back message and set activeDoctorConsult to false
-                const updatedConvs = conversations.map(c => {
-                  if (c.id === activeConvId) {
-                    return {
-                      ...c,
-                      activeDoctorConsult: false,
-                      messages: [
-                        ...c.messages,
-                        { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc sau 24h. Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
-                      ]
-                    };
-                  }
-                  return c;
-                });
-                setConversations(updatedConvs);
-              }}
-              style={{
-                padding: '2px 8px',
-                backgroundColor: '#b45309',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '0.72rem',
-                cursor: 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              Hết hạn (Simulate)
-            </button>
           </div>
         )}
 
@@ -508,7 +511,10 @@ export default function PatientConsultation({
                 key={s}
                 onClick={() => handleQuickReply(s)}
                 style={{
-                  padding: '4px 12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px 14px',
                   borderRadius: '16px',
                   border: '1px solid var(--border-color)',
                   background: '#fff',
@@ -516,7 +522,9 @@ export default function PatientConsultation({
                   cursor: 'pointer',
                   color: 'var(--text-dark)',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  lineHeight: '1',
+                  height: '30px'
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-light)'; e.currentTarget.style.backgroundColor = '#f8fafc'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.backgroundColor = '#fff'; }}
@@ -640,7 +648,7 @@ export default function PatientConsultation({
 
         {/* Action Panel */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeConv.showActions && activeConv.status === 'Đang tư vấn' && !isConsultingDoctor && (
+          {activeConv.showActions && activeConv.status === 'Đang tư vấn' && (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -672,26 +680,28 @@ export default function PatientConsultation({
                 <Calendar size={14} /> Đặt lịch khám phòng khám
               </button>
 
-              <button
-                onClick={() => {
-                  setShowPaymentModal(true);
-                  setPaymentStep(1);
-                }}
-                className="btn animate-pulse"
-                style={{
-                  padding: '8px',
-                  fontSize: '0.8rem',
-                  backgroundColor: '#10b981',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  fontWeight: '600'
-                }}
-              >
-                <CreditCard size={14} /> Tư vấn chuyên sâu bác sĩ
-              </button>
+              {!isConsultingDoctor && (
+                <button
+                  onClick={() => {
+                    setShowPaymentModal(true);
+                    setPaymentStep(1);
+                  }}
+                  className="btn animate-pulse"
+                  style={{
+                    padding: '8px',
+                    fontSize: '0.8rem',
+                    backgroundColor: '#10b981',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    fontWeight: '600'
+                  }}
+                >
+                  <CreditCard size={14} /> Tư vấn chuyên sâu bác sĩ
+                </button>
+              )}
             </div>
           )}
         </div>
