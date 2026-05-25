@@ -456,10 +456,11 @@ export default function Navbar({
         </div>
 
         {/* Bell */}
-        <div className="navbar-bell" ref={notificationRef} style={{ position: 'relative' }}>
+        <div ref={notificationRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
           <button 
+            className="navbar-bell"
             onClick={() => setShowNotifications(!showNotifications)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', color: 'var(--text-dark)' }}
+            style={{ border: 'none', cursor: 'pointer', outline: 'none', padding: 0 }}
           >
             <Bell size={18} />
             {unreadCount > 0 && (
@@ -489,9 +490,33 @@ export default function Navbar({
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-color)',
               padding: '12px 0',
-              zIndex: 99999,
+              zIndex: 999999,
               margin: 0
             }}>
+              <style>{`
+                .notification-item {
+                  padding: 12px 16px;
+                  border-bottom: 1px solid #f1f5f9;
+                  cursor: pointer;
+                  transition: background-color 0.2s;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 4px;
+                }
+                .notification-item.unread {
+                  background-color: #f0f7ff;
+                }
+                .notification-item.unread:hover {
+                  background-color: #e0f2fe;
+                }
+                .notification-item.read {
+                  background-color: transparent;
+                }
+                .notification-item.read:hover {
+                  background-color: #f8fafc;
+                }
+              `}</style>
+              
               <div style={{ padding: '0 16px 8px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: '0.88rem', color: 'var(--text-dark)' }}>Thông báo</strong>
                 {unreadCount > 0 && (
@@ -514,18 +539,7 @@ export default function Navbar({
                   <div
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    style={{
-                      padding: '12px 16px',
-                      borderBottom: '1px solid #f1f5f9',
-                      cursor: 'pointer',
-                      backgroundColor: n.read ? 'transparent' : '#f0f7ff',
-                      transition: 'background-color 0.2s',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = n.read ? '#f8fafc' : '#e0f2fe'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = n.read ? 'transparent' : '#f0f7ff'; }}
+                    className={`notification-item ${n.read ? 'read' : 'unread'}`}
                   >
                     <span style={{
                       fontSize: '0.8rem',
