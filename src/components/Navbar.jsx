@@ -32,7 +32,10 @@ export default function Navbar({
 
   // Compute breadcrumbs and their corresponding navigation destinations
   const getBreadcrumbs = () => {
-    const crumbs = [{ text: 'Pages', view: role === 'expert' ? 'dashboard' : role === 'manager' ? 'manager-dashboard' : 'doctor-dashboard' }];
+    const crumbs = [{ 
+      text: 'Pages', 
+      view: role === 'expert' ? 'dashboard' : role === 'manager' ? 'manager-dashboard' : role === 'patient' ? 'patient-dashboard' : 'doctor-dashboard' 
+    }];
     
     if (role === 'expert') {
       if (currentView === 'dashboard') {
@@ -96,6 +99,17 @@ export default function Navbar({
         if (currentView === 'reminder-add') crumbs.push({ text: 'Tạo nhắc lịch mới', view: 'reminder-add' });
       } else if (currentView === 'reports-analytics') {
         crumbs.push({ text: 'Báo cáo, phân tích', view: 'reports-analytics' });
+      }
+    } else if (role === 'patient') {
+      // PATIENT crumbs
+      if (currentView === 'patient-dashboard') {
+        crumbs.push({ text: 'Trang chủ', view: 'patient-dashboard' });
+      } else if (currentView === 'patient-consultation') {
+        crumbs.push({ text: 'Tư vấn sức khỏe', view: 'patient-consultation' });
+      } else if (currentView === 'patient-schedule') {
+        crumbs.push({ text: 'Lịch khám', view: 'patient-schedule' });
+      } else if (currentView === 'patient-medical-data') {
+        crumbs.push({ text: 'Dữ liệu y tế', view: 'patient-medical-data' });
       }
     } else {
       // DOCTOR crumbs
@@ -180,7 +194,7 @@ export default function Navbar({
     if (type === 'disease') {
       if (role !== 'doctor') {
         onSelectId(id);
-        onNavigate('disease-details');
+        onNavigate(role === 'patient' ? 'patient-medical-data' : 'disease-details');
       }
     } else if (type === 'medicine') {
       onSelectId(id);
@@ -192,6 +206,8 @@ export default function Navbar({
       if (role === 'manager') {
         onSelectId(id);
         onNavigate('doctor-details');
+      } else if (role === 'patient') {
+        onNavigate('patient-schedule');
       }
     } else if (type === 'reminder') {
       if (role === 'manager') {
@@ -204,6 +220,8 @@ export default function Navbar({
         onNavigate('appointment-calendar');
       } else if (role === 'doctor') {
         onNavigate('doctor-schedule');
+      } else if (role === 'patient') {
+        onNavigate('patient-schedule');
       }
     }
   };
@@ -239,7 +257,15 @@ export default function Navbar({
           <Search size={16} className="navbar-search-icon" />
           <input
             type="text"
-            placeholder={role === 'expert' ? "Tìm bệnh, thuốc..." : role === 'manager' ? "Tìm bệnh nhân, bác sĩ, lịch hẹn..." : "Tìm bệnh nhân, thuốc..."}
+            placeholder={
+              role === 'expert' 
+                ? "Tìm bệnh, thuốc..." 
+                : role === 'manager' 
+                ? "Tìm bệnh nhân, bác sĩ, lịch hẹn..." 
+                : role === 'patient'
+                ? "Tìm dịch bệnh, bác sĩ, lịch hẹn..."
+                : "Tìm bệnh nhân, thuốc..."
+            }
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -251,7 +277,7 @@ export default function Navbar({
           {/* Search Dropdown Panel */}
           {showDropdown && searchQuery.trim() && (
             <div className="search-results-dropdown">
-              {role === 'expert' ? (
+              {role === 'expert' || role === 'patient' ? (
                 <>
                   {/* Diseases section */}
                   {results.diseases.length > 0 && (
@@ -282,6 +308,23 @@ export default function Navbar({
                         >
                           <span>{m.name}</span>
                           <span className="search-results-type-badge" style={{ backgroundColor: '#ecfdf5', color: '#10b981' }}><Pill size={10} style={{ marginRight: '2px' }} /> Thuốc</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Doctors section for patient search */}
+                  {role === 'patient' && results.doctors.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bác sĩ ({results.doctors.length})</div>
+                      {results.doctors.map(doc => (
+                        <div
+                          key={doc.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('doctor', doc.id)}
+                        >
+                          <span>{doc.name} - {doc.specialty}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#f0fdf4', color: '#15803d' }}><Stethoscope size={10} style={{ marginRight: '2px' }} /> Bác sĩ</span>
                         </div>
                       ))}
                     </>
@@ -377,10 +420,22 @@ export default function Navbar({
         <div className="navbar-profile-pill" style={{ cursor: 'pointer' }} onClick={() => onNavigate('profile')}>
           <div className="profile-pill-text">
             <div className="profile-pill-name">
-              {role === 'expert' ? 'Mai Thùy Linh' : role === 'manager' ? 'Nguyễn Nhật Linh' : 'Dương Gia Huy'}
+              {role === 'expert' 
+                ? 'Mai Thùy Linh' 
+                : role === 'manager' 
+                ? 'Nguyễn Nhật Linh' 
+                : role === 'patient'
+                ? 'Lương Hương Giang'
+                : 'Dương Gia Huy'}
             </div>
             <div className="profile-pill-role">
-              {role === 'expert' ? 'Chuyên gia' : role === 'manager' ? 'Quản lý' : 'Bác sĩ'}
+              {role === 'expert' 
+                ? 'Chuyên gia' 
+                : role === 'manager' 
+                ? 'Quản lý' 
+                : role === 'patient'
+                ? 'Người dùng'
+                : 'Bác sĩ'}
             </div>
           </div>
           <div className="profile-pill-avatar">
@@ -395,6 +450,12 @@ export default function Navbar({
                 <circle cx="50" cy="50" r="50" fill="#fef3c7" />
                 <circle cx="50" cy="40" r="20" fill="#d97706" />
                 <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
+              </svg>
+            ) : role === 'patient' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
               </svg>
             ) : (
               <svg viewBox="0 0 100 100" width="100%" height="100%">

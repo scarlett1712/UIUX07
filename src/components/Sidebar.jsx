@@ -204,6 +204,64 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               </a>
             </div>
           </>
+        ) : role === 'patient' ? (
+          /* PATIENT ROLE MENU */
+          <>
+            {/* Trang chủ */}
+            <div className="sidebar-item">
+              <a
+                className={`sidebar-link ${currentView === 'patient-dashboard' ? 'active' : ''}`}
+                onClick={() => onNavigate('patient-dashboard')}
+              >
+                <LayoutDashboard size={20} />
+                <span>Trang chủ</span>
+              </a>
+            </div>
+
+            {/* Tư vấn sức khỏe */}
+            <div className="sidebar-item">
+              <a
+                className={`sidebar-link ${currentView === 'patient-consultation' ? 'active' : ''}`}
+                onClick={() => onNavigate('patient-consultation')}
+              >
+                <Bot size={20} />
+                <span>Tư vấn sức khỏe</span>
+              </a>
+            </div>
+
+            {/* Lịch khám */}
+            <div className="sidebar-item">
+              <a
+                className={`sidebar-link ${currentView === 'patient-schedule' ? 'active' : ''}`}
+                onClick={() => onNavigate('patient-schedule')}
+              >
+                <Calendar size={20} />
+                <span>Lịch khám</span>
+              </a>
+            </div>
+
+            {/* Dữ liệu y tế */}
+            <div className="sidebar-item">
+              <a
+                className={`sidebar-link ${currentView === 'patient-medical-data' ? 'active' : ''}`}
+                onClick={() => onNavigate('patient-medical-data')}
+              >
+                <Database size={20} />
+                <span>Dữ liệu y tế</span>
+              </a>
+            </div>
+
+            {/* Cài đặt */}
+            <div className="sidebar-item">
+              <a
+                className={`sidebar-link ${currentView === 'profile' ? 'active' : ''}`}
+                onClick={() => onNavigate('profile')}
+              >
+                <Users size={20} />
+                <span>Cài đặt</span>
+              </a>
+            </div>
+          </>
         ) : (
           /* DOCTOR ROLE MENU */
           <>
@@ -296,6 +354,12 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
                 <circle cx="50" cy="40" r="20" fill="#d97706" />
                 <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
               </svg>
+            ) : role === 'patient' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
+              </svg>
             ) : (
               <svg viewBox="0 0 100 100" width="100%" height="100%">
                 <circle cx="50" cy="50" r="50" fill="#dbeafe" />
@@ -306,10 +370,22 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           </div>
           <div style={{ flexGrow: 1, minWidth: 0 }}>
             <div className="sidebar-user-name">
-              {role === 'expert' ? 'Mai Thùy Linh' : role === 'manager' ? 'Nguyễn Nhật Linh' : 'Dương Gia Huy'}
+              {role === 'expert'
+                ? 'Mai Thùy Linh'
+                : role === 'manager'
+                ? 'Nguyễn Nhật Linh'
+                : role === 'patient'
+                ? 'Lương Hương Giang'
+                : 'Dương Gia Huy'}
             </div>
             <div className="sidebar-user-role">
-              {role === 'expert' ? 'Chuyên gia' : role === 'manager' ? 'Quản lý' : 'Bác sĩ'}
+              {role === 'expert'
+                ? 'Chuyên gia'
+                : role === 'manager'
+                ? 'Quản lý'
+                : role === 'patient'
+                ? 'Người dùng'
+                : 'Bác sĩ'}
             </div>
           </div>
         </div>

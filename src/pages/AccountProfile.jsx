@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Mail, Phone, MapPin, Shield, Check } from 'lucide-react';
+import { Award, Mail, Phone, MapPin, Shield, Check, Calendar, Heart } from 'lucide-react';
 
 export default function AccountProfile({ role }) {
+  // --- DEFAULT ROLE STATES (EXPERT, MANAGER, DOCTOR) ---
   const [profile, setProfile] = useState({
     name: 'Mai Thùy Linh',
     email: 'linh.maithuy@mediconsult.vn',
@@ -14,6 +15,8 @@ export default function AccountProfile({ role }) {
       scenarioUpdate: true
     }
   });
+
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     if (role === 'manager') {
@@ -42,7 +45,7 @@ export default function AccountProfile({ role }) {
           scenarioUpdate: false
         }
       });
-    } else {
+    } else if (role === 'expert') {
       setProfile({
         name: 'Mai Thùy Linh',
         email: 'linh.maithuy@mediconsult.vn',
@@ -58,13 +61,242 @@ export default function AccountProfile({ role }) {
     }
   }, [role]);
 
-  const [isSaved, setIsSaved] = useState(false);
+  // --- PATIENT SPECIFIC STATES ---
+  const [patientName, setPatientName] = useState('Lương Hương Giang');
+  const [patientPhone, setPatientPhone] = useState('0123456789');
+  const [patientDob, setPatientDob] = useState('2000-05-05');
+  const [patientGender, setPatientGender] = useState('Nữ');
+  const [patientAddress, setPatientAddress] = useState('Cầu Giấy, Hà Nội');
+  const [patientNotes, setPatientNotes] = useState('Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.');
+  
+  const [patientBlood, setPatientBlood] = useState('O');
+  const [patientHeight, setPatientHeight] = useState(165);
+  const [patientWeight, setPatientWeight] = useState(52);
+
+  // Dynamic BMI calculation: weight (kg) / (height (m) ^ 2)
+  const bmi = patientHeight > 0 ? (patientWeight / ((patientHeight / 100) ** 2)).toFixed(1) : '0.0';
 
   const handleSaveProfile = () => {
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
 
+  // --- RENDER PATIENT ACCOUNT SETTINGS (IMAGE 3) ---
+  if (role === 'patient') {
+    return (
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
+          Cài đặt tài khoản
+        </h2>
+        
+        {/* Double Column Grid Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+          
+          {/* COLUMN 1: Basic Info & Health Notes */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* THÔNG TIN CƠ BẢN */}
+            <div className="card" style={{ margin: 0, padding: '20px' }}>
+              <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--primary)' }}>
+                Thông tin cơ bản
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Họ và tên</span>
+                  <input
+                    type="text"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Số điện thoại</span>
+                  <input
+                    type="text"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ngày sinh</span>
+                  <input
+                    type="date"
+                    value={patientDob}
+                    onChange={(e) => setPatientDob(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Giới tính</span>
+                  <select
+                    value={patientGender}
+                    onChange={(e) => setPatientGender(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  >
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vai trò</span>
+                  <input
+                    type="text"
+                    value="Người dùng"
+                    disabled
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px', backgroundColor: '#f1f5f9' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Địa chỉ</span>
+                  <input
+                    type="text"
+                    value={patientAddress}
+                    onChange={(e) => setPatientAddress(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* GHI CHÚ Y TẾ VÀ DỊ ỨNG */}
+            <div className="card" style={{ margin: 0, padding: '20px' }}>
+              <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--primary)' }}>
+                Ghi chú y tế và dị ứng
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 10px 0', marginTop: '-10px' }}>
+                Tiền sử dị ứng và ghi chú quan trọng
+              </p>
+              
+              <textarea
+                value={patientNotes}
+                onChange={(e) => setPatientNotes(e.target.value)}
+                className="form-input"
+                style={{ width: '100%', height: '80px', padding: '10px 12px', resize: 'none', lineHeight: '1.4' }}
+              />
+            </div>
+
+          </div>
+
+          {/* COLUMN 2: Health Indicators */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            {/* CHỈ SỐ SỨC KHỎE */}
+            <div className="card" style={{ margin: 0, padding: '20px' }}>
+              <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--primary)' }}>
+                Chỉ số sức khỏe
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nhóm máu</span>
+                  <select
+                    value={patientBlood}
+                    onChange={(e) => setPatientBlood(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  >
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="AB">AB</option>
+                    <option value="O">O</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Chiều cao (cm)</span>
+                  <input
+                    type="number"
+                    value={patientHeight}
+                    onChange={(e) => setPatientHeight(Number(e.target.value))}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Cân nặng (kg)</span>
+                  <input
+                    type="number"
+                    value={patientWeight}
+                    onChange={(e) => setPatientWeight(Number(e.target.value))}
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BMI</span>
+                  <input
+                    type="text"
+                    value={bmi}
+                    disabled
+                    className="form-input"
+                    style={{ width: '100%', height: '40px', padding: '8px 12px', backgroundColor: '#f1f5f9', fontWeight: 'bold', color: 'var(--primary)' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Empty space card or help sheet */}
+            <div className="card" style={{ margin: 0, padding: '20px', display: 'flex', gap: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <Heart size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '4px' }}>Mách bạn:</strong>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  Giữ các chỉ số sức khỏe chiều cao, cân nặng được cập nhật thường xuyên sẽ giúp Trợ lý AI và Bác sĩ đưa ra phân tích thể trạng chính xác nhất cho bạn.
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+          {isSaved && (
+            <div className="flex align-center gap-2" style={{ color: '#10b981', fontWeight: '600', fontSize: '0.9rem', marginRight: '10px', marginTop: '10px' }}>
+              <Check size={16} /> Đã lưu thông tin tài khoản!
+            </div>
+          )}
+          
+          <button 
+            type="button" 
+            onClick={() => triggerToast && triggerToast('Đã hủy bỏ các thay đổi', 'info')}
+            className="btn btn-cancel animate-fade-in" 
+            style={{ padding: '10px 32px', margin: 0 }}
+          >
+            Hủy bỏ
+          </button>
+          
+          <button 
+            type="button" 
+            onClick={handleSaveProfile}
+            className="btn btn-save animate-fade-in" 
+            style={{ padding: '10px 36px', margin: 0 }}
+          >
+            Lưu thay đổi
+          </button>
+        </div>
+
+      </div>
+    );
+  }
+
+  // --- RENDER ORIGINAL PROFILE DETAILS FOR OTHER ROLES (EXPERT, MANAGER, DOCTOR) ---
   return (
     <div className="profile-container animate-fade-in">
       {/* Left side info card */}

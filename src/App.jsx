@@ -23,7 +23,13 @@ import DoctorMessages from './pages/DoctorMessages';
 import DoctorMedicalRecords from './pages/DoctorMedicalRecords';
 import DoctorMedicines from './pages/DoctorMedicines';
 
-import { CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+// Import Patient pages
+import PatientDashboard from './pages/PatientDashboard';
+import PatientConsultation from './pages/PatientConsultation';
+import PatientSchedule from './pages/PatientSchedule';
+import PatientMedicalData from './pages/PatientMedicalData';
+
+import { CheckCircle2, AlertTriangle, Info, Bot, Maximize2, MessageCircle } from 'lucide-react';
 
 // Initial Mock Diseases
 const INITIAL_DISEASES = [
@@ -34,7 +40,7 @@ const INITIAL_DISEASES = [
     danger: 'Thấp',
     department: 'Tai Mũi Họng',
     symptoms: [
-      { stt: 1, name: 'Số mũi', desc: 'Chảy nước mũi liên tục, có thể trong hoặc đặc', duration: 'Ngày 1-3 của bệnh', frequency: 'Thường xuyên' },
+      { stt: 1, name: 'Sốt mũi', desc: 'Chảy nước mũi liên tục, có thể trong hoặc đặc', duration: 'Ngày 1-3 của bệnh', frequency: 'Thường xuyên' },
       { stt: 2, name: 'Hắt hơi', desc: 'Hắt hơi nhiều, nhất là giai đoạn đầu', duration: 'Ngày 1-2', frequency: 'Thường xuyên' },
       { stt: 3, name: 'Đau họng', desc: 'Rát họng, khó chịu khi nuốt', duration: 'Ngày 1-2', frequency: 'Trung bình' },
       { stt: 4, name: 'Ho nhẹ', desc: 'Ho khan hoặc ít đờm, xuất hiện sau', duration: 'Ngày 2-4', frequency: 'Thỉnh thoảng' }
@@ -83,7 +89,7 @@ const INITIAL_DISEASES = [
     department: 'Tim mạch',
     symptoms: [
       { stt: 1, name: 'Đau đầu', desc: 'Đau nhức ê ẩm vùng chẩm (sau gáy) vào sáng sớm', duration: 'Thường xuyên', frequency: 'Trung bình' },
-      { stt: 2, name: 'Đau đầu', desc: 'Hoa mắt, chóng mark khi đứng lên ngồi xuống', duration: 'Thỉnh thoảng', frequency: 'Thỉnh thoảng' }
+      { stt: 2, name: 'Đau đầu', desc: 'Hoa mắt, chóng mặt khi đứng lên ngồi xuống', duration: 'Thỉnh thoảng', frequency: 'Thỉnh thoảng' }
     ]
   },
   {
@@ -164,11 +170,24 @@ const INITIAL_MEDICINES = [
   }
 ];
 
-// Initial Mock Appointments for Manager Calendar (Image 2)
+// Initial Mock Appointments
 const INITIAL_APPOINTMENTS = [
   { id: 'APT001', patientName: 'Đỗ Minh Tú', patientId: 'P001', doctorName: 'Bs. Huy', date: '2026-05-03', time: '11:30 - 12:30', specialty: 'Ngoại tổng quát', status: 'Đã xác nhận', symptoms: 'Đau bụng âm ỉ vùng hố chậu phải' },
-  { id: 'APT002', patientName: 'Nguyễn Minh Anh', patientId: 'P002', doctorName: 'Bs. B', date: '2026-05-06', time: '08:00 - 09:00', specialty: 'Nhi khoa', status: 'Đã xác nhận', symptoms: 'Sốt nhẹ, ho khan kéo dài' },
-  { id: 'APT003', patientName: 'Văn Thị Trinh', patientId: 'P003', doctorName: 'Bs. C', date: '2026-05-10', time: '14:00 - 15:00', specialty: 'Tai mũi họng', status: 'Đang xử lý', symptoms: 'Nghẹt mũi, ù tai trái' }
+  { id: 'APT002', patientName: 'Nguyễn Minh Anh', patientId: 'P002', doctorName: 'BS. Nguyễn Văn B', date: '2026-05-06', time: '08:00 - 09:00', specialty: 'Nội tổng quát', status: 'Đã xác nhận', symptoms: 'Sốt nhẹ, ho khan kéo dài' },
+  { id: 'APT003', patientName: 'Văn Thị Trinh', patientId: 'P003', doctorName: 'Bs. C', date: '2026-05-10', time: '14:00 - 15:00', specialty: 'Tai mũi họng', status: 'Đang xử lý', symptoms: 'Nghẹt mũi, ù tai trái' },
+  {
+    id: 'APT004',
+    patientName: 'Lương Hương Giang',
+    patientId: 'P004',
+    doctorName: 'BS. Nguyễn Văn B',
+    specialty: 'Khoa Nội tổng quát',
+    date: '2026-06-20',
+    time: '09:00 - 09:30',
+    location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội',
+    fee: '350.000',
+    status: 'Đã xác nhận',
+    symptoms: 'Sốt cao đột ngột, đau đầu mệt mỏi, ho hắt hơi nhiều'
+  }
 ];
 
 // Initial Mock Patients Database
@@ -179,17 +198,18 @@ const INITIAL_PATIENTS = [
   { id: 'P002', name: 'Nguyễn Minh Anh', dob: '2000-08-25', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [] },
   { id: 'P003', name: 'Văn Thị Trinh', dob: '1988-11-05', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
     { date: '01/05/2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi, kháng histamin 7 ngày' }
-  ] }
+  ] },
+  { id: 'P004', name: 'Lương Hương Giang', dob: '2000-05-05', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', medicalHistory: [] }
 ];
 
 // Initial Mock Doctors
 const INITIAL_DOCTORS = [
   { id: 'DOC001', name: 'Bs. Huy', specialty: 'Ngoại tổng quát', phone: '0966112233', email: 'huy.ngoai@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', biography: 'Hơn 10 năm kinh nghiệm phẫu thuật ngoại khoa và nội soi tiêu hóa tại bệnh viện Bạch Mai.' },
-  { id: 'DOC002', name: 'Bs. B', specialty: 'Nhi khoa', phone: '0977223344', email: 'binh.nhi@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ chuyên khoa I', biography: 'Chuyên khoa Nhi, tận tâm và giàu kinh nghiệm chăm sóc trẻ sơ sinh.' },
+  { id: 'DOC002', name: 'BS. Nguyễn Văn B', specialty: 'Khoa Nội tổng quát', phone: '0977223344', email: 'binh.nhi@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', biography: 'Hơn 10 năm kinh nghiệm khám chữa bệnh nội tổng quát tại bệnh viện Bạch Mai.' },
   { id: 'DOC003', name: 'Bs. C', specialty: 'Tai mũi họng', phone: '0988334455', email: 'cuc.tmh@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ chuyên khoa II', biography: 'Chuyên gia điều trị các bệnh lý đường hô hấp trên, viêm tai giữa trẻ em.' }
 ];
 
-// Initial Mock Reminders (Image 4)
+// Initial Mock Reminders
 const INITIAL_REMINDERS = [
   { id: 'REM001', title: 'Nhắc lịch trước 1 ngày', target: 'Bệnh nhân', time: 'Trước 1 ngày 08:00', channel: 'SMS', status: 'Đang hoạt động', messageContent: 'MediConsult nhắc: Lịch khám của quý khách với [Tên bác sĩ] vào ngày mai lúc [Giờ khám]. Vui lòng đến trước 10 phút.' },
   { id: 'REM002', title: 'Nhắc lịch trước 2 giờ', target: 'Bệnh nhân', time: 'Trước 2 giờ 08:00', channel: 'App', status: 'Đang hoạt động', messageContent: 'Lịch khám sắp tới! Lịch hẹn của bạn sẽ bắt đầu sau 2 giờ.' },
@@ -229,6 +249,13 @@ function App() {
   // State to handle placeholder views for other roles
   const [underDevRole, setUnderDevRole] = useState(null);
 
+  // Floating Chatbot Widget states (Patient specific)
+  const [showFloatingChat, setShowFloatingChat] = useState(false);
+  const [floatingMessages, setFloatingMessages] = useState([
+    { sender: 'bot', text: 'Chào Giang! Mình có thể giúp gì cho bạn hôm nay?' }
+  ]);
+  const [floatingInput, setFloatingInput] = useState('');
+
   // Trigger Toast popup
   const triggerToast = (message, type = 'success') => {
     const id = Date.now();
@@ -251,6 +278,10 @@ function App() {
       setRole('doctor');
       setCurrentView('doctor-dashboard');
       triggerToast('Đăng nhập thành công với vai trò Bác sĩ', 'info');
+    } else if (selectedRole === 'patient') {
+      setRole('patient');
+      setCurrentView('patient-dashboard');
+      triggerToast('Đăng nhập thành công với vai trò Người cần tư vấn / khám bệnh', 'info');
     } else {
       setUnderDevRole(selectedRole);
     }
@@ -264,6 +295,10 @@ function App() {
       view === 'dashboard' || 
       view === 'manager-dashboard' ||
       view === 'doctor-dashboard' ||
+      view === 'patient-dashboard' ||
+      view === 'patient-consultation' ||
+      view === 'patient-schedule' ||
+      view === 'patient-medical-data' ||
       view === 'profile' || 
       view === 'chatbot-scenarios' || 
       view === 'ai-evaluation' ||
@@ -285,6 +320,7 @@ function App() {
     setRole(null);
     setCurrentView('dashboard');
     setUnderDevRole(null);
+    setShowFloatingChat(false);
     triggerToast('Đã đăng xuất khỏi hệ thống', 'info');
   };
 
@@ -345,6 +381,41 @@ function App() {
           appointments={appointments}
         />
         <main className="content-body">
+          
+          {/* PATIENT PAGES */}
+          {role === 'patient' && currentView === 'patient-dashboard' && (
+            <PatientDashboard
+              onNavigate={handleNavigate}
+              appointments={appointments}
+              diseases={diseases}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'patient' && currentView === 'patient-consultation' && (
+            <PatientConsultation
+              onNavigate={handleNavigate}
+              setAppointments={setAppointments}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'patient' && currentView === 'patient-schedule' && (
+            <PatientSchedule
+              appointments={appointments}
+              setAppointments={setAppointments}
+              triggerToast={triggerToast}
+            />
+          )}
+
+          {role === 'patient' && currentView === 'patient-medical-data' && (
+            <PatientMedicalData
+              onNavigate={handleNavigate}
+              diseases={diseases}
+              triggerToast={triggerToast}
+            />
+          )}
+
           {/* EXPERT PAGES */}
           {role === 'expert' && currentView === 'dashboard' && (
             <Dashboard
@@ -528,10 +599,173 @@ function App() {
 
           {/* GLOBAL PAGES */}
           {currentView === 'profile' && (
-            <AccountProfile role={role} />
+            <AccountProfile role={role} triggerToast={triggerToast} />
           )}
         </main>
       </div>
+
+      {/* FLOATING CHATBOT WIDGET FOR PATIENT */}
+      {role === 'patient' && (
+        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          {/* Chat window */}
+          {showFloatingChat && (
+            <div className="card animate-fade-in" style={{
+              width: '320px',
+              height: '420px',
+              backgroundColor: '#fff',
+              boxShadow: 'var(--shadow-lg)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 0,
+              overflow: 'hidden',
+              border: '1.5px solid var(--primary-light)',
+              marginBottom: '12px',
+              margin: '0 0 12px 0'
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: '12px 14px',
+                background: 'var(--primary)',
+                color: '#fff',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Bot size={16} />
+                  <strong style={{ fontSize: '0.85rem' }}>Trợ lý sức khỏe AI</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Zoom to full chat button */}
+                  <button 
+                    onClick={() => {
+                      setShowFloatingChat(false);
+                      handleNavigate('patient-consultation');
+                    }}
+                    title="Mở toàn màn hình"
+                    style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  >
+                    <Maximize2 size={14} />
+                  </button>
+                  {/* Close button */}
+                  <button 
+                    onClick={() => setShowFloatingChat(false)}
+                    style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+
+              {/* Message scroll */}
+              <div style={{ flexGrow: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {floatingMessages.map((m, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{
+                      alignSelf: m.sender === 'bot' ? 'flex-start' : 'flex-end',
+                      backgroundColor: m.sender === 'bot' ? '#f1f5f9' : 'var(--primary)',
+                      color: m.sender === 'bot' ? 'var(--text-dark)' : '#fff',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      fontSize: '0.8rem',
+                      maxWidth: '85%',
+                      boxShadow: 'var(--shadow-sm)',
+                      lineHeight: '1.3'
+                    }}
+                  >
+                    {m.text}
+                  </div>
+                ))}
+              </div>
+
+              {/* Input bar */}
+              <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  placeholder="Nhập tin nhắn..."
+                  value={floatingInput}
+                  onChange={(e) => setFloatingInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && floatingInput.trim()) {
+                      const userText = floatingInput.trim();
+                      const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
+                      setFloatingMessages(newMsgs);
+                      setFloatingInput('');
+                      
+                      // AI Response simulation
+                      setTimeout(() => {
+                        let botResponse = 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!';
+                        if (userText.toLowerCase().includes('sốt')) {
+                          botResponse = 'Bạn bị sốt từ khi nào và có cặp nhiệt độ cụ thể chưa? Hãy phóng to khung chat để tôi thu thập đầy đủ triệu chứng và kết nối bác sĩ giúp bạn nhé!';
+                        }
+                        setFloatingMessages([...newMsgs, { sender: 'bot', text: botResponse }]);
+                      }, 1000);
+                    }
+                  }}
+                  style={{
+                    flexGrow: 1,
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    padding: '6px 10px',
+                    fontSize: '0.78rem',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (floatingInput.trim()) {
+                      const userText = floatingInput.trim();
+                      const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
+                      setFloatingMessages(newMsgs);
+                      setFloatingInput('');
+                      setTimeout(() => {
+                        setFloatingMessages([...newMsgs, { sender: 'bot', text: 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!' }]);
+                      }, 1000);
+                    }
+                  }}
+                  style={{
+                    padding: '6px 8px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  Gửi
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Button */}
+          <button
+            onClick={() => setShowFloatingChat(!showFloatingChat)}
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              animation: 'pulseGlow 2s infinite',
+              transition: 'transform 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            <MessageCircle size={24} />
+          </button>
+        </div>
+      )}
 
       {/* Floating Popup Toast Notifications Overlay */}
       <div className="toast-container">
