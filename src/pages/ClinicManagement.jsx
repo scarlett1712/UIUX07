@@ -38,6 +38,15 @@ export default function ClinicManagement({
     setCurrentPage(1);
   }, [currentView, activeTab, patientSearch, patientGender]);
 
+  // Sync tab state when currentView changes (for deep links like notifications)
+  useEffect(() => {
+    if (currentView === 'clinic-feedback') {
+      setActiveTab('feedback');
+    } else if (currentView === 'clinic-info') {
+      setActiveTab('info');
+    }
+  }, [currentView]);
+
   // --- FORM DATA & MODIFICATION STATE ---
   const [formData, setFormData] = useState(null);
   const [originalData, setOriginalData] = useState(null);
@@ -207,7 +216,7 @@ export default function ClinicManagement({
   // --- RENDER SECTIONS ---
 
   // 1. VIEW CLINIC INFO & REVIEWS
-  if (currentView === 'clinic-info') {
+  if (currentView === 'clinic-info' || currentView === 'clinic-feedback') {
     return (
       <div className="animate-fade-in">
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '20px' }}>
