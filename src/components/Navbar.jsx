@@ -15,13 +15,54 @@ export default function Navbar({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef(null);
+  const notificationRef = useRef(null);
+
+  // Initial mock notifications for each role
+  const [notificationsList, setNotificationsList] = useState({
+    expert: [
+      { id: 'n1', text: "Kịch bản 'Tư vấn cảm cúm' vừa được chỉnh sửa bởi AI", view: 'chatbot-scenarios', read: false, time: '10 phút trước' },
+      { id: 'n2', text: 'Hội thoại y khoa mới cần kiểm duyệt (Mã: #9281)', view: 'ai-evaluation', read: false, time: '1 giờ trước' },
+      { id: 'n3', text: 'Báo cáo hiệu suất phản hồi AI tuần 21 đã sẵn sàng', view: 'ai-evaluation', read: false, time: 'Hôm qua' }
+    ],
+    manager: [
+      { id: 'n4', text: 'Bệnh nhân Lương Hương Giang vừa đăng ký khám mới', view: 'appointment-calendar', read: false, time: '5 phút trước' },
+      { id: 'n5', text: 'Yêu cầu trực/nghỉ của Bác sĩ cần duyệt điều chỉnh', view: 'doctor-shifts', read: false, time: '30 phút trước' },
+      { id: 'n6', text: 'Có phản hồi đánh giá 5 sao từ bệnh nhân mới', view: 'clinic-feedback', read: false, time: '2 giờ trước' }
+    ],
+    doctor: [
+      { id: 'n7', text: 'Lịch hẹn khám mới lúc 09:00 ngày mai với Đỗ Minh Tú', view: 'doctor-schedule', read: false, time: '15 phút trước' },
+      { id: 'n8', text: 'Bệnh nhân Nguyễn Minh Anh gửi tin nhắn mới', view: 'doctor-messages', read: false, time: '45 phút trước' },
+      { id: 'n9', text: 'Bệnh án bệnh nhân Đỗ Minh Tú cần nhập chẩn đoán', view: 'doctor-medical-records', read: false, time: '3 giờ trước' }
+    ],
+    patient: [
+      { id: 'n10', text: 'Lịch khám hẹn ngày 20/06 với Bs. Nguyễn Văn B đã được xác nhận', view: 'patient-schedule', read: false, time: '10 phút trước' },
+      { id: 'n11', text: 'Đã có hướng dẫn chăm sóc triệu chứng sốt của bạn', view: 'patient-consultation-keep', read: false, time: '30 phút trước' },
+      { id: 'n12', text: 'Hồ sơ dữ liệu y tế của bạn vừa cập nhật bệnh án mới', view: 'patient-medical-data', read: false, time: '1 ngày trước' }
+    ]
+  });
+
+  const currentNotifications = notificationsList[role] || [];
+  const unreadCount = currentNotifications.filter(n => !n.read).length;
+
+  const handleNotificationClick = (n) => {
+    setNotificationsList(prev => ({
+      ...prev,
+      [role]: prev[role].map(item => item.id === n.id ? { ...item, read: true } : item)
+    }));
+    setShowNotifications(false);
+    onNavigate(n.view);
+  };
 
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -415,8 +456,100 @@ export default function Navbar({
         </div>
 
         {/* Bell */}
-        <div className="navbar-bell">
-          <Bell size={18} />
+        <div className="navbar-bell" ref={notificationRef} style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', color: 'var(--text-dark)' }}
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '2px',
+                right: '2px',
+                width: '8px',
+                height: '8px',
+                backgroundColor: '#ef4444',
+                borderRadius: '50%',
+                border: '1.5px solid #fff'
+              }} />
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="card animate-fade-in" style={{
+              position: 'absolute',
+              top: '40px',
+              right: '-10px',
+              width: '320px',
+              maxHeight: '400px',
+              overflowY: 'auto',
+              backgroundColor: '#fff',
+              boxShadow: 'var(--shadow-lg)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              padding: '12px 0',
+              zIndex: 99999,
+              margin: 0
+            }}>
+              <div style={{ padding: '0 16px 8px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '0.88rem', color: 'var(--text-dark)' }}>Thông báo</strong>
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={() => {
+                      setNotificationsList(prev => ({
+                        ...prev,
+                        [role]: prev[role].map(item => ({ ...item, read: true }))
+                      }));
+                    }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-light)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '500' }}
+                  >
+                    Đánh dấu tất cả đã đọc
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {currentNotifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => handleNotificationClick(n)}
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #f1f5f9',
+                      cursor: 'pointer',
+                      backgroundColor: n.read ? 'transparent' : '#f0f7ff',
+                      transition: 'background-color 0.2s',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = n.read ? '#f8fafc' : '#e0f2fe'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = n.read ? 'transparent' : '#f0f7ff'; }}
+                  >
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: n.read ? '400' : '600',
+                      color: 'var(--text-dark)',
+                      lineHeight: '1.4',
+                      textAlign: 'left'
+                    }}>
+                      {n.text}
+                    </span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'left' }}>
+                      {n.time}
+                    </span>
+                  </div>
+                ))}
+
+                {currentNotifications.length === 0 && (
+                  <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                    Không có thông báo nào mới
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Profile Pill */}
