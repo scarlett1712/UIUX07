@@ -1,57 +1,107 @@
 import React, { useState } from 'react';
+import { formatDate } from '../utils/date';
 import { Calendar as CalendarIcon, MessageSquare, Users, TrendingUp, TrendingDown, Clock, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 
-export default function DoctorDashboard({ onNavigate, triggerToast }) {
-  const [selectedDate, setSelectedDate] = useState(7); // default 7th May 2026
+export default function DoctorDashboard({ 
+  onNavigate, 
+  appointments = [], 
+  patients = [], 
+  triggerToast 
+}) {
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-indexed
+  
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  // Calculate stats dynamically
+  const todayConfirmedCount = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date === todayStr && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý')).length;
+  const pendingCount = appointments.filter(a => a.doctorName === 'Bs. Huy' && (a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý')).length;
+
+  const [selectedDate, setSelectedDate] = useState(today.getDate()); // default to today's date
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
   
   // Quick Messaging Thread previews
   const messageAlerts = [
-    { name: 'Nguyễn Minh Anh', desc: 'Triệu chứng sốt, đau họng', date: '05/05/2026', time: '08:15' },
-    { name: 'Trần Phương Huế', desc: 'Đau bụng âm ỉ không dứt', date: '04/05/2026', time: '10:05' },
-    { name: 'Lê Hải Minh', desc: 'Đau, chảy nước mắt', date: '02/05/2026', time: '18:01' },
-    { name: 'Văn Mai Hương', desc: 'Khó thở, nghẹt mũi lâu ngày', date: '01/05/2026', time: '22:21' }
+    { id: 'MSG101', name: 'Nguyễn Minh Anh', desc: 'Triệu chứng sốt, đau họng', date: '05-05-2026', time: '08:15' },
+    { id: 'MSG102', name: 'Trần Phương Huế', desc: 'Đau bụng âm ỉ không dứt', date: '04-05-2026', time: '10:05' },
+    { id: 'MSG103', name: 'Lê Hải Minh', desc: 'Đau, chảy nước mắt', date: '02-05-2026', time: '18:01' },
+    { id: 'MSG104', name: 'Văn Mai Hương', desc: 'Khó thở, nghẹt mũi lâu ngày', date: '01-05-2026', time: '22:21' }
   ];
 
-  // Appointment schedule mock data linked to calendar days
-  const scheduleData = {
-    7: [
-      { time: '8:00 - 9:00', patient: 'Ngô Gia Bảo', symptom: 'đau đầu, chóng mặt nhiều ngày...' },
-      { time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' },
-      { time: '16:00 - 17:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    9: [
-      { time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { time: '9:00 - 10:00', patient: 'Lê Hải Minh', symptom: 'mỏi mắt, khô mắt chảy nước mắt...' },
-      { time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    11: [
-      { time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { time: '10:00 - 11:00', patient: 'Nguyễn Minh Anh', symptom: 'sốt cao đột ngột, đau họng, chảy mũi...' }
-    ],
-    14: [
-      { time: '15:00 - 16:00', patient: 'Trần Phương Huế', symptom: 'đau bụng âm ỉ thượng vị, buồn nôn...' }
-    ]
-  };
-
   const getAppointmentsForDay = (day) => {
-    return scheduleData[day] || [
-      { time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' }
-    ];
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = `${currentYear}-${monthStr}-${day < 10 ? '0' + day : day}`;
+    return appointments
+      .filter(a => a.doctorName === 'Bs. Huy' && a.date === dayStr && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'))
+      .map(a => ({
+        id: a.id,
+        time: a.time,
+        patient: a.patientName || a.name || a.patient || 'Bệnh nhân',
+        symptom: a.symptoms || a.symptom || 'Khám tổng quát'
+      }));
   };
 
-  // Calendar render helpers (May 2026)
-  const daysInMonth = 31;
-  const startOffset = 4; // May 1st 2026 is Friday (starts at index 4 if Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+  const getUpcomingAppointments = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // start of today
+    
+    return appointments
+      .filter(a => {
+        if (a.doctorName !== 'Bs. Huy') return false;
+        if (a.status !== 'Đã xác nhận' && a.status !== 'Đã đồng ý') return false;
+        
+        // Parse date
+        const aptDate = new Date(a.date);
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate >= today; // today or future
+      })
+      .sort((a, b) => {
+        // Compare date
+        if (a.date !== b.date) {
+          return a.date.localeCompare(b.date);
+        }
+        // Compare start time
+        const startA = a.time.split(' - ')[0].trim();
+        const startB = b.time.split(' - ')[0].trim();
+        return startA.localeCompare(startB);
+      });
+  };
+
+  // Calendar render helpers dynamic
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startOffset = new Date(currentYear, currentMonth, 1).getDay();
   const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+  const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const myConfirmedAppts = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date.startsWith(yearMonthStr) && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
+  const appointmentDays = myConfirmedAppts.map(a => {
+    const parts = a.date.split('-');
+    return parseInt(parts[2], 10);
+  });
 
   const handleCellClick = (day) => {
     if (!day) return;
     setSelectedDate(day);
-    triggerToast(`Đang xem lịch khám ngày ${day}/05/2026`, 'info');
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    triggerToast(`Đang xem lịch khám ngày ${day}/${monthStr}/${currentYear}`, 'info');
   };
 
   return (
@@ -87,25 +137,39 @@ export default function DoctorDashboard({ onNavigate, triggerToast }) {
  
           {/* Stats Widgets Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Tổng số bệnh nhân</span>
+            <div 
+              className="card stat-card" 
+              onClick={() => {
+                onNavigate('doctor-schedule');
+                triggerToast('Chuyển tới Lịch khám bác sĩ', 'info');
+              }}
+              style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', margin: 0 }}
+            >
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Lịch khám hôm nay</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-dark)' }}>15</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#ef4444' }}>
-                <TrendingDown size={14} />
-                <span>Giảm 10% so với tháng trước</span>
-              </div>
-            </div>
- 
-            <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Lịch khám trong tuần</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-dark)' }}>5</span>
+                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-dark)' }}>{todayConfirmedCount}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#10b981' }}>
                 <TrendingUp size={14} />
-                <span>Tăng 20% so với tuần trước</span>
+                <span>Xem ca trực hôm nay</span>
+              </div>
+            </div>
+ 
+            <div 
+              className="card stat-card" 
+              onClick={() => {
+                onNavigate('doctor-appointments');
+                triggerToast('Chuyển tới Danh sách lịch hẹn cần duyệt', 'info');
+              }}
+              style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', margin: 0 }}
+            >
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Lịch hẹn cần duyệt</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: '#d97706' }}>{pendingCount}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#d97706' }}>
+                <Clock size={14} />
+                <span>Xem lịch hẹn chờ duyệt</span>
               </div>
             </div>
           </div>
@@ -118,7 +182,10 @@ export default function DoctorDashboard({ onNavigate, triggerToast }) {
                 <div 
                   key={index} 
                   className="card"
-                  onClick={() => onNavigate('doctor-messages')}
+                  onClick={() => {
+                    onNavigate('doctor-messages', msg.id);
+                    triggerToast(`Mở hội thoại với ${msg.name}`, 'info');
+                  }}
                   style={{ 
                     padding: '8px 12px', 
                     display: 'flex', 
@@ -164,7 +231,18 @@ export default function DoctorDashboard({ onNavigate, triggerToast }) {
           <div className="card" style={{ padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-dark)' }}>Lịch Khám</span>
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>07/05/2026</span>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                {formatDate(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`)}
+              </span>
+            </div>
+
+            {/* Month Navigator Mockup */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.8rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Tháng {currentMonth + 1}, {currentYear}</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={handlePrevMonth} className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronLeft size={14} /></button>
+                <button onClick={handleNextMonth} className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronRight size={14} /></button>
+              </div>
             </div>
  
             {/* Calendar grid */}
@@ -182,7 +260,7 @@ export default function DoctorDashboard({ onNavigate, triggerToast }) {
                 {/* Days of May */}
                 {Array.from({ length: daysInMonth }).map((_, idx) => {
                   const day = idx + 1;
-                  const hasAppts = scheduleData[day] && scheduleData[day].some(s => s.patient);
+                  const hasAppts = appointmentDays.includes(day);
                   const isSelected = selectedDate === day;
  
                   return (
@@ -220,39 +298,46 @@ export default function DoctorDashboard({ onNavigate, triggerToast }) {
             <h3 style={{ fontSize: '1.1rem', margin: '4px 0 0 0', fontWeight: 600, color: 'var(--text-dark)' }}>Lịch khám sắp tới</h3>
             
             <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>
-                Ca khám ngày {selectedDate}/05/2026
-              </div>
- 
-              {getAppointmentsForDay(selectedDate).filter(slot => slot.patient).map((slot, index) => (
-                <div 
-                  key={index}
-                  style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    padding: '8px 12px',
-                    borderRadius: '8px', 
-                    backgroundColor: '#e0f2fe',
-                    border: 'none',
-                    margin: 0
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0369a1' }}>
-                      {slot.time}
-                    </span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-                      {slot.patient}
-                    </span>
+              {getUpcomingAppointments().slice(0, 5).map((apt) => {
+                const displayDate = formatDate(apt.date);
+                return (
+                  <div 
+                    key={apt.id}
+                    onClick={() => {
+                      onNavigate('doctor-schedule', apt.id);
+                      triggerToast(`Đang xem chi tiết ca khám của ${apt.patientName || apt.name}`, 'info');
+                    }}
+                    style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      padding: '8px 12px',
+                      borderRadius: '8px', 
+                      backgroundColor: '#e0f2fe',
+                      border: 'none',
+                      margin: 0,
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0369a1' }}>
+                        {displayDate} &bull; {apt.time}
+                      </span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-dark)' }}>
+                        {apt.patientName || apt.name || apt.patient}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#0284c7', marginTop: '4px' }}>
+                      {apt.symptoms || apt.symptom || 'Khám lâm sàng'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#0284c7', marginTop: '4px' }}>
-                    {slot.symptom}
-                  </div>
-                </div>
-              ))}
-              {getAppointmentsForDay(selectedDate).filter(slot => slot.patient).length === 0 && (
+                );
+              })}
+              {getUpcomingAppointments().length === 0 && (
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.78rem', fontStyle: 'italic', padding: '10px 0' }}>
-                  Không có ca khám nào.
+                  Không có ca khám sắp tới nào.
                 </div>
               )}
             </div>

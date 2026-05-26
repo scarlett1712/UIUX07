@@ -71,7 +71,8 @@ export default function ChatbotScenarios({
   onSelectId,
   scenarios,
   setScenarios,
-  triggerToast
+  triggerToast,
+  showConfirm
 }) {
   // Designer Canvas States
   const [nodes, setNodes] = useState(INITIAL_NODES);
@@ -80,6 +81,37 @@ export default function ChatbotScenarios({
   const [draggingNodeId, setDraggingNodeId] = useState(null);
   const dragOffset = useRef({ x: 0, y: 0 });
   const canvasRef = useRef(null);
+
+  // Scenario metadata states
+  const [scenarioName, setScenarioName] = useState('');
+  const [scenarioStatus, setScenarioStatus] = useState('Hoạt động');
+
+  useEffect(() => {
+    if (currentView === 'chatbot-scenario-add') {
+      setNodes([
+        { id: 'start', type: 'start', label: 'Bắt đầu', x: 450, y: 50, content: 'Bắt đầu luồng kịch bản' },
+        { id: 'welcome', type: 'bot', label: 'Chào mừng', x: 450, y: 140, content: 'Xin chào! Tôi có thể giúp gì cho bạn?' }
+      ]);
+      setConnections([
+        { from: 'start', to: 'welcome' }
+      ]);
+      setScenarioName('Kịch bản mới');
+      setScenarioStatus('Nháp');
+      setSelectedNodeId(null);
+    } else if (selectedId) {
+      const activeSc = scenarios.find((s) => s.id === selectedId);
+      if (activeSc) {
+        setScenarioName(activeSc.name);
+        setScenarioStatus(activeSc.status);
+        if (activeSc.nodes) {
+          setNodes(activeSc.nodes);
+        }
+        if (activeSc.connections) {
+          setConnections(activeSc.connections);
+        }
+      }
+    }
+  }, [selectedId, currentView]);
 
   // --- FILTERS & PAGINATION ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,6 +129,11 @@ export default function ChatbotScenarios({
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInputValue, setChatInputValue] = useState('');
   const [isSimulatorRunning, setIsSimulatorRunning] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   // Center scroll pane on mount
   useEffect(() => {
@@ -167,17 +204,17 @@ export default function ChatbotScenarios({
       triggerToast('Không thể xóa nút khởi đầu hệ thống', 'error');
       return;
     }
-    if (window.confirm('Bạn có chắc chắn muốn xóa nút này?')) {
+    showConfirm('Bạn có chắc chắn muốn xóa nút này?', () => {
       setNodes(nodes.filter((n) => n.id !== nodeId));
       setConnections(connections.filter((c) => c.from !== nodeId && c.to !== nodeId));
       setSelectedNodeId(null);
       triggerToast('Đã xóa khối kịch bản', 'info');
-    }
+    });
   };
 
   // --- Lifted state CRUD backend mapping ---
-  const handleSaveScenario = (status) => {
-    const scenarioId = selectedId || `SC004`;
+  const handleSaveScenario = (statusOverride) => {
+    const scenarioId = selectedId || `SC${Date.now()}`;
     const updatedScenarios = [...scenarios];
     const existingIdx = scenarios.findIndex((s) => s.id === scenarioId);
     const nodeCount = nodes.length;
@@ -185,26 +222,33 @@ export default function ChatbotScenarios({
       .toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
       .replace(',', ' -');
 
+    const finalStatus = statusOverride || scenarioStatus;
+
     if (existingIdx > -1) {
       updatedScenarios[existingIdx] = {
         ...scenarios[existingIdx],
-        status,
+        name: scenarioName,
+        status: finalStatus,
         nodeCount,
         lastUpdated: timeString,
+        nodes,
+        connections
       };
     } else {
       updatedScenarios.unshift({
         id: scenarioId,
-        name: 'Tư vấn khám bệnh tổng quát tự động',
-        status,
+        name: scenarioName,
+        status: finalStatus,
         lastUpdated: timeString,
         nodeCount,
+        nodes,
+        connections
       });
     }
 
     setScenarios(updatedScenarios);
     triggerToast(
-      status === 'Hoạt động'
+      finalStatus === 'Hoạt động'
         ? 'Đã lưu & xuất bản kịch bản thành công!'
         : 'Đã lưu kịch bản nháp thành công!',
       'success'
@@ -530,10 +574,10 @@ export default function ChatbotScenarios({
                       </button>
                       <button
                         onClick={() => {
-                          if (window.confirm('Xóa kịch bản này?')) {
+                          showConfirm('Bạn có chắc muốn xóa kịch bản này?', () => {
                             setScenarios(scenarios.filter((s) => s.id !== sc.id));
                             triggerToast('Đã xóa kịch bản', 'info');
-                          }
+                          });
                         }}
                         className="btn btn-outline"
                         style={{ padding: '4px', color: 'red' }}
@@ -667,7 +711,7 @@ export default function ChatbotScenarios({
               <X size={16} />
             </button>
             <h2 style={{ fontSize: '1.4rem', margin: 0 }}>
-              {currentView === 'chatbot-scenario-add' ? 'Tạo mới kịch bản chatbot' : 'Thiết kế kịch bản: Tư vấn cảm cúm'}
+              {currentView === 'chatbot-scenario-add' ? 'Tạo mới kịch bản chatbot' : `Thiết kế kịch bản: ${scenarioName}`}
             </h2>
           </div>
 
@@ -695,6 +739,32 @@ export default function ChatbotScenarios({
         <div className="canvas-container-outer">
           {/* Node templates sidebar */}
           <div className="canvas-sidebar">
+            <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+              <div className="canvas-sidebar-title" style={{ marginBottom: '10px' }}>Thông tin kịch bản</div>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <span className="form-group-label" style={{ display: 'block', marginBottom: '4px', fontSize: '0.75rem', fontWeight: 600 }}>Tên kịch bản</span>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={scenarioName}
+                  onChange={(e) => setScenarioName(e.target.value)}
+                  style={{ padding: '6px', fontSize: '0.8rem', width: '100%', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+                />
+              </div>
+              <div className="form-group">
+                <span className="form-group-label" style={{ display: 'block', marginBottom: '4px', fontSize: '0.75rem', fontWeight: 600 }}>Trạng thái</span>
+                <select
+                  className="form-select"
+                  value={scenarioStatus}
+                  onChange={(e) => setScenarioStatus(e.target.value)}
+                  style={{ padding: '6px', fontSize: '0.8rem', width: '100%', borderRadius: '4px', border: '1px solid var(--border-color)' }}
+                >
+                  <option value="Hoạt động">Hoạt động</option>
+                  <option value="Nháp">Nháp</option>
+                </select>
+              </div>
+            </div>
+
             <div className="canvas-sidebar-title">Thêm Node mới</div>
             <div className="draggable-node-template" onClick={() => handleAddNode('bot')}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
@@ -936,7 +1006,7 @@ export default function ChatbotScenarios({
               <span>Cửa sổ kiểm thử kịch bản (ChatGPT Mock)</span>
             </div>
             
-            <div className="chatgpt-messages-area">
+            <div className="chatgpt-messages-area" style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flexGrow: 1, padding: '16px' }}>
               {chatMessages.length === 0 ? (
                 <div style={{ margin: 'auto', textAlign: 'center', color: 'var(--text-muted)', maxWidth: '280px' }}>
                   <Sparkles size={36} style={{ margin: '0 auto 10px auto', color: 'var(--primary-light)' }} />
@@ -944,22 +1014,60 @@ export default function ChatbotScenarios({
                   <p style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>Nhấp vào nút "Bắt đầu kiểm thử" để kích hoạt cuộc gọi giả lập với Trợ lý AI y tế.</p>
                 </div>
               ) : (
-                chatMessages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`chatgpt-message-row ${msg.sender === 'bot' ? 'bot' : 'patient'}`}
-                  >
-                    <div className={`chatgpt-avatar-circle ${msg.sender === 'bot' ? 'chatgpt-avatar-bot' : 'chatgpt-avatar-patient'}`}>
-                      {msg.sender === 'bot' ? <Bot size={16} /> : <User size={16} />}
+                chatMessages.map((msg, index) => {
+                  const isBot = msg.sender === 'bot';
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        alignSelf: isBot ? 'flex-start' : 'flex-end',
+                        maxWidth: '85%'
+                      }}
+                    >
+                      {isBot && (
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: '#e0f2fe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--primary-light)',
+                          flexShrink: 0
+                        }}>
+                          <Bot size={14} />
+                        </div>
+                      )}
+                      
+                      <div style={{
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        fontSize: '0.85rem',
+                        lineHeight: '1.4',
+                        backgroundColor: isBot ? '#f1f5f9' : 'var(--primary)',
+                        color: isBot ? 'var(--text-dark)' : '#fff',
+                        boxShadow: 'var(--shadow-sm)',
+                        whiteSpace: 'pre-line'
+                      }}>
+                        {msg.text}
+                        <div style={{
+                          fontSize: '0.68rem',
+                          textAlign: 'right',
+                          marginTop: '4px',
+                          color: isBot ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)'
+                        }}>
+                          Vừa xong
+                        </div>
+                      </div>
                     </div>
-                    <div className="chatgpt-bubble">
-                      {msg.text.split('\n').map((line, i) => (
-                        <div key={i}>{line}</div>
-                      ))}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* ChatGPT Pill Input box */}

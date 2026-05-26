@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Trash2, Edit3, ArrowLeft, Camera, Undo2, ToggleLeft, ToggleRight, Check, X, Bell } from 'lucide-react';
 
+const getReminderStatusBadgeStyle = (status) => {
+  if (status === 'Đang hoạt động') {
+    return { backgroundColor: '#d1fae5', color: '#065f46' };
+  }
+  return { backgroundColor: '#f1f5f9', color: '#475569' };
+};
+
 export default function ReminderAlerts({
   currentView,
   onNavigate,
@@ -8,7 +15,8 @@ export default function ReminderAlerts({
   onSelectId,
   reminders,
   setReminders,
-  triggerToast
+  triggerToast,
+  showConfirm
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [targetFilter, setTargetFilter] = useState('');
@@ -79,11 +87,11 @@ export default function ReminderAlerts({
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa quy trình nhắc lịch này?')) {
+    showConfirm('Bạn có chắc chắn muốn xóa quy trình nhắc lịch này?', () => {
       setReminders(reminders.filter(r => r.id !== id));
       triggerToast('Đã xóa nhắc lịch tự động', 'success');
       onNavigate('reminder-list');
-    }
+    });
   };
 
   if (currentView === 'reminder-list') {
@@ -101,142 +109,147 @@ export default function ReminderAlerts({
     const paginatedReminders = filtered.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-      <div className="card animate-fade-in" style={{ padding: '20px' }}>
-        <div className="flex align-center gap-4" style={{ marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Danh sách nhắc lịch tự động</h2>
-          <button className="plus-btn-circle" onClick={() => onNavigate('reminder-add')}>
-            <Plus size={14} />
-          </button>
-        </div>
-
-        {/* Search & Filters */}
-        <div className="filters-bar">
-          <div className="filter-group">
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm nhắc lịch..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input"
-              style={{ width: '180px', padding: '4px 8px' }}
-            />
-          </div>
-
-          <div className="filter-group">
-            <Filter size={14} />
-            <select
-              value={targetFilter}
-              onChange={(e) => setTargetFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Đối tượng</option>
-              <option value="Bệnh nhân">Bệnh nhân</option>
-              <option value="Bác sĩ">Bác sĩ</option>
-            </select>
-
-            <select
-              value={channelFilter}
-              onChange={(e) => setChannelFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Kênh gửi</option>
-              <option value="SMS">SMS</option>
-              <option value="App">App</option>
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="">Trạng thái</option>
-              <option value="Đang hoạt động">Đang hoạt động</option>
-              <option value="Tạm dừng">Tạm dừng</option>
-            </select>
-
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setTargetFilter('');
-                setChannelFilter('');
-                setStatusFilter('');
-                triggerToast('Đã xóa tất cả bộ lọc nhắc lịch', 'info');
-              }}
-              className="btn btn-outline"
-              style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '3px', color: '#ff6b6b' }}
-            >
-              <Undo2 size={12} /> Hủy lọc
+      <div className="animate-fade-in">
+        <div className="card" style={{ padding: '20px', margin: 0 }}>
+          <div className="flex align-center gap-4" style={{ marginBottom: '14px' }}>
+            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Danh sách nhắc lịch tự động</h2>
+            <button className="plus-btn-circle" onClick={() => onNavigate('reminder-add')}>
+              <Plus size={14} />
             </button>
           </div>
-        </div>
 
-        {/* Table layout matching Image 4 */}
-        <div className="custom-table-container">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Tên thông báo</th>
-                <th style={{ width: '120px' }}>Đối tượng</th>
-                <th>Thời điểm gửi</th>
-                <th style={{ width: '90px' }}>Kênh</th>
-                <th style={{ width: '150px' }}>Trạng thái</th>
-                <th style={{ width: '100px' }}>Kích hoạt</th>
-                <th style={{ width: '100px' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedReminders.map(r => (
-                <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => {
-                  onSelectId(r.id);
-                  onNavigate('reminder-details');
-                }}>
-                  <td style={{ fontWeight: 600 }}>{r.title}</td>
-                  <td>{r.target}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{r.time}</td>
-                  <td>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      backgroundColor: r.channel === 'SMS' ? '#eff6ff' : '#ecfdf5',
-                      color: r.channel === 'SMS' ? '#2563eb' : '#059669',
-                      border: `1px solid ${r.channel === 'SMS' ? '#bfdbfe' : '#a7f3d0'}`
-                    }}>
-                      {r.channel}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${r.status === 'Đang hoạt động' ? 'badge-low' : 'badge-high'}`}>
-                      {r.status}
-                    </span>
-                  </td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleToggle(r.id)}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: r.status === 'Đang hoạt động' ? '#10b981' : '#cbd5e1' }}
-                    >
-                      {r.status === 'Đang hoạt động' ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
-                    </button>
-                  </td>
-                  <td onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
-                        onSelectId(r.id);
-                        onNavigate('reminder-edit');
-                      }}>
-                        <Edit3 size={12} />
-                      </button>
-                      <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDelete(r.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
+          {/* Search & Filters */}
+          <div className="filters-bar">
+            <div className="filter-group">
+              <Search size={14} style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Tìm kiếm nhắc lịch..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="form-input"
+                style={{ width: '180px', padding: '4px 8px' }}
+              />
+            </div>
+
+            <div className="filter-group">
+              <Filter size={14} />
+              <select
+                value={targetFilter}
+                onChange={(e) => setTargetFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Đối tượng</option>
+                <option value="Bệnh nhân">Bệnh nhân</option>
+                <option value="Bác sĩ">Bác sĩ</option>
+              </select>
+
+              <select
+                value={channelFilter}
+                onChange={(e) => setChannelFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Kênh gửi</option>
+                <option value="SMS">SMS</option>
+                <option value="App">App</option>
+              </select>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Trạng thái</option>
+                <option value="Đang hoạt động">Đang hoạt động</option>
+                <option value="Tạm dừng">Tạm dừng</option>
+              </select>
+
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setTargetFilter('');
+                  setChannelFilter('');
+                  setStatusFilter('');
+                  triggerToast('Đã xóa tất cả bộ lọc nhắc lịch', 'info');
+                }}
+                className="btn btn-outline"
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '3px', color: '#ff6b6b' }}
+              >
+                <Undo2 size={12} /> Hủy lọc
+              </button>
+            </div>
+          </div>
+
+          {/* Table layout matching Image 4 */}
+          <div className="custom-table-container">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Tên thông báo</th>
+                  <th style={{ width: '120px' }}>Đối tượng</th>
+                  <th>Thời điểm gửi</th>
+                  <th style={{ width: '90px' }}>Kênh</th>
+                  <th style={{ width: '150px' }}>Trạng thái</th>
+                  <th style={{ width: '100px' }}>Kích hoạt</th>
+                  <th style={{ width: '100px' }}>Hành động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedReminders.map(r => (
+                  <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => {
+                    onSelectId(r.id);
+                    onNavigate('reminder-details');
+                  }}>
+                    <td style={{ fontWeight: 600 }}>{r.title}</td>
+                    <td>{r.target}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{r.time}</td>
+                    <td>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        backgroundColor: r.channel === 'SMS' ? '#eff6ff' : '#ecfdf5',
+                        color: r.channel === 'SMS' ? '#2563eb' : '#059669',
+                        border: `1px solid ${r.channel === 'SMS' ? '#bfdbfe' : '#a7f3d0'}`
+                      }}>
+                        {r.channel}
+                      </span>
+                    </td>
+                    <td>
+                      <span 
+                        className="badge"
+                        style={getReminderStatusBadgeStyle(r.status)}
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleToggle(r.id)}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: r.status === 'Đang hoạt động' ? '#10b981' : '#cbd5e1' }}
+                      >
+                        {r.status === 'Đang hoạt động' ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                      </button>
+                    </td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <div className="flex gap-2">
+                        <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
+                          onSelectId(r.id);
+                          onNavigate('reminder-edit');
+                        }}>
+                          <Edit3 size={12} />
+                        </button>
+                        <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDelete(r.id)}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Pagination Bar */}
@@ -284,7 +297,15 @@ export default function ReminderAlerts({
           <div><strong>Đối tượng nhận tin:</strong> {item.target}</div>
           <div><strong>Thời điểm gửi:</strong> {item.time}</div>
           <div><strong>Kênh truyền thông:</strong> {item.channel}</div>
-          <div><strong>Trạng thái hoạt động:</strong> {item.status}</div>
+          <div>
+            <strong>Trạng thái hoạt động:</strong>{' '}
+            <span 
+              className="badge"
+              style={{ ...getReminderStatusBadgeStyle(item.status), marginLeft: '8px' }}
+            >
+              {item.status}
+            </span>
+          </div>
           {item.messageContent && (
             <div style={{ marginTop: '8px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
               <strong>Nội dung tin nhắn SMS / App mẫu:</strong>

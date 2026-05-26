@@ -11,6 +11,7 @@ export default function MedicalData({
   medicines,
   setMedicines,
   triggerToast,
+  showConfirm,
 }) {
   // Filter States
   const [diseaseSearch, setDiseaseSearch] = useState('');
@@ -110,11 +111,13 @@ export default function MedicalData({
       if (currentView === 'medicine-add') {
         setMedicines([formData, ...medicines]);
         triggerToast('Thêm thông tin thuốc mới thành công!', 'success');
+        onNavigate('medicine-list');
       } else {
         setMedicines(medicines.map((m) => (m.id === formData.id ? formData : m)));
         triggerToast('Cập nhật thông tin thuốc thành công!', 'success');
+        onSelectId(formData.id);
+        onNavigate('medicine-details');
       }
-      onNavigate('medicine-list');
     }
     setFormData(null);
     setOriginalData(null);
@@ -122,7 +125,7 @@ export default function MedicalData({
 
   // Handle Delete
   const handleDelete = (type, id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bản ghi này?')) {
+    showConfirm('Bạn có chắc chắn muốn xóa bản ghi này?', () => {
       if (type === 'disease') {
         setDiseases(diseases.filter((d) => d.id !== id));
         triggerToast('Đã xóa dữ liệu bệnh thành công!', 'success');
@@ -132,7 +135,7 @@ export default function MedicalData({
         triggerToast('Đã xóa dữ liệu thuốc thành công!', 'success');
         onNavigate('medicine-list');
       }
-    }
+    });
   };
 
   // --- Dynamic Symptoms Rows in Disease Form ---
@@ -1044,7 +1047,7 @@ export default function MedicalData({
         <div className="form-action-buttons">
           <button className="btn btn-cancel" onClick={() => {
             triggerToast('Đã hủy nhập thông tin thuốc', 'info');
-            onNavigate('medicine-list');
+            onNavigate(currentView === 'medicine-edit' ? 'medicine-details' : 'medicine-list');
           }}>
             Hủy
           </button>

@@ -1,85 +1,105 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '../utils/date';
 import { Calendar as CalendarIcon, Search, Filter, Clock, Eye, AlertCircle, ChevronLeft, ChevronRight, X, User } from 'lucide-react';
 
-// Appointments database for May 2026
-const appointmentsByDay = {
-  7: {
-    morning: [
-      { id: 'APT101', time: '8:00 - 9:00', patient: 'Ngô Gia Bảo', gender: 'Nam', dob: '2015-06-18', phone: '0977889900', symptom: 'Đau đầu, chóng mặt nhiều ngày, buồn nôn nhẹ.' },
-      { id: 'APT102', time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT103', time: '10:00 - 11:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    afternoon: [
-      { id: 'APT104', time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT105', time: '14:00 - 15:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT106', time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' }
-    ]
-  },
-  9: {
-    morning: [
-      { id: 'APT201', time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT202', time: '9:00 - 10:00', patient: 'Lê Hải Minh', gender: 'Nam', dob: '1992-03-14', phone: '0901223344', symptom: 'Mỏi mắt, nhức mỏi cơ và khô giác mạc nhẹ.' },
-      { id: 'APT203', time: '10:00 - 11:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    afternoon: [
-      { id: 'APT204', time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT205', time: '14:00 - 15:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT206', time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' }
-    ]
-  },
-  11: {
-    morning: [
-      { id: 'APT301', time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT302', time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT303', time: '10:00 - 11:00', patient: 'Nguyễn Minh Anh', gender: 'Nữ', dob: '2000-08-25', phone: '0912345678', symptom: 'Sốt cao 39 độ C đột ngột, ho đờm và đau họng.' }
-    ],
-    afternoon: [
-      { id: 'APT304', time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT305', time: '14:00 - 15:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT306', time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' }
-    ]
-  },
-  14: {
-    morning: [
-      { id: 'APT401', time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT402', time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT403', time: '10:00 - 11:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    afternoon: [
-      { id: 'APT404', time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { id: 'APT405', time: '14:00 - 15:00', patient: 'Trần Phương Huế', gender: 'Nữ', dob: '1985-09-02', phone: '0933456789', symptom: 'Đau tức vùng bụng thượng vị âm ỉ kéo dài.' },
-      { id: 'APT406', time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' }
-    ]
-  }
-};
-
-const getDaySchedule = (day) => {
-  const defaultSchedule = {
-    morning: [
-      { id: `d-${day}-m1`, time: '8:00 - 9:00', patient: '', symptom: '----------------------------------------' },
-      { id: `d-${day}-m2`, time: '9:00 - 10:00', patient: '', symptom: '----------------------------------------' },
-      { id: `d-${day}-m3`, time: '10:00 - 11:00', patient: '', symptom: '----------------------------------------' }
-    ],
-    afternoon: [
-      { id: `d-${day}-a1`, time: '13:00 - 14:00', patient: '', symptom: '----------------------------------------' },
-      { id: `d-${day}-a2`, time: '14:00 - 15:00', patient: '', symptom: '----------------------------------------' },
-      { id: `d-${day}-a3`, time: '15:00 - 16:00', patient: '', symptom: '----------------------------------------' }
-    ]
-  };
-  return appointmentsByDay[day] || defaultSchedule;
-};
-
-export default function DoctorSchedule({ onNavigate, triggerToast }) {
-  const [selectedDay, setSelectedDay] = useState(7); // default 7th May 2026
+export default function DoctorSchedule({ onNavigate, appointments = [], selectedId, triggerToast }) {
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth()); // 0-indexed
+  const [selectedDay, setSelectedDay] = useState(today.getDate()); // default today
   const [searchQuery, setSearchQuery] = useState('');
   const [activeShiftFilter, setActiveShiftFilter] = useState('all'); // 'all', 'morning', 'afternoon'
+
+  // Initialize selectedAppointment to first active appointment on currentDay
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  const lastHandledId = React.useRef(null);
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
+  // Auto select appointment from selectedId (navigated from Dashboard)
+  useEffect(() => {
+    if (selectedId && lastHandledId.current !== selectedId) {
+      lastHandledId.current = selectedId;
+      const apt = appointments.find(a => a.id === selectedId);
+      if (apt) {
+        const parts = apt.date.split('-');
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // 0-indexed
+          const day = parseInt(parts[2], 10);
+          
+          setCurrentYear(year);
+          setCurrentMonth(month);
+          setSelectedDay(day);
+          
+          const activeSlot = {
+            id: apt.id,
+            time: apt.time,
+            patient: apt.patientName || apt.name || apt.patient || 'Bệnh nhân',
+            symptom: apt.symptoms || apt.symptom || 'Khám tổng quát',
+            notes: apt.notes || '',
+            status: apt.status
+          };
+          setSelectedAppointment(activeSlot);
+        }
+      }
+    }
+  }, [selectedId, appointments]);
   
-  // Initialize selectedAppointment to first active appointment on Day 7
-  const [selectedAppointment, setSelectedAppointment] = useState(() => {
-    const schedule = getDaySchedule(7);
-    const activeSlots = [...schedule.morning, ...schedule.afternoon].filter(s => s.patient && s.patient !== '');
-    return activeSlots[0] || null;
-  });
+  const getDaySchedule = (day) => {
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = `${currentYear}-${monthStr}-${day < 10 ? '0' + day : day}`;
+    const myAppts = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date === dayStr && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
+    
+    const morningTimes = ['8:00 - 9:00', '9:00 - 10:00', '10:00 - 11:00', '11:30 - 12:30'];
+    const afternoonTimes = ['13:00 - 14:00', '14:00 - 15:00', '15:00 - 16:00'];
+    
+    const mapApptsToSlots = (times, prefix) => {
+      return times.map((t, idx) => {
+        const apt = myAppts.find(a => a.time.trim() === t);
+        if (apt) {
+          return {
+            id: apt.id,
+            time: apt.time,
+            patient: apt.patientName || apt.name || apt.patient,
+            gender: apt.gender || 'Nam',
+            dob: apt.dob || '2000-08-25',
+            phone: apt.phone || '0912345678',
+            symptom: apt.symptoms || apt.symptom || 'Khám tổng quát',
+            notes: apt.notes || ''
+          };
+        }
+        return {
+          id: `d-${day}-${prefix}${idx}`,
+          time: t,
+          patient: '',
+          symptom: '----------------------------------------'
+        };
+      });
+    };
+    
+    return {
+      morning: mapApptsToSlots(morningTimes, 'm'),
+      afternoon: mapApptsToSlots(afternoonTimes, 'a')
+    };
+  };
 
   const currentSchedule = getDaySchedule(selectedDay);
 
@@ -103,6 +123,32 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
 
   // Synchronize selectedAppointment when day, shift filter, or search changes
   useEffect(() => {
+    if (selectedId) {
+      const apt = appointments.find(a => a.id === selectedId);
+      if (apt) {
+        const parts = apt.date.split('-');
+        if (parts.length === 3 && parseInt(parts[2], 10) === selectedDay) {
+          const month = parseInt(parts[1], 10) - 1;
+          const year = parseInt(parts[0], 10);
+          if (month === currentMonth && year === currentYear) {
+            if (selectedAppointment?.id === selectedId) {
+              return;
+            }
+            const activeSlot = {
+              id: apt.id,
+              time: apt.time,
+              patient: apt.patientName || apt.name || apt.patient || 'Bệnh nhân',
+              symptom: apt.symptoms || apt.symptom || 'Khám tổng quát',
+              notes: apt.notes || '',
+              status: apt.status
+            };
+            setSelectedAppointment(activeSlot);
+            return;
+          }
+        }
+      }
+    }
+
     if (filteredActiveSlots.length > 0) {
       const stillValid = filteredActiveSlots.find(s => s.id === selectedAppointment?.id);
       if (!stillValid) {
@@ -111,17 +157,29 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
     } else {
       setSelectedAppointment(null);
     }
-  }, [selectedDay, activeShiftFilter, searchQuery]);
+  }, [selectedDay, activeShiftFilter, searchQuery, appointments, selectedId, selectedAppointment?.id, currentMonth, currentYear]);
 
-  // Calendar cells config (May 2026)
-  const daysInMonth = 31;
-  const startOffset = 4; // May 1st is Friday
+  // Calendar cells config dynamic
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startOffset = new Date(currentYear, currentMonth, 1).getDay();
   const calendarCells = [];
   for (let i = 0; i < startOffset; i++) calendarCells.push(null);
   for (let i = 1; i <= daysInMonth; i++) calendarCells.push(i);
 
   // Days with active appointments
-  const appointmentDays = [7, 9, 11, 14];
+  const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const myConfirmedAppts = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date.startsWith(yearMonthStr) && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
+  const appointmentDays = myConfirmedAppts.map(a => {
+    const parts = a.date.split('-');
+    return parseInt(parts[2], 10);
+  });
+
+  const getFormattedDateHeader = (day) => {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const targetDate = new Date(dateStr);
+    const wDays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    return `${wDays[targetDate.getDay()]} ${formatDate(dateStr)}`;
+  };
 
   const handleCellClick = (day) => {
     if (!day) return;
@@ -192,7 +250,7 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '4px' }}>
               <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-dark)', fontWeight: 700 }}>Danh sách ca khám</h3>
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-dark)' }}>Thứ 5, {selectedDay}/5/2026</span>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-dark)' }}>{getFormattedDateHeader(selectedDay)}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -315,7 +373,7 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
                       fontWeight: 500, 
                       color: '#1e293b' 
                     }}>
-                      {selectedAppointment.dob ? selectedAppointment.dob.split('-').reverse().join('/') : '18/05/2003'}
+                      {selectedAppointment.dob ? selectedAppointment.dob.split('-').reverse().join('-') : '18-05-2003'}
                     </div>
                   </div>
                 </div>
@@ -380,11 +438,17 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
           
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <button 
+                onClick={handlePrevMonth}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px' }}
+              >
                 &larr;
               </button>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Tháng 5, 2026</h3>
-              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Tháng {currentMonth + 1}, {currentYear}</h3>
+              <button 
+                onClick={handleNextMonth}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px' }}
+              >
                 &rarr;
               </button>
             </div>
@@ -433,7 +497,10 @@ export default function DoctorSchedule({ onNavigate, triggerToast }) {
               {/* Back to Today button */}
               <button
                 onClick={() => {
-                  setSelectedDay(7);
+                  const today = new Date();
+                  setCurrentYear(today.getFullYear());
+                  setCurrentMonth(today.getMonth());
+                  setSelectedDay(today.getDate());
                   setSelectedAppointment(null);
                   triggerToast('Đã quay lại lịch hôm nay', 'info');
                 }}

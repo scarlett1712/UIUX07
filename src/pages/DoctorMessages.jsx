@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bot, User, Send, BellRing, Sparkles, FolderArchive, MessageCircle, FileText } from 'lucide-react';
+import { Search, Bot, User, Send, BellRing, Sparkles, FolderArchive, MessageCircle, FileText, Clock } from 'lucide-react';
 
-export default function DoctorMessages({ onNavigate, triggerToast }) {
+export default function DoctorMessages({ onNavigate, selectedId, patients = [], setPatients, onSelectId, triggerToast, threads = [], setThreads }) {
   const [activeThreadId, setActiveThreadId] = useState('MSG101');
+
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'archived'
@@ -10,88 +11,62 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
   // Simulation handoff state
   const [hasEscalatedSession, setHasEscalatedSession] = useState(true);
   const [isEscalatedSessionActive, setIsEscalatedSessionActive] = useState(false);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(120);
+  const [escalatedThreadId, setEscalatedThreadId] = useState(null);
 
-  // Conversations mock database
-  const [threads, setThreads] = useState([
-    {
-      id: 'MSG101',
-      name: 'Nguyễn Minh Anh',
-      lastMsg: 'Người khá mệt, ăn uống cũng kém.',
-      date: '05/05/2026',
-      time: '08:15',
-      unread: true,
-      messages: [
-        { sender: 'patient', text: 'Mình bị sốt từ hôm qua, người mệt với đau đầu khá rõ. Hôm nay vẫn chưa đỡ, còn đau họng với hơi ho.', time: '21:57' },
-        { sender: 'bot', text: 'Chào bạn, tôi là AI Chatbot. Bạn đã đo nhiệt độ chưa, khoảng bao nhiêu độ? Ngoài ra có bị ớn lạnh hay đau nhức người không?', time: '21:58' },
-        { sender: 'patient', text: 'Sốt khoảng gần 39 độ, có ớn lạnh với đau người. Người khá mệt, ăn uống cũng kém.', time: '22:15' },
-        { sender: 'bot', text: 'Triệu chứng của bạn có thể liên quan đến cúm hoặc nhiễm virus đường hô hấp. Do sốt cao và kéo dài, bạn nên đi khám để được kiểm tra và điều trị phù hợp.', time: '22:16' }
-      ]
-    },
-    {
-      id: 'MSG102',
-      name: 'Trần Phương Huế',
-      lastMsg: 'Đau bụng thượng vị, buồn nôn nhiều...',
-      date: '04/05/2026',
-      time: '10:05',
-      unread: false,
-      messages: [
-        { sender: 'patient', text: 'Chào bác sĩ, em bị đau bụng vùng trên rốn âm ỉ suốt từ tối qua đến giờ.', time: '09:50' },
-        { sender: 'doctor', text: 'Đau có lan ra sau lưng không bạn? Bạn có cảm thấy buồn nôn hay ợ chua gì không?', time: '09:55' },
-        { sender: 'patient', text: 'Đau không lan ạ, nhưng bụng ấm ách đầy hơi, thỉnh thoảng buồn nôn nhiều.', time: '10:05' }
-      ]
-    },
-    {
-      id: 'MSG103',
-      name: 'Lê Hải Minh',
-      lastMsg: 'Chào bác sĩ, mắt bị sưng đỏ...',
-      date: '02/05/2026',
-      time: '18:01',
-      unread: false,
-      messages: [
-        { sender: 'patient', text: 'Chào bác sĩ, mắt trái em bị đỏ và sưng húp lên sau khi ngủ dậy.', time: '18:01' }
-      ]
-    },
-    {
-      id: 'MSG104',
-      name: 'Văn Mai Hương',
-      lastMsg: 'Nghẹt mũi, khó thở rát cổ họng...',
-      date: '01/05/2026',
-      time: '22:21',
-      unread: false,
-      messages: [
-        { sender: 'patient', text: 'Chào bác sĩ, em bị ngạt mũi rát họng lâu ngày rồi, uống thuốc cảm thông thường không đỡ.', time: '22:21' }
-      ]
-    },
-    {
-      id: 'MSG105',
-      name: 'Đỗ Minh Tú',
-      lastMsg: 'Đau khớp gối khi vận động...',
-      date: '01/05/2026',
-      time: '08:23',
-      unread: false,
-      messages: [
-        { sender: 'patient', text: 'Bác sĩ ơi, khớp gối của em cứ đi lại nhiều là bị đau nhức nhối.', time: '08:23' }
-      ]
-    },
-    {
-      id: 'MSG106',
-      name: 'Đức Minh Tuan',
-      lastMsg: 'Hay bị chóng mặt hoa mắt lúc sáng...',
-      date: '25/04/2026',
-      time: '09:15',
-      unread: false,
-      messages: [
-        { sender: 'patient', text: 'Gần đây buổi sáng thức dậy em hay bị hoa mắt chóng mặt lắm.', time: '09:15' }
-      ]
+  const messagesEndRef = React.useRef(null);
+
+  useEffect(() => {
+    if (selectedId) {
+      if (selectedId.startsWith('MSG') && threads.some(t => t.id === selectedId)) {
+        setActiveThreadId(selectedId);
+      } else if (selectedId.startsWith('P')) {
+        const patient = patients.find(p => p.id === selectedId);
+        if (patient) {
+          const matchedThread = threads.find(t => t.name.toLowerCase() === patient.name.toLowerCase());
+          if (matchedThread) {
+            setActiveThreadId(matchedThread.id);
+          }
+        }
+      }
     }
-  ]);
+  }, [selectedId, threads, patients]);
 
   const activeThread = threads.find(t => t.id === activeThreadId) || threads[0];
+
+  // Auto scroll to bottom when messages update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeThread?.messages]);
+
+  // Session timer ticker
+  useEffect(() => {
+    let timer;
+    if (isEscalatedSessionActive) {
+      timer = setInterval(() => {
+        setSessionTimeLeft(prev => {
+          if (prev <= 1) {
+            setIsEscalatedSessionActive(false);
+            setHasEscalatedSession(true);
+            setEscalatedThreadId(null);
+            triggerToast('Phiên tư vấn chuyên sâu đã hết hạn (giới hạn demo 2 phút).', 'info');
+            return 120;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setEscalatedThreadId(null);
+      setSessionTimeLeft(120);
+    }
+    return () => clearInterval(timer);
+  }, [isEscalatedSessionActive]);
 
   // Handoff Live Session trigger
   const handleAcceptHandoff = () => {
     setHasEscalatedSession(false);
     setIsEscalatedSessionActive(true);
+    setEscalatedThreadId(activeThreadId);
     triggerToast('Đã kết nối phiên live chat tư vấn chuyên sâu!', 'success');
     
     // Add new chat thread or insert into current Nguyễn Minh Anh messages
@@ -195,7 +170,7 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
           animation: 'pulseGlow 2.5s infinite' 
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ backgroundColor: 'var(--primary)', color: '#fff', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
+            <div style={{ backgroundColor: 'var(--primary)', color: '#fff', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <BellRing size={16} style={{ margin: '0 auto' }} />
             </div>
             <div>
@@ -327,7 +302,7 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
                     <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary)' }} />
                   )}
 
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0, color: 'var(--text-muted)' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--text-muted)' }}>
                     <User size={16} style={{ margin: '0 auto' }} />
                   </div>
 
@@ -354,7 +329,7 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
           {/* Header */}
           <div className="chatgpt-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: 'var(--primary)' }}>
+              <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                 <User size={14} style={{ margin: '0 auto' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -368,8 +343,29 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
 
             <button 
               onClick={() => {
-                onNavigate('doctor-medical-records');
-                triggerToast('Đang điều hướng tới Hồ sơ bệnh án...', 'info');
+                const nameToFind = activeThread.name;
+                const existing = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase());
+                let targetId;
+                if (existing) {
+                  targetId = existing.id;
+                } else {
+                  targetId = `P${Date.now()}`;
+                  const newPatient = {
+                    id: targetId,
+                    name: nameToFind,
+                    dob: '2000-08-25',
+                    gender: 'Nữ',
+                    phone: '0912345678',
+                    email: `${nameToFind.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+                    address: 'Hải Châu, Đà Nẵng',
+                    insurance: 'DN4012030192',
+                    medicalHistory: []
+                  };
+                  setPatients([...patients, newPatient]);
+                }
+                onSelectId(targetId);
+                onNavigate('doctor-patient-details');
+                triggerToast(`Đang điều hướng tới hồ sơ bệnh án của ${nameToFind}...`, 'info');
               }}
               className="btn btn-outline"
               style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--border-color)', color: 'var(--primary)' }}
@@ -377,6 +373,29 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
               <FileText size={12} /> Bệnh án chi tiết
             </button>
           </div>
+
+          {isEscalatedSessionActive && activeThreadId === escalatedThreadId && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#fffbeb',
+              borderBottom: '1px solid #fef3c7',
+              color: '#b45309',
+              fontSize: '0.8rem',
+              fontWeight: '500',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clock size={14} />
+                <span>
+                  Thời hạn phiên tư vấn chuyên sâu: <strong>24 giờ</strong> (Còn lại: 23 giờ 59 phút, Demo tự động kết thúc sau: <strong>{Math.floor(sessionTimeLeft / 60).toString().padStart(2, '0')}:{ (sessionTimeLeft % 60).toString().padStart(2, '0') }</strong>)
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Messages Area */}
           <div className="chatgpt-messages-area" style={{ flexGrow: 1, padding: '16px', overflowY: 'auto' }}>
@@ -464,6 +483,7 @@ export default function DoctorMessages({ onNavigate, triggerToast }) {
                 </div>
               );
             })}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Message input */}

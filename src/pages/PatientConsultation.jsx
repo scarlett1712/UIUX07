@@ -35,18 +35,18 @@ export default function PatientConsultation({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeConv?.messages]);
 
-  // Auto open a new conversation if none exist
+  // Auto open a new conversation if none exist, and sync doctor consult state
   useEffect(() => {
     if (conversations.length === 0) {
       handleStartNewChat();
     } else {
       // Restore doctor consult status based on active conversation
-      const currentActive = conversations.find(c => c.id === activeConvId) || conversations[0];
+      const currentActive = conversations.find(c => c.id === activeConvId);
       if (currentActive) {
         setIsConsultingDoctor(!!currentActive.activeDoctorConsult);
       }
     }
-  }, []);
+  }, [activeConvId, conversations]);
 
   // Timer simulation for calls
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function PatientConsultation({
                   activeDoctorConsult: false,
                   messages: [
                     ...c.messages,
-                    { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc sau 24h. Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
+                    { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc (giới hạn demo 2 phút). Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
                   ]
                 };
               }

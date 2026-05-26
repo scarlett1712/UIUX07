@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Activity, Pill, Bot, User, Stethoscope, Clock, BellRing } from 'lucide-react';
+import { Search, Bell, Activity, Pill, Bot, User, Stethoscope, Clock, BellRing, ShieldAlert, MessageCircle } from 'lucide-react';
 
 export default function Navbar({
   role,
   currentView,
+  previousView,
   onNavigate,
   onSelectId,
   diseases,
@@ -11,7 +12,11 @@ export default function Navbar({
   patients = [],
   doctors = [],
   reminders = [],
-  appointments = []
+  appointments = [],
+  scenarios = [],
+  conversations = [],
+  doctorThreads = [],
+  patientConversations = []
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -74,7 +79,7 @@ export default function Navbar({
   // Compute breadcrumbs and their corresponding navigation destinations
   const getBreadcrumbs = () => {
     const crumbs = [{ 
-      text: 'Pages', 
+      text: 'Trang chủ', 
       view: role === 'expert' ? 'dashboard' : role === 'manager' ? 'manager-dashboard' : role === 'patient' ? 'patient-dashboard' : 'doctor-dashboard' 
     }];
     
@@ -166,7 +171,11 @@ export default function Navbar({
       } else if (currentView === 'doctor-messages') {
         crumbs.push({ text: 'Tin nhắn', view: 'doctor-messages' });
       } else if (currentView === 'doctor-medical-records' || currentView.includes('doctor-patient-')) {
-        crumbs.push({ text: 'Hồ sơ bệnh án', view: 'doctor-medical-records' });
+        if (previousView === 'doctor-messages' && currentView.includes('doctor-patient-')) {
+          crumbs.push({ text: 'Tin nhắn', view: 'doctor-messages' });
+        } else {
+          crumbs.push({ text: 'Hồ sơ bệnh án', view: 'doctor-medical-records' });
+        }
         if (currentView === 'doctor-medical-records') crumbs.push({ text: 'Danh sách bệnh nhân', view: 'doctor-medical-records' });
         if (currentView === 'doctor-patient-details') crumbs.push({ text: 'Chi tiết bệnh án', view: 'doctor-patient-details' });
         if (currentView === 'doctor-patient-diagnose') crumbs.push({ text: 'Chẩn đoán & kê đơn', view: 'doctor-patient-diagnose' });
@@ -188,7 +197,7 @@ export default function Navbar({
 
   // Search filter logic across database entities
   const getSearchResults = () => {
-    if (!searchQuery.trim()) return { diseases: [], medicines: [], patients: [], doctors: [], reminders: [], appointments: [] };
+    if (!searchQuery.trim()) return { diseases: [], medicines: [], patients: [], doctors: [], reminders: [], appointments: [], scenarios: [], evaluations: [], doctorThreads: [], patientConvs: [] };
     const query = searchQuery.toLowerCase();
     
     // Expert matches
@@ -197,6 +206,12 @@ export default function Navbar({
     );
     const matchedMedicines = medicines.filter(m => 
       m.name.toLowerCase().includes(query) || m.activeIngredient.toLowerCase().includes(query)
+    );
+    const matchedScenarios = (scenarios || []).filter(s =>
+      s.name.toLowerCase().includes(query)
+    );
+    const matchedEvaluations = (conversations || []).filter(c =>
+      c.name.toLowerCase().includes(query) || c.topic.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
     );
 
     // Manager matches
@@ -213,24 +228,47 @@ export default function Navbar({
       apt.patientName.toLowerCase().includes(query) || apt.doctorName.toLowerCase().includes(query)
     );
 
+    // Doctor matches
+    const matchedDoctorThreads = (doctorThreads || []).filter(t =>
+      t.name.toLowerCase().includes(query) || t.lastMsg.toLowerCase().includes(query)
+    );
+
+    // Patient matches
+    const matchedPatientConvs = (patientConversations || []).filter(c =>
+      c.topic.toLowerCase().includes(query) || c.messages.some(m => m.text.toLowerCase().includes(query))
+    );
+
     return {
       diseases: matchedDiseases,
       medicines: matchedMedicines,
       patients: matchedPatients,
       doctors: matchedDoctors,
       reminders: matchedReminders,
-      appointments: matchedAppointments
+      appointments: matchedAppointments,
+      scenarios: matchedScenarios,
+      evaluations: matchedEvaluations,
+      doctorThreads: matchedDoctorThreads,
+      patientConvs: matchedPatientConvs
     };
   };
 
   const results = getSearchResults();
-  const hasResults =
-    results.diseases.length > 0 ||
-    results.medicines.length > 0 ||
-    results.patients.length > 0 ||
-    results.doctors.length > 0 ||
-    results.reminders.length > 0 ||
-    results.appointments.length > 0;
+  
+  const hasDisplayedResults = () => {
+    if (role === 'expert') {
+      return results.diseases.length > 0 || results.medicines.length > 0 || results.scenarios.length > 0 || results.evaluations.length > 0;
+    }
+    if (role === 'patient') {
+      return results.diseases.length > 0 || results.medicines.length > 0 || results.doctors.length > 0 || results.appointments.length > 0 || results.patientConvs.length > 0;
+    }
+    if (role === 'doctor') {
+      return results.patients.length > 0 || results.medicines.length > 0 || results.appointments.length > 0 || results.doctorThreads.length > 0;
+    }
+    if (role === 'manager') {
+      return results.patients.length > 0 || results.doctors.length > 0 || results.appointments.length > 0 || results.reminders.length > 0;
+    }
+    return false;
+  };
 
   const handleSearchResultClick = (type, id) => {
     setSearchQuery('');
@@ -238,35 +276,47 @@ export default function Navbar({
     if (type === 'disease') {
       if (role !== 'doctor') {
         onSelectId(id);
-        onNavigate(role === 'patient' ? 'patient-medical-data' : 'disease-details');
+        onNavigate(role === 'patient' ? 'patient-medical-data' : 'disease-details', id);
       }
     } else if (type === 'medicine') {
       onSelectId(id);
-      onNavigate(role === 'doctor' ? 'doctor-medicine-details' : 'medicine-details');
+      onNavigate(role === 'doctor' ? 'doctor-medicine-details' : role === 'patient' ? 'patient-medical-data' : 'medicine-details', id);
     } else if (type === 'patient') {
       onSelectId(id);
-      onNavigate(role === 'doctor' ? 'doctor-patient-details' : 'patient-details');
+      onNavigate(role === 'doctor' ? 'doctor-patient-details' : 'patient-details', id);
     } else if (type === 'doctor') {
       if (role === 'manager') {
         onSelectId(id);
-        onNavigate('doctor-details');
+        onNavigate('doctor-details', id);
       } else if (role === 'patient') {
-        onNavigate('patient-schedule');
+        onNavigate('patient-schedule', id);
       }
     } else if (type === 'reminder') {
       if (role === 'manager') {
         onSelectId(id);
-        onNavigate('reminder-details');
+        onNavigate('reminder-details', id);
       }
     } else if (type === 'appointment') {
       if (role === 'manager') {
         onSelectId(id);
-        onNavigate('appointment-calendar');
+        onNavigate('appointment-calendar', id);
       } else if (role === 'doctor') {
-        onNavigate('doctor-schedule');
+        onNavigate('doctor-schedule', id);
       } else if (role === 'patient') {
-        onNavigate('patient-schedule');
+        onNavigate('patient-schedule', id);
       }
+    } else if (type === 'scenario') {
+      onSelectId(id);
+      onNavigate('chatbot-scenarios', id);
+    } else if (type === 'evaluation') {
+      onSelectId(id);
+      onNavigate('ai-evaluation-analysis', id);
+    } else if (type === 'doctor-thread') {
+      onSelectId(id);
+      onNavigate('doctor-messages', id);
+    } else if (type === 'patient-conv') {
+      onSelectId(id);
+      onNavigate('patient-consultation-keep', id);
     }
   };
 
@@ -321,7 +371,7 @@ export default function Navbar({
           {/* Search Dropdown Panel */}
           {showDropdown && searchQuery.trim() && (
             <div className="search-results-dropdown">
-              {role === 'expert' || role === 'patient' ? (
+              {role === 'expert' && (
                 <>
                   {/* Diseases section */}
                   {results.diseases.length > 0 && (
@@ -356,9 +406,81 @@ export default function Navbar({
                       ))}
                     </>
                   )}
-                  
-                  {/* Doctors section for patient search */}
-                  {role === 'patient' && results.doctors.length > 0 && (
+
+                  {/* Scenarios section */}
+                  {results.scenarios.length > 0 && (
+                    <>
+                      <div className="search-results-section">Kịch bản Chatbot ({results.scenarios.length})</div>
+                      {results.scenarios.map(s => (
+                        <div
+                          key={s.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('scenario', s.id)}
+                        >
+                          <span>{s.name}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#e0f2fe', color: '#0284c7' }}><Bot size={10} style={{ marginRight: '2px' }} /> Kịch bản</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* AI Evaluations section */}
+                  {results.evaluations.length > 0 && (
+                    <>
+                      <div className="search-results-section">Đánh giá & Kiểm duyệt AI ({results.evaluations.length})</div>
+                      {results.evaluations.map(c => (
+                        <div
+                          key={c.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('evaluation', c.id)}
+                        >
+                          <span>{c.name} - {c.topic}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}><ShieldAlert size={10} style={{ marginRight: '2px' }} /> AI</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+
+              {role === 'patient' && (
+                <>
+                  {/* Diseases section */}
+                  {results.diseases.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bệnh ({results.diseases.length})</div>
+                      {results.diseases.map(d => (
+                        <div
+                          key={d.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('disease', d.id)}
+                        >
+                          <span>{d.name}</span>
+                          <span className="search-results-type-badge"><Activity size={10} style={{ marginRight: '2px' }} /> Bệnh</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Medicines section */}
+                  {results.medicines.length > 0 && (
+                    <>
+                      <div className="search-results-section">Thuốc ({results.medicines.length})</div>
+                      {results.medicines.map(m => (
+                        <div
+                          key={m.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('medicine', m.id)}
+                        >
+                          <span>{m.name}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#ecfdf5', color: '#10b981' }}><Pill size={10} style={{ marginRight: '2px' }} /> Thuốc</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Doctors section */}
+                  {results.doctors.length > 0 && (
                     <>
                       <div className="search-results-section">Bác sĩ ({results.doctors.length})</div>
                       {results.doctors.map(doc => (
@@ -373,8 +495,116 @@ export default function Navbar({
                       ))}
                     </>
                   )}
+
+                  {/* Appointments section */}
+                  {results.appointments.length > 0 && (
+                    <>
+                      <div className="search-results-section">Lịch hẹn ({results.appointments.length})</div>
+                      {results.appointments.map(apt => (
+                        <div
+                          key={apt.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('appointment', apt.id)}
+                        >
+                          <span>{apt.patientName} - {apt.doctorName} ({apt.time})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}><Clock size={10} style={{ marginRight: '2px' }} /> Lịch</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Consultation history section */}
+                  {results.patientConvs.length > 0 && (
+                    <>
+                      <div className="search-results-section">Tư vấn y tế ({results.patientConvs.length})</div>
+                      {results.patientConvs.map(c => (
+                        <div
+                          key={c.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('patient-conv', c.id)}
+                        >
+                          <span>{c.topic} ({c.date})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#e2f5ff', color: '#0284c7' }}><MessageCircle size={10} style={{ marginRight: '2px' }} /> Tư vấn</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </>
-              ) : (
+              )}
+
+              {role === 'doctor' && (
+                <>
+                  {/* Patients section */}
+                  {results.patients.length > 0 && (
+                    <>
+                      <div className="search-results-section">Bệnh nhân ({results.patients.length})</div>
+                      {results.patients.map(p => (
+                        <div
+                          key={p.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('patient', p.id)}
+                        >
+                          <span>{p.name} ({p.id})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#fdf2f8', color: '#db2777' }}><User size={10} style={{ marginRight: '2px' }} /> Hồ sơ</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Medicines section */}
+                  {results.medicines.length > 0 && (
+                    <>
+                      <div className="search-results-section">Thuốc ({results.medicines.length})</div>
+                      {results.medicines.map(m => (
+                        <div
+                          key={m.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('medicine', m.id)}
+                        >
+                          <span>{m.name}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#ecfdf5', color: '#10b981' }}><Pill size={10} style={{ marginRight: '2px' }} /> Thuốc</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Appointments section */}
+                  {results.appointments.length > 0 && (
+                    <>
+                      <div className="search-results-section">Lịch hẹn ({results.appointments.length})</div>
+                      {results.appointments.map(apt => (
+                        <div
+                          key={apt.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('appointment', apt.id)}
+                        >
+                          <span>{apt.patientName} - {apt.doctorName} ({apt.time})</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}><Clock size={10} style={{ marginRight: '2px' }} /> Lịch</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Doctor threads section */}
+                  {results.doctorThreads.length > 0 && (
+                    <>
+                      <div className="search-results-section">Tin nhắn ({results.doctorThreads.length})</div>
+                      {results.doctorThreads.map(t => (
+                        <div
+                          key={t.id}
+                          className="search-results-item"
+                          onClick={() => handleSearchResultClick('doctor-thread', t.id)}
+                        >
+                          <span>{t.name} - {t.lastMsg}</span>
+                          <span className="search-results-type-badge" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}><MessageCircle size={10} style={{ marginRight: '2px' }} /> Tin nhắn</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+
+              {role === 'manager' && (
                 <>
                   {/* Patients section */}
                   {results.patients.length > 0 && (
@@ -446,7 +676,7 @@ export default function Navbar({
                 </>
               )}
 
-              {!hasResults && (
+              {!hasDisplayedResults() && (
                 <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                   Không tìm thấy kết quả phù hợp
                 </div>

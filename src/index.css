@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* Colors */
@@ -27,7 +27,7 @@
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Outfit', var(--font-sans);
+  --font-display: 'Be Vietnam Pro', var(--font-sans);
 
   /* Shadows & Radius */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -38,7 +38,7 @@
   --radius-lg: 14px;
   --radius-full: 9999px;
 
-  font-size: 13.5px;
+  font-size: 15px;
   box-sizing: border-box;
 }
 
@@ -252,6 +252,12 @@ button, input, select, textarea {
 .badge-medium { background-color: #fef3c7; color: #d97706; }
 .badge-high { background-color: #fee2e2; color: #dc2626; }
 
+/* Detail row styling for appointment details */
+.detail-row { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+.detail-label { font-weight: 600; color: var(--text-dark); }
+.detail-value { color: var(--text-dark); }
+
+
 /* Landing Page Grid */
 .landing-container {
   min-height: 100vh;
@@ -342,12 +348,18 @@ button, input, select, textarea {
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--primary);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .role-desc {
   font-size: 0.85rem;
   color: var(--text-muted);
   line-height: 1.4;
+  min-height: 72px;
+  text-align: center;
 }
 
 /* Sidebar navigation styling */
@@ -409,6 +421,11 @@ button, input, select, textarea {
   transition: all 0.2s ease;
   cursor: pointer;
   font-size: 0.95rem;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
 }
 
 .sidebar-link:hover {
@@ -439,6 +456,11 @@ button, input, select, textarea {
   font-size: 0.88rem;
   transition: all 0.2s ease;
   cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
 }
 
 .sidebar-sublink:hover {
@@ -748,6 +770,14 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
 }
 
 .stat-title {

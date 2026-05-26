@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ShieldAlert, CheckCircle, FileText, Edit2, Play, ArrowLeft, Heart, Sparkles } from 'lucide-react';
+import { ShieldAlert, CheckCircle, FileText, Edit2, Play, ArrowLeft, Heart, Sparkles, Search, Filter, Undo2 } from 'lucide-react';
 
 const INITIAL_CONVERSATIONS = [
   {
     id: 'CONV001',
     name: 'Nguyễn Minh Anh',
-    time: '05/05/2026 - 08:15',
+    time: '05-05-2026 - 08:15',
     topic: 'Triệu chứng sốt, đau họng',
     rating: '1đ',
     ratingNum: 1,
@@ -22,7 +22,7 @@ const INITIAL_CONVERSATIONS = [
   {
     id: 'CONV002',
     name: 'Trần Thu Hà',
-    time: '05/05/2026 - 09:40',
+    time: '05-05-2026 - 09:40',
     topic: 'Tra cứu đơn thuốc cũ',
     rating: '2đ',
     ratingNum: 2,
@@ -39,7 +39,7 @@ const INITIAL_CONVERSATIONS = [
   {
     id: 'CONV003',
     name: 'Lê Quốc Bảo',
-    time: '05/05/2026 - 10:05',
+    time: '05-05-2026 - 10:05',
     topic: 'Đặt lịch khám',
     rating: '1đ',
     ratingNum: 1,
@@ -56,7 +56,7 @@ const INITIAL_CONVERSATIONS = [
   {
     id: 'CONV004',
     name: 'Phạm Ngọc Linh',
-    time: '05/05/2026 - 11:20',
+    time: '05-05-2026 - 11:20',
     topic: 'Dị ứng da',
     rating: '1đ',
     ratingNum: 1,
@@ -69,6 +69,66 @@ const INITIAL_CONVERSATIONS = [
     ],
     errors: { medical: true, hallucination: false, tone: false, logic: false },
     notes: 'Sốc phản vệ hải sản có triệu chứng khó thở và sưng tê môi là ca cấp cứu tối khẩn cấp, bot khuyên nằm nghỉ ngơi là cực kỳ nguy hiểm. Phải sửa kịch bản để tự động chuyển tiếp cuộc gọi tới bác sĩ hoặc cảnh báo cấp cứu ngay lập tức!'
+  },
+  {
+    id: 'CONV005',
+    name: 'Vũ Văn Thanh',
+    time: '05-05-2026 - 13:30',
+    topic: 'Tư vấn tiêm chủng',
+    rating: '5đ',
+    ratingNum: 5,
+    status: 'Đã duyệt',
+    transcript: [
+      { sender: 'patient', text: 'Cho hỏi lịch tiêm vắc xin sởi cho bé 9 tháng tuổi.' },
+      { sender: 'bot', text: 'Bé tròn 9 tháng tuổi bắt đầu có thể tiêm mũi sởi đơn thứ nhất. Bạn hãy liên hệ trạm y tế gần nhất nhé.' }
+    ],
+    errors: { medical: false, hallucination: false, tone: false, logic: false },
+    notes: 'Câu trả lời chuẩn xác, tư vấn nhiệt tình.'
+  },
+  {
+    id: 'CONV006',
+    name: 'Đặng Thị Thu',
+    time: '05-05-2026 - 14:15',
+    topic: 'Triệu chứng đau tai',
+    rating: '3đ',
+    ratingNum: 3,
+    status: 'Chưa duyệt',
+    transcript: [
+      { sender: 'patient', text: 'Tai tôi bị ù và hơi nhức sau khi đi bơi về.' },
+      { sender: 'bot', text: 'Có thể nước vào tai gây viêm tai ngoài nhẹ. Bạn hãy dùng cồn boric nhỏ tai thử xem nhé.', flagged: true, errorType: 'Tự ý đề xuất hóa chất nhỏ tai' }
+    ],
+    errors: { medical: true, hallucination: false, tone: false, logic: false },
+    notes: 'Khuyên nhỏ cồn boric mà chưa qua bác sĩ nội soi là không an toàn. Cần cập nhật chatbot.'
+  },
+  {
+    id: 'CONV007',
+    name: 'Hoàng Minh Đức',
+    time: '05-05-2026 - 15:45',
+    topic: 'Kê đơn vitamin',
+    rating: '4đ',
+    ratingNum: 4,
+    status: 'Đã duyệt',
+    transcript: [
+      { sender: 'patient', text: 'Tôi muốn bổ sung vitamin D3 cho bé 1 tuổi.' },
+      { sender: 'bot', text: 'Liều dự phòng thông thường cho bé là 400 IU/ngày. Bạn nên chọn loại nhỏ giọt chuyên dụng.' }
+    ],
+    errors: { medical: false, hallucination: false, tone: false, logic: false },
+    notes: 'Đúng liều khuyến cáo dinh dưỡng trẻ em.'
+  },
+  {
+    id: 'CONV008',
+    name: 'Trần Minh Quang',
+    time: '05-05-2026 - 16:20',
+    topic: 'Triệu chứng đau đầu',
+    rating: '2đ',
+    ratingNum: 2,
+    status: 'Cần chỉnh sửa',
+    transcript: [
+      { sender: 'patient', text: 'Đầu tôi đau bừng bừng sau gáy, đo huyết áp là 160/90.' },
+      { sender: 'bot', text: 'Uống hoạt huyết dưỡng não và nghỉ ngơi đi bạn.', flagged: true, errorType: 'Bỏ qua dấu hiệu tăng huyết áp khẩn cấp' }
+    ],
+    errors: { medical: true, hallucination: false, tone: false, logic: true },
+    notes: 'Tăng huyết áp kèm đau sau gáy là dấu hiệu tiền đột quỵ nguy hiểm, bot khuyên uống hoạt huyết dưỡng não là sai lầm chết người. Cần sửa chatbot cảnh báo ngay lập tức.'
   }
 ];
 
@@ -83,7 +143,15 @@ export default function AIEvaluation({
 }) {
   const [activeConv, setActiveConv] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Tất cả');
+  const [ratingFilter, setRatingFilter] = useState('Tất cả');
+  const [errorFilter, setErrorFilter] = useState('Tất cả');
   const itemsPerPage = 7;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, ratingFilter, errorFilter]);
 
   // Load active conversation details
   React.useEffect(() => {
@@ -118,14 +186,99 @@ export default function AIEvaluation({
 
   // --- RENDERING AUDIT TRANSCRIPTS LIST ---
   if (currentView === 'ai-evaluation') {
-    const totalItems = conversations.length;
+    const filteredConversations = conversations.filter((c) => {
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            c.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            c.id.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'Tất cả' || c.status === statusFilter;
+      const matchesRating = ratingFilter === 'Tất cả' || c.rating === ratingFilter || c.ratingNum.toString() === ratingFilter;
+      
+      let matchesError = true;
+      if (errorFilter !== 'Tất cả') {
+        if (errorFilter === 'medical') matchesError = c.errors?.medical;
+        else if (errorFilter === 'hallucination') matchesError = c.errors?.hallucination;
+        else if (errorFilter === 'tone') matchesError = c.errors?.tone;
+        else if (errorFilter === 'logic') matchesError = c.errors?.logic;
+      }
+      return matchesSearch && matchesStatus && matchesRating && matchesError;
+    });
+
+    const totalItems = filteredConversations.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedConversations = conversations.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedConversations = filteredConversations.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
         <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Đánh giá & kiểm duyệt AI</h2>
+
+        {/* Filter bar */}
+        <div className="filters-bar">
+          <div className="filter-group">
+            <Search size={14} style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Tìm mã, tên khách hàng, triệu chứng..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input"
+              style={{ width: '240px', padding: '4px 8px' }}
+            />
+          </div>
+
+          <div className="filter-group" style={{ flexWrap: 'wrap' }}>
+            <Filter size={14} style={{ color: 'var(--text-muted)' }} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="Tất cả">Tất cả trạng thái</option>
+              <option value="Chưa duyệt">Chưa duyệt</option>
+              <option value="Đã duyệt">Đã duyệt</option>
+              <option value="Cần chỉnh sửa">Cần chỉnh sửa</option>
+            </select>
+
+            <select
+              value={ratingFilter}
+              onChange={(e) => setRatingFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="Tất cả">Tất cả đánh giá</option>
+              <option value="5đ">5 sao</option>
+              <option value="4đ">4 sao</option>
+              <option value="3đ">3 sao</option>
+              <option value="2đ">2 sao</option>
+              <option value="1đ">1 sao</option>
+            </select>
+
+            <select
+              value={errorFilter}
+              onChange={(e) => setErrorFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="Tất cả">Tất cả loại lỗi</option>
+              <option value="medical">Sai lệch chuyên môn</option>
+              <option value="hallucination">Ảo giác hệ thống</option>
+              <option value="tone">Thái độ không phù hợp</option>
+              <option value="logic">Lỗi logic/khác</option>
+            </select>
+            
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('Tất cả');
+                setRatingFilter('Tất cả');
+                setErrorFilter('Tất cả');
+                triggerToast('Đã xóa tất cả bộ lọc', 'info');
+              }}
+              className="btn btn-outline"
+              style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '3px', color: '#ff6b6b', fontSize: '0.82rem' }}
+            >
+              <Undo2 size={12} /> Hủy
+            </button>
+          </div>
+        </div>
 
         <div className="card" style={{ padding: '0px', overflow: 'hidden' }}>
           <table className="custom-table" style={{ margin: 0 }}>

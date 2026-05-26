@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Trash2, Edit3, ArrowLeft, Camera, Undo2, Calendar, Clock, AlertTriangle, Check, X, ShieldAlert } from 'lucide-react';
 
+const getStatusBadgeStyle = (status) => {
+  if (status === 'Đang làm việc') {
+    return { backgroundColor: '#d1fae5', color: '#065f46' };
+  }
+  if (status === 'Nghỉ phép') {
+    return { backgroundColor: '#fef3c7', color: '#d97706' };
+  }
+  return { backgroundColor: '#e2e8f0', color: '#475569' };
+};
+
 export default function DoctorCoordinator({
   currentView,
   onNavigate,
@@ -8,7 +18,8 @@ export default function DoctorCoordinator({
   onSelectId,
   doctors,
   setDoctors,
-  triggerToast
+  triggerToast,
+  showConfirm
 }) {
   const [activeTab, setActiveTab] = useState('doctors'); // 'doctors' or 'shifts'
 
@@ -25,6 +36,7 @@ export default function DoctorCoordinator({
   const [selectedShiftDay, setSelectedShiftDay] = useState(null);
   const [modalDoctor, setModalDoctor] = useState('Bs. Huy');
   const [modalTime, setModalTime] = useState('08:00 - 10:00');
+  const [editingShift, setEditingShift] = useState(null);
 
   // Reset page when filter changes
   useEffect(() => {
@@ -87,16 +99,20 @@ export default function DoctorCoordinator({
   };
 
   const handleDeleteDoctor = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa hồ sơ bác sĩ này?')) {
+    showConfirm('Bạn có chắc chắn muốn xóa hồ sơ bác sĩ này?', () => {
       setDoctors(doctors.filter(d => d.id !== id));
       triggerToast('Đã xóa hồ sơ bác sĩ thành công!', 'success');
       onNavigate('doctor-list');
-    }
+    });
   };
 
-  // --- CALENDAR GRID SHIFTS DATA (MAY 2026) ---
-  const daysInMonth = 31;
-  const startDayOffset = 5; // May 1st, 2026 is Friday
+  // --- CALENDAR GRID SHIFTS DATA (DYNAMIC BASED ON CURRENT MONTH) ---
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Sunday=0, Monday=1
+  const startDayOffset = (firstDay + 6) % 7; // Monday is index 0
   const calendarCells = [];
   for (let i = 0; i < startDayOffset; i++) {
     calendarCells.push(null);
@@ -105,24 +121,23 @@ export default function DoctorCoordinator({
     calendarCells.push(i);
   }
 
-  // Shifts records matching mockup Image 3
   const [shifts, setShifts] = useState([
-    { id: 1, date: '2026-05-09', title: 'Bs. B', time: '08:00 - 10:00', type: 'duty', color: '#c084fc', bg: '#f3e8ff' },
-    { id: 2, date: '2026-05-11', title: 'Bs. Huy', time: '08:00 - 10:00', type: 'duty', color: '#4ade80', bg: '#f0fdf4' },
-    { id: 3, date: '2026-05-17', title: 'Bs. C', time: '17:00 - 19:00', type: 'duty', color: '#facc15', bg: '#fef9c3' },
-    { id: 4, date: '2026-05-20', title: 'Nghỉ lễ / Bảo trì phòng khám', time: 'Cả ngày', type: 'maintenance', color: '#94a3b8', bg: '#f1f5f9' }
+    { id: 1, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-09`, title: 'Bs. B', time: '08:00 - 10:00', type: 'duty', color: '#c084fc', bg: '#f3e8ff' },
+    { id: 2, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-11`, title: 'Bs. Huy', time: '08:00 - 10:00', type: 'duty', color: '#4ade80', bg: '#f0fdf4' },
+    { id: 3, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-17`, title: 'Bs. C', time: '17:00 - 19:00', type: 'duty', color: '#facc15', bg: '#fef9c3' },
+    { id: 4, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-20`, title: 'Nghỉ lễ / Bảo trì phòng khám', time: 'Cả ngày', type: 'maintenance', color: '#94a3b8', bg: '#f1f5f9' }
   ]);
 
   // Clash Alerts matching bottom of Image 3
   const clashAlerts = [
-    { id: 1, doctor: 'Bs. Huy', date: '06/05/2026', count: 2 },
-    { id: 2, doctor: 'Bs. B', date: '07/05/2026', count: 3 },
-    { id: 3, doctor: 'Bs. C', date: '09/05/2026', count: 2 }
+    { id: 1, doctor: 'Bs. Huy', date: `06/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 2 },
+    { id: 2, doctor: 'Bs. B', date: `07/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 3 },
+    { id: 3, doctor: 'Bs. C', date: `09/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 2 }
   ];
 
   const getShiftsForDay = (day) => {
     if (!day) return [];
-    const dateStr = `2026-05-${day.toString().padStart(2, '0')}`;
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     return shifts.filter(s => s.date === dateStr);
   };
 
@@ -131,7 +146,25 @@ export default function DoctorCoordinator({
     setSelectedShiftDay(day);
     setModalDoctor('Bs. Huy');
     setModalTime('08:00 - 12:00');
+    setEditingShift(null);
     setShowShiftModal(true);
+  };
+
+  const handleEditShift = (shiftItem, day) => {
+    setSelectedShiftDay(day);
+    setModalDoctor(shiftItem.title);
+    setModalTime(shiftItem.time);
+    setEditingShift(shiftItem);
+    setShowShiftModal(true);
+  };
+
+  const handleDeleteShift = () => {
+    if (!editingShift) return;
+    showConfirm(`Bạn có chắc chắn muốn xóa ca trực của ${editingShift.title} ngày ${selectedShiftDay}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}?`, () => {
+      setShifts(shifts.filter(sh => sh.id !== editingShift.id));
+      triggerToast('Đã xóa ca trực thành công!', 'success');
+      setShowShiftModal(false);
+    });
   };
 
   const handleSaveShiftModal = () => {
@@ -148,17 +181,29 @@ export default function DoctorCoordinator({
       color = '#facc15';
       bg = '#fef9c3';
     }
-    const newShift = {
-      id: Date.now(),
-      date: `2026-05-${selectedShiftDay.toString().padStart(2, '0')}`,
-      title: modalDoctor,
-      time: modalTime,
-      type: 'duty',
-      color,
-      bg
-    };
-    setShifts([...shifts, newShift]);
-    triggerToast(`Đã xếp ca trực cho ${modalDoctor} ngày ${selectedShiftDay}/05/2026`, 'success');
+
+    if (editingShift) {
+      setShifts(shifts.map(sh => sh.id === editingShift.id ? {
+        ...sh,
+        title: modalDoctor,
+        time: modalTime,
+        color,
+        bg
+      } : sh));
+      triggerToast(`Đã cập nhật ca trực cho ${modalDoctor} thành công!`, 'success');
+    } else {
+      const newShift = {
+        id: Date.now(),
+        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${selectedShiftDay.toString().padStart(2, '0')}`,
+        title: modalDoctor,
+        time: modalTime,
+        type: 'duty',
+        color,
+        bg
+      };
+      setShifts([...shifts, newShift]);
+      triggerToast(`Đã xếp ca trực cho ${modalDoctor} ngày ${selectedShiftDay}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, 'success');
+    }
     setShowShiftModal(false);
   };
 
@@ -178,7 +223,7 @@ export default function DoctorCoordinator({
         {/* Navigation tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '20px' }}>
           <button
-            onClick={() => setActiveTab('doctors')}
+            onClick={() => onNavigate('doctor-list')}
             style={{
               padding: '10px 0',
               fontWeight: activeTab === 'doctors' ? '700' : '500',
@@ -192,7 +237,7 @@ export default function DoctorCoordinator({
             Danh sách bác sĩ
           </button>
           <button
-            onClick={() => setActiveTab('shifts')}
+            onClick={() => onNavigate('doctor-shifts')}
             style={{
               padding: '10px 0',
               fontWeight: activeTab === 'shifts' ? '700' : '500',
@@ -288,7 +333,10 @@ export default function DoctorCoordinator({
                       <td>{d.phone}</td>
                       <td>{d.email}</td>
                       <td>
-                        <span className={`badge ${d.status === 'Đang làm việc' ? 'badge-low' : d.status === 'Nghỉ phép' ? 'badge-medium' : 'badge-high'}`}>
+                        <span 
+                          className="badge"
+                          style={getStatusBadgeStyle(d.status)}
+                        >
                           {d.status}
                         </span>
                       </td>
@@ -341,7 +389,7 @@ export default function DoctorCoordinator({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '1rem' }}>Lịch trực bác sĩ</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontWeight: '600' }}>&lt; Tháng 5, 2026 &gt;</span>
+                <span style={{ fontWeight: '600' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
                 <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
                   <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Ngày</button>
                   <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Tuần</button>
@@ -377,10 +425,7 @@ export default function DoctorCoordinator({
                           key={s.id}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm(`Xóa ca trực của ${s.title} ngày ${day}/05/2026?`)) {
-                              setShifts(shifts.filter(sh => sh.id !== s.id));
-                              triggerToast('Đã xóa ca trực', 'info');
-                            }
+                            handleEditShift(s, day);
                           }}
                           style={{
                             padding: '2px 4px',
@@ -440,12 +485,14 @@ export default function DoctorCoordinator({
               </div>
             </div>
 
-          {/* Modal for adding shift */}
+          {/* Modal for adding/editing shift */}
           {showShiftModal && (
             <div className="shift-modal-backdrop" onClick={() => setShowShiftModal(false)}>
               <div className="shift-modal-card" onClick={(e) => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--primary)' }}>Xếp ca trực mới</h3>
+                  <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--primary)' }}>
+                    {editingShift ? 'Chi tiết / Chỉnh sửa ca trực' : 'Xếp ca trực mới'}
+                  </h3>
                   <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowShiftModal(false)}>
                     <X size={16} />
                   </button>
@@ -479,13 +526,20 @@ export default function DoctorCoordinator({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '12px' }}>
-                  <button className="btn btn-outline" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={() => setShowShiftModal(false)}>
-                    Hủy
-                  </button>
-                  <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={handleSaveShiftModal}>
-                    Lưu ca trực
-                  </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginTop: '12px', width: '100%' }}>
+                  {editingShift ? (
+                    <button className="btn btn-outline" style={{ padding: '6px 16px', fontSize: '0.85rem', color: '#ff6b6b', borderColor: '#ff6b6b' }} onClick={handleDeleteShift}>
+                      Xóa ca trực
+                    </button>
+                  ) : <div />}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-outline" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={() => setShowShiftModal(false)}>
+                      Hủy
+                    </button>
+                    <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={handleSaveShiftModal}>
+                      {editingShift ? 'Cập nhật' : 'Lưu ca trực'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -523,7 +577,7 @@ export default function DoctorCoordinator({
             <div><strong>Chuyên khoa phụ trách:</strong> {item.specialty}</div>
             <div><strong>Số điện thoại:</strong> {item.phone}</div>
             <div><strong>Email liên hệ:</strong> {item.email}</div>
-            <div><strong>Trạng thái hoạt động:</strong> <span className={`badge ${item.status === 'Đang làm việc' ? 'badge-low' : 'badge-medium'}`}>{item.status}</span></div>
+            <div><strong>Trạng thái hoạt động:</strong> <span className="badge" style={getStatusBadgeStyle(item.status)}>{item.status}</span></div>
             {item.biography && <div style={{ marginTop: '8px' }}><strong>Tiểu sử & Kinh nghiệm:</strong> <p style={{ color: 'var(--text-muted)', margin: '4px 0 0 0', lineHeight: 1.5 }}>{item.biography}</p></div>}
           </div>
         </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Download, TrendingUp, TrendingDown, RefreshCw, BarChart2, PieChart } from 'lucide-react';
 
 export default function ReportAnalytics({ triggerToast }) {
-  const [dateRange, setDateRange] = useState('01/05/2026 - 06/05/2026');
+  const [dateRange, setDateRange] = useState('01-05-2026 - 06-05-2026');
 
   const handleExport = () => {
     triggerToast('Đang tạo và tải xuống tệp báo cáo thống kê định dạng PDF...', 'success');

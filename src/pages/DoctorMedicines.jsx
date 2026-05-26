@@ -46,7 +46,7 @@ export default function DoctorMedicines({
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: '#e2fbe8', color: '#10b981', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: '#e2fbe8', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Pill size={24} style={{ margin: '0 auto' }} />
             </div>
             <div>
@@ -55,41 +55,45 @@ export default function DoctorMedicines({
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            {/* Left Column info boxes */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Row 1: General Description & Dosage */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Mô tả tổng quan</span>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-dark)', lineHeight: 1.4 }}>{activeMed.desc}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{activeMed.desc}</p>
               </div>
-
               <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chỉ định điều trị</span>
-                <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-dark)', borderLeft: '3px solid #10b981', marginTop: '4px', lineHeight: 1.4 }}>
-                  {activeMed.indication}
-                </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chống chỉ định</span>
-                <div style={{ padding: '10px', backgroundColor: '#fff5f5', borderRadius: '6px', fontSize: '0.8rem', color: '#dc2626', borderLeft: '3px solid #ef4444', marginTop: '4px', lineHeight: 1.4 }}>
-                  {activeMed.contraindication}
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Liều lượng & Cách dùng</span>
+                <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid var(--primary-light)', marginTop: '4px', lineHeight: 1.45 }}>
+                  {activeMed.dosage}
                 </div>
               </div>
             </div>
 
-            {/* Right Column info boxes */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Row 2: Indication & Side Effects */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Liều lượng & Cách dùng</span>
-                <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.8rem', color: 'var(--text-dark)', borderLeft: '3px solid var(--primary-light)', marginTop: '4px', lineHeight: 1.4 }}>
-                  {activeMed.dosage}
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chỉ định điều trị</span>
+                <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid #10b981', marginTop: '4px', lineHeight: 1.45 }}>
+                  {activeMed.indication}
                 </div>
               </div>
-
               <div>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tác dụng phụ có thể gặp</span>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-dark)', lineHeight: 1.4 }}>{activeMed.sideEffects || 'Chưa ghi nhận tác dụng phụ đáng kể.'}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{activeMed.sideEffects || 'Chưa ghi nhận tác dụng phụ đáng kể.'}</p>
+              </div>
+            </div>
+
+            {/* Row 3: Contraindications */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chống chỉ định</span>
+                <div style={{ padding: '10px', backgroundColor: '#fff5f5', borderRadius: '6px', fontSize: '0.82rem', color: '#dc2626', borderLeft: '3px solid #ef4444', marginTop: '4px', lineHeight: 1.45 }}>
+                  {activeMed.contraindication}
+                </div>
+              </div>
+              <div>
+                {/* Empty cell to maintain symmetry */}
               </div>
             </div>
           </div>

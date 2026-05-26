@@ -11,7 +11,10 @@ export default function ClinicManagement({
   patients,
   setPatients,
   doctors,
-  triggerToast
+  feedbacks,
+  setFeedbacks,
+  triggerToast,
+  showConfirm
 }) {
   // --- SUB TAB STATES for clinic info ---
   const [activeTab, setActiveTab] = useState('info'); // 'info' or 'feedback'
@@ -62,12 +65,6 @@ export default function ClinicManagement({
   const [originalClinicInfo, setOriginalClinicInfo] = useState(JSON.parse(JSON.stringify(clinicInfo)));
   const [isEditingClinic, setIsEditingClinic] = useState(false);
 
-  // Clinic Feedbacks lists
-  const [feedbacks, setFeedbacks] = useState([
-    { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24/05/2026' },
-    { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23/05/2026' },
-    { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22/05/2026' }
-  ]);
   const [feedbackReplyText, setFeedbackReplyText] = useState({});
 
   // Active Popup Modal state
@@ -182,16 +179,20 @@ export default function ClinicManagement({
   };
 
   const handleDeletePatient = (id) => {
-    if (window.confirm('Bạn có chắc muốn xóa hồ sơ bệnh nhân này?')) {
+    showConfirm('Bạn có chắc muốn xóa hồ sơ bệnh nhân này?', () => {
       setPatients(patients.filter(p => p.id !== id));
       triggerToast('Đã xóa hồ sơ bệnh nhân', 'success');
       onNavigate('patient-list');
-    }
+    });
   };
 
-  // --- APPOINTMENT CALENDAR GRID SETUP (MAY 2026) ---
-  const daysInMonth = 31;
-  const startDayOffset = 5; // May 1st, 2026 is Friday
+  // --- APPOINTMENT CALENDAR GRID SETUP (DYNAMIC BASED ON CURRENT MONTH) ---
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Sunday=0, Monday=1
+  const startDayOffset = (firstDay + 6) % 7; // Monday is index 0
   const calendarCells = [];
   for (let i = 0; i < startDayOffset; i++) {
     calendarCells.push(null);
@@ -202,7 +203,7 @@ export default function ClinicManagement({
 
   const getAppointmentsForDay = (day) => {
     if (!day) return [];
-    const dateStr = `2026-05-${day.toString().padStart(2, '0')}`;
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     return appointments.filter(a => {
       if (a.date !== dateStr) return false;
       // Filter by Specialty
@@ -452,7 +453,7 @@ export default function ClinicManagement({
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontWeight: '600' }}>&lt; Tháng 5, 2026 &gt;</span>
+              <span style={{ fontWeight: '600' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
               <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
                 <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Ngày</button>
                 <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Tuần</button>
@@ -478,7 +479,7 @@ export default function ClinicManagement({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(60px, 1fr)', flexGrow: 1, backgroundColor: '#f1f5f9', gap: '1px' }}>
               {calendarCells.map((day, idx) => {
                 const dayApts = getAppointmentsForDay(day);
-                const isToday = day === 6; // Highlight today May 6, 2026
+                const isToday = day === today.getDate() && currentYear === today.getFullYear() && currentMonth === today.getMonth();
                 return (
                   <div key={idx} style={{ backgroundColor: '#fff', padding: '4px', position: 'relative', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {day && (
@@ -906,22 +907,44 @@ export default function ClinicManagement({
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: '20px', marginTop: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-          <div className="text-center">
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#fbcfe8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#db2777', margin: '0 auto 8px auto' }}>
-              <User size={36} />
+        <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr 1fr', gap: '20px', marginTop: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', alignItems: 'center' }}>
+          {/* Avatar placeholder */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '1px solid var(--border-color)', paddingRight: '16px', textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fbcfe8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#db2777', marginBottom: '8px' }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-            <h4 style={{ margin: '4px 0 0 0' }}>{item.name}</h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mã: {item.id}</span>
+            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)', display: 'block', wordBreak: 'break-word', lineHeight: '1.2' }}>{item.name}</span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>Mã: {item.id}</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '0.85rem' }}>
-            <div><strong>Ngày sinh:</strong> {item.dob}</div>
-            <div><strong>Giới tính:</strong> {item.gender}</div>
-            <div><strong>Số điện thoại:</strong> {item.phone}</div>
-            <div><strong>Email:</strong> {item.email}</div>
-            <div><strong>Bảo hiểm y tế:</strong> {item.insurance || 'Không có'}</div>
-            <div><strong>Địa chỉ:</strong> {item.address}</div>
+          {/* Col 1 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Ngày sinh:</strong> <span style={{ color: 'var(--text-muted)' }}>{item.dob}</span>
+            </div>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Email:</strong> <span style={{ color: 'var(--text-muted)', wordBreak: 'break-all' }}>{item.email || 'Chưa cập nhật'}</span>
+            </div>
+          </div>
+
+          {/* Col 2 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Giới tính:</strong> <span style={{ color: 'var(--text-muted)' }}>{item.gender}</span>
+            </div>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Bảo hiểm y tế:</strong> <span style={{ color: 'var(--text-muted)' }}>{item.insurance || 'Không có BHYT'}</span>
+            </div>
+          </div>
+
+          {/* Col 3 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Số điện thoại:</strong> <span style={{ color: 'var(--text-muted)' }}>{item.phone}</span>
+            </div>
+            <div style={{ fontSize: '0.88rem' }}>
+              <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Địa chỉ:</strong> <span style={{ color: 'var(--text-muted)' }}>{item.address || 'Chưa cập nhật'}</span>
+            </div>
           </div>
         </div>
 

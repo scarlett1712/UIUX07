@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
 import { Users, DollarSign, Star, Calendar, MessageSquare, ChevronLeft, ChevronRight, AlertTriangle, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
 
-export default function ManagerDashboard({ onNavigate, onSelectId, triggerToast }) {
-  // Calendar state
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 6)); // May 6, 2026
+export default function ManagerDashboard({ 
+  onNavigate, 
+  onSelectId, 
+  appointments = [], 
+  patients = [], 
+  feedbacks = [], 
+  triggerToast 
+}) {
+  // Calendar state dynamic
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  const [selectedDate, setSelectedDate] = useState(today.getDate());
 
-  const daysInMonth = 31;
-  const startDayOffset = 5; // May 1st, 2026 is Friday (5 is index of Friday, assuming Sun=0, Mon=1... Fri=5)
+  const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const confirmedAppts = appointments.filter(a => a.date.startsWith(yearMonthStr) && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
+  const appointmentDays = confirmedAppts.map(a => {
+    const parts = a.date.split('-');
+    return parseInt(parts[2], 10);
+  });
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startDayOffset = new Date(currentYear, currentMonth, 1).getDay();
 
   // Generate calendar days
   const calendarDays = [];
@@ -33,7 +50,8 @@ export default function ManagerDashboard({ onNavigate, onSelectId, triggerToast 
 
   const handleSelectDay = (day) => {
     if (!day) return;
-    triggerToast(`Hiển thị lịch hẹn ngày ${day}/05/2026`, 'info');
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    triggerToast(`Hiển thị lịch hẹn ngày ${day}/${monthStr}/${currentYear}`, 'info');
     onNavigate('appointment-calendar');
   };
 
@@ -67,71 +85,104 @@ export default function ManagerDashboard({ onNavigate, onSelectId, triggerToast 
 
         {/* 4 Stats Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-          {/* Card 1: Bệnh nhân hôm nay */}
-          <div className="card stat-card" style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}>
+          {/* Card 1: Tổng bệnh nhân */}
+          <div 
+            className="card stat-card" 
+            onClick={() => {
+              onNavigate('patient-list');
+              triggerToast('Chuyển tới Danh sách bệnh nhân', 'info');
+            }}
+            style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Bệnh nhân hôm nay</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Tổng số bệnh nhân</span>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
                 <Users size={16} />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>36</span>
+              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>{patients.length}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981' }}>
               <ArrowUpRight size={14} />
-              <span>Tăng 2.5% so với hôm qua</span>
+              <span>Xem chi tiết danh sách</span>
             </div>
           </div>
 
-          {/* Card 2: Doanh thu hôm nay */}
-          <div className="card stat-card" style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}>
+          {/* Card 2: Doanh thu hệ thống */}
+          <div 
+            className="card stat-card" 
+            onClick={() => {
+              onNavigate('reports-analytics');
+              triggerToast('Chuyển tới Báo cáo doanh thu', 'info');
+            }}
+            style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Doanh thu hôm nay</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Doanh thu hệ thống</span>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#15803d' }}>
                 <DollarSign size={16} />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>17.600.000 VNĐ</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>
+                {(appointments
+                  .filter(apt => apt.status === 'Đã xác nhận' && apt.fee)
+                  .reduce((sum, apt) => sum + (parseInt(apt.fee.replace(/\./g, '')) || 0), 0)
+                ).toLocaleString('vi-VN')} VNĐ
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981' }}>
               <ArrowUpRight size={14} />
-              <span>Tăng 5.6% so với hôm qua</span>
+              <span>Từ các lịch đã xác nhận</span>
             </div>
           </div>
 
-          {/* Card 3: Bài đánh giá hôm nay */}
-          <div className="card stat-card" style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}>
+          {/* Card 3: Phản hồi & Đánh giá */}
+          <div 
+            className="card stat-card" 
+            onClick={() => {
+              onNavigate('clinic-feedback');
+              triggerToast('Chuyển tới Đánh giá phòng khám', 'info');
+            }}
+            style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Bài đánh giá hôm nay</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Tổng số đánh giá</span>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
                 <Star size={16} />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>5</span>
+              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>{feedbacks.length}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#ef4444' }}>
-              <ArrowDownRight size={14} />
-              <span>Giảm 6% so với hôm qua</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981' }}>
+              <ArrowUpRight size={14} />
+              <span>Xem phản hồi của người bệnh</span>
             </div>
           </div>
 
-          {/* Card 4: Lịch hẹn hôm nay */}
-          <div className="card stat-card" style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}>
+          {/* Card 4: Tổng số lịch hẹn */}
+          <div 
+            className="card stat-card" 
+            onClick={() => {
+              onNavigate('appointment-calendar');
+              triggerToast('Chuyển tới Lịch hẹn khám', 'info');
+            }}
+            style={{ height: '110px', padding: '12px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', margin: 0 }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Lịch hẹn hôm nay</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Tổng số lịch hẹn</span>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
                 <Calendar size={16} />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>27</span>
+              <span style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)', lineHeight: 1 }}>{appointments.length}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#10b981' }}>
               <ArrowUpRight size={14} />
-              <span>Tăng 3% so với hôm qua</span>
+              <span>Xem chi tiết lịch hẹn khám</span>
             </div>
           </div>
         </div>
@@ -198,12 +249,14 @@ export default function ManagerDashboard({ onNavigate, onSelectId, triggerToast 
         <div className="card" style={{ padding: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--primary)' }}>Lịch</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>06/05/2026</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {selectedDate}/{String(currentMonth + 1).padStart(2, '0')}/{currentYear}
+            </span>
           </div>
 
           {/* Month Navigator Mockup */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.8rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Tháng 5, 2026</span>
+            <span style={{ color: 'var(--text-muted)' }}>Tháng {currentMonth + 1}, {currentYear}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronLeft size={14} /></button>
               <button className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronRight size={14} /></button>
@@ -221,29 +274,40 @@ export default function ManagerDashboard({ onNavigate, onSelectId, triggerToast 
             <div>SAT</div>
           </div>
 
-          {/* Calendar Grid Body */}
+           {/* Calendar Grid Body */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', fontSize: '0.8rem' }}>
             {calendarDays.map((day, idx) => {
-              const isSelected = day === 25; // Highlight May 25th as current day active in mockup or active selection
+              const hasAppts = day ? appointmentDays.includes(day) : false;
+              const isSelected = selectedDate === day;
               return (
                 <div
                   key={idx}
-                  onClick={() => handleSelectDay(day)}
+                  onClick={() => {
+                    if (day) {
+                      setSelectedDate(day);
+                      handleSelectDay(day);
+                    }
+                  }}
                   style={{
-                    height: '24px',
+                    height: '28px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: '4px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
                     cursor: day ? 'pointer' : 'default',
-                    color: day ? (isSelected ? 'var(--white)' : 'var(--text-dark)') : 'transparent',
+                    position: 'relative',
                     backgroundColor: isSelected ? 'var(--primary)' : 'transparent',
-                    fontWeight: isSelected ? '700' : '400',
-                    border: day && !isSelected && (day === 6 || day === 3 || day === 10) ? '1px dashed var(--primary-light)' : 'none'
+                    color: day ? (isSelected ? '#fff' : 'var(--text-dark)') : 'transparent',
+                    fontWeight: isSelected || hasAppts ? '700' : '500',
+                    border: hasAppts && !isSelected ? '1.5px solid var(--primary)' : 'none'
                   }}
                   className={day && !isSelected ? 'hover-day' : ''}
                 >
                   {day || ''}
+                  {hasAppts && !isSelected && (
+                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--primary)', position: 'absolute', bottom: '2px' }} />
+                  )}
                 </div>
               );
             })}

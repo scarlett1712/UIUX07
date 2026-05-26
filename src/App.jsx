@@ -7,6 +7,11 @@ import MedicalData from './pages/MedicalData';
 import ChatbotScenarios from './pages/ChatbotScenarios';
 import AIEvaluation, { INITIAL_CONVERSATIONS } from './pages/AIEvaluation';
 import AccountProfile from './pages/AccountProfile';
+import { 
+  SC001_NODES, SC001_CONNECTIONS, 
+  SC002_NODES, SC002_CONNECTIONS, 
+  SC003_NODES, SC003_CONNECTIONS 
+} from './data/scenarioMockData';
 
 // Import Manager pages
 import ManagerDashboard from './pages/ManagerDashboard';
@@ -113,6 +118,18 @@ const INITIAL_DISEASES = [
       { stt: 1, name: 'Sốt cao', desc: 'Sốt cao liên tục 39-40 độ C, khó hạ sốt bằng thuốc', duration: 'Ngày 1-5', frequency: 'Thường xuyên' },
       { stt: 2, name: 'Phát ban', desc: 'Xuất hiện các chấm xuất huyết dưới da, chảy máu cam', duration: 'Ngày 3-7', frequency: 'Trung bình' }
     ]
+  },
+  {
+    id: 'D008',
+    name: 'Sởi',
+    desc: 'Bệnh truyền nhiễm cấp tính do virus sởi gây ra, phổ biến ở trẻ em.',
+    danger: 'Trung bình',
+    department: 'Truyền nhiễm',
+    symptoms: [
+      { stt: 1, name: 'Sốt', desc: 'Sốt nhẹ đến trung bình, sau đó sốt cao', duration: 'Ngày 1-4', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Phát ban', desc: 'Ban đỏ dạng sẩn từ sau tai lan ra mặt và toàn thân', duration: 'Ngày 4-7', frequency: 'Thường xuyên' },
+      { stt: 3, name: 'Đỏ mắt', desc: 'Viêm kết mạc đỏ mắt, sợ ánh sáng, chảy nước mắt', duration: 'Ngày 1-5', frequency: 'Trung bình' }
+    ]
   }
 ];
 
@@ -170,34 +187,241 @@ const INITIAL_MEDICINES = [
   }
 ];
 
+const getRelativeDate = (offsetDays) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 // Initial Mock Appointments
 const INITIAL_APPOINTMENTS = [
-  { id: 'APT001', patientName: 'Đỗ Minh Tú', patientId: 'P001', doctorName: 'Bs. Huy', date: '2026-05-03', time: '11:30 - 12:30', specialty: 'Ngoại tổng quát', status: 'Đã xác nhận', symptoms: 'Đau bụng âm ỉ vùng hố chậu phải' },
-  { id: 'APT002', patientName: 'Nguyễn Minh Anh', patientId: 'P002', doctorName: 'BS. Nguyễn Văn B', date: '2026-05-06', time: '08:00 - 09:00', specialty: 'Nội tổng quát', status: 'Đã xác nhận', symptoms: 'Sốt nhẹ, ho khan kéo dài' },
-  { id: 'APT003', patientName: 'Văn Thị Trinh', patientId: 'P003', doctorName: 'Bs. C', date: '2026-05-10', time: '14:00 - 15:00', specialty: 'Tai mũi họng', status: 'Đang xử lý', symptoms: 'Nghẹt mũi, ù tai trái' },
+  // Today's appointments (May 26, 2026) for Bs. Huy
   {
-    id: 'APT004',
+    id: 'APT001',
+    patientName: 'Đỗ Minh Tú',
+    patientId: 'P001',
+    patient: 'Đỗ Minh Tú',
+    name: 'Đỗ Minh Tú',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(0), // Today
+    time: '11:30 - 12:30',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau bụng âm ỉ vùng hố chậu phải',
+    symptom: 'Đau bụng âm ỉ vùng hố chậu phải',
+    fullSymptom: 'Đau bụng âm ỉ vùng hố chậu phải kéo dài',
+    gender: 'Nam',
+    dob: '1995-04-12',
+    phone: '0987654321'
+  },
+  {
+    id: 'APT002',
+    patientName: 'Nguyễn Minh Anh',
+    patientId: 'P002',
+    patient: 'Nguyễn Minh Anh',
+    name: 'Nguyễn Minh Anh',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(0), // Today
+    time: '10:00 - 11:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Sốt nhẹ, đau họng',
+    symptom: 'Sốt nhẹ, đau họng',
+    fullSymptom: 'Sốt nhẹ, đau họng nhiều ngày',
+    gender: 'Nữ',
+    dob: '2000-08-25',
+    phone: '0912345678'
+  },
+  // Tomorrow's appointments (May 27, 2026) for Bs. Huy
+  {
+    id: 'APT003',
+    patientName: 'Văn Thị Trinh',
+    patientId: 'P003',
+    patient: 'Văn Thị Trinh',
+    name: 'Văn Thị Trinh',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(1), // Tomorrow
+    time: '14:00 - 15:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Mỏi mắt, nhức đầu',
+    symptom: 'Mỏi mắt, nhức đầu',
+    fullSymptom: 'Mỏi mắt, nhức đầu kéo dài',
+    gender: 'Nữ',
+    dob: '1988-11-05',
+    phone: '0905554433'
+  },
+  // Other days (May 7, May 9, May 11, May 14) for Bs. Huy to sync with existing mock schedule
+  {
+    id: 'APT005',
+    patientName: 'Ngô Gia Bảo',
+    patientId: 'P005',
+    patient: 'Ngô Gia Bảo',
+    name: 'Ngô Gia Bảo',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(-19), // May 7
+    time: '8:00 - 9:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau đầu, chóng mặt nhiều ngày',
+    symptom: 'Đau đầu, chóng mặt nhiều ngày',
+    fullSymptom: 'Đau đầu, chóng mặt nhiều ngày, buồn nôn nhẹ',
+    gender: 'Nam',
+    dob: '2015-06-18',
+    phone: '0977889900'
+  },
+  {
+    id: 'APT006',
+    patientName: 'Lê Hải Minh',
+    patientId: 'P006',
+    patient: 'Lê Hải Minh',
+    name: 'Lê Hải Minh',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(-17), // May 9
+    time: '9:00 - 10:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Mỏi mắt, khô mắt',
+    symptom: 'Mỏi mắt, khô mắt',
+    fullSymptom: 'Mỏi mắt, nhức mỏi cơ và khô giác mạc nhẹ',
+    gender: 'Nam',
+    dob: '1992-03-14',
+    phone: '0901223344'
+  },
+  {
+    id: 'APT007',
+    patientName: 'Trần Phương Huế',
+    patientId: 'P007',
+    patient: 'Trần Phương Huế',
+    name: 'Trần Phương Huế',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(-12), // May 14
+    time: '15:00 - 16:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau bụng thượng vị',
+    symptom: 'Đau bụng thượng vị',
+    fullSymptom: 'Đau tức vùng bụng thượng vị âm ỉ kéo dài',
+    gender: 'Nữ',
+    dob: '1985-09-02',
+    phone: '0933456789'
+  },
+  // Pending appointments (Chờ xác nhận / Đang xử lý) to show in Doctor's pending list and dashboard count
+  {
+    id: 'APT008',
+    patientName: 'Vũ Anh Long',
+    patientId: 'P008',
+    patient: 'Vũ Anh Long',
+    name: 'Vũ Anh Long',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(2), // May 28
+    time: '8:00 - 9:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Chờ xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau tai, chảy dịch',
+    symptom: 'Đau tai, chảy dịch',
+    fullSymptom: 'Đau tai phải từ hôm qua, có dịch mủ vàng chảy ra kèm sốt nhẹ',
+    gender: 'Nam',
+    dob: '1990-10-10',
+    phone: '0981112222'
+  },
+  {
+    id: 'APT009',
     patientName: 'Lương Hương Giang',
     patientId: 'P004',
-    doctorName: 'BS. Nguyễn Văn B',
-    specialty: 'Khoa Nội tổng quát',
-    date: '2026-06-20',
-    time: '09:00 - 09:30',
-    location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội',
+    patient: 'Lương Hương Giang',
+    name: 'Lương Hương Giang',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(3), // May 29
+    time: '9:00 - 10:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Chờ xác nhận',
     fee: '350.000',
+    symptoms: 'Sốt cao, ho khan',
+    symptom: 'Sốt cao, ho khan',
+    fullSymptom: 'Sốt nóng lạnh 39 độ C kèm ho khan tức ngực',
+    gender: 'Nữ',
+    dob: '2000-05-05',
+    phone: '0123456789'
+  },
+  {
+    id: 'APT010',
+    patientName: 'Phan Quốc Bảo',
+    patientId: 'P010',
+    patient: 'Phan Quốc Bảo',
+    name: 'Phan Quốc Bảo',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(4), // May 30
+    time: '14:00 - 15:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Chờ xác nhận',
+    fee: '350.000',
+    symptoms: 'Ù tai lâu ngày',
+    symptom: 'Ù tai lâu ngày',
+    fullSymptom: 'Ù tai trái kéo dài hơn 1 tuần, nghe kém',
+    gender: 'Nam',
+    dob: '1993-12-12',
+    phone: '0979888777'
+  },
+  // Other doctors' appointments
+  {
+    id: 'APT011',
+    patientName: 'Lê Hải Minh',
+    patientId: 'P006',
+    patient: 'Lê Hải Minh',
+    name: 'Lê Hải Minh',
+    doctorName: 'BS. Nguyễn Văn B',
+    date: getRelativeDate(0),
+    time: '9:00 - 10:00',
+    specialty: 'Khoa Nội tổng quát',
     status: 'Đã xác nhận',
-    symptoms: 'Sốt cao đột ngột, đau đầu mệt mỏi, ho hắt hơi nhiều'
+    fee: '300.000',
+    symptoms: 'Mỏi mắt nhức vai',
+    symptom: 'Mỏi mắt nhức vai',
+    fullSymptom: 'Mỏi mắt nhức vai gáy',
+    gender: 'Nam',
+    dob: '1992-03-14',
+    phone: '0901223344'
+  },
+  {
+    id: 'APT012',
+    patientName: 'Văn Thị Trinh',
+    patientId: 'P003',
+    patient: 'Văn Thị Trinh',
+    name: 'Văn Thị Trinh',
+    doctorName: 'Bs. C',
+    date: getRelativeDate(0),
+    time: '14:00 - 15:00',
+    specialty: 'Tai mũi họng',
+    status: 'Đang xử lý',
+    fee: '400.000',
+    symptoms: 'Nghẹt mũi, ù tai trái',
+    symptom: 'Nghẹt mũi, ù tai trái',
+    fullSymptom: 'Nghẹt mũi, ù tai trái nhiều ngày',
+    gender: 'Nữ',
+    dob: '1988-11-05',
+    phone: '0905554433'
   }
 ];
 
 // Initial Mock Patients Database
 const INITIAL_PATIENTS = [
   { id: 'P001', name: 'Đỗ Minh Tú', dob: '1995-04-12', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', medicalHistory: [
-    { date: '12/04/2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid' }
+    { date: '12-04-2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid' }
   ] },
   { id: 'P002', name: 'Nguyễn Minh Anh', dob: '2000-08-25', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [] },
   { id: 'P003', name: 'Văn Thị Trinh', dob: '1988-11-05', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
-    { date: '01/05/2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi, kháng histamin 7 ngày' }
+    { date: '01-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi, kháng histamin 7 ngày' }
   ] },
   { id: 'P004', name: 'Lương Hương Giang', dob: '2000-05-05', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', medicalHistory: [] }
 ];
@@ -241,7 +465,7 @@ const INITIAL_PATIENT_CONVS = [
   {
     id: 'PCONV002',
     topic: 'Khó tiêu và đau bụng thượng vị',
-    date: '18/05/2026',
+    date: '18-05-2026',
     status: 'Hoàn thành',
     messages: [
       { sender: 'bot', text: 'Chào bạn. Tôi có thể giúp gì cho sức khỏe của bạn?', time: '09:00 am' },
@@ -254,13 +478,113 @@ const INITIAL_PATIENT_CONVS = [
   }
 ];
 
+const INITIAL_DOCTOR_THREADS = [
+  {
+    id: 'MSG101',
+    name: 'Nguyễn Minh Anh',
+    lastMsg: 'Người khá mệt, ăn uống cũng kém.',
+    date: '05-05-2026',
+    time: '08:15',
+    unread: true,
+    messages: [
+      { sender: 'patient', text: 'Mình bị sốt từ hôm qua, người mệt với đau đầu khá rõ. Hôm nay vẫn chưa đỡ, còn đau họng với hơi ho.', time: '21:57' },
+      { sender: 'bot', text: 'Chào bạn, tôi là AI Chatbot. Bạn đã đo nhiệt độ chưa, khoảng bao nhiêu độ? Ngoài ra có bị ớn lạnh hay đau nhức người không?', time: '21:58' },
+      { sender: 'patient', text: 'Sốt khoảng gần 39 độ, có ớn lạnh với đau người. Người khá mệt, ăn uống cũng kém.', time: '22:15' },
+      { sender: 'bot', text: 'Triệu chứng của bạn có thể liên quan đến cúm hoặc nhiễm virus đường hô hấp. Do sốt cao và kéo dài, bạn nên đi khám để được kiểm tra và điều trị phù hợp.', time: '22:16' }
+    ]
+  },
+  {
+    id: 'MSG102',
+    name: 'Trần Phương Huế',
+    lastMsg: 'Đau bụng thượng vị, buồn nôn nhiều...',
+    date: '04-05-2026',
+    time: '10:05',
+    unread: false,
+    messages: [
+      { sender: 'patient', text: 'Chào bác sĩ, em bị đau bụng vùng trên rốn âm ỉ suốt từ tối qua đến giờ.', time: '09:50' },
+      { sender: 'doctor', text: 'Đau có lan ra sau lưng không bạn? Bạn có cảm thấy buồn nôn hay ợ chua gì không?', time: '09:55' },
+      { sender: 'patient', text: 'Đau không lan ạ, nhưng bụng ấm ách đầy hơi, thỉnh thoảng buồn nôn nhiều.', time: '10:05' }
+    ]
+  },
+  {
+    id: 'MSG103',
+    name: 'Lê Hải Minh',
+    lastMsg: 'Chào bác sĩ, mắt bị sưng đỏ...',
+    date: '02-05-2026',
+    time: '18:01',
+    unread: false,
+    messages: [
+      { sender: 'patient', text: 'Chào bác sĩ, mắt trái em bị đỏ và sưng húp lên sau khi ngủ dậy.', time: '18:01' }
+    ]
+  },
+  {
+    id: 'MSG104',
+    name: 'Văn Mai Hương',
+    lastMsg: 'Nghẹt mũi, khó thở rát cổ họng...',
+    date: '01-05-2026',
+    time: '22:21',
+    unread: false,
+    messages: [
+      { sender: 'patient', text: 'Chào bác sĩ, em bị ngạt mũi rát họng lâu ngày rồi, uống thuốc cảm thông thường không đỡ.', time: '22:21' }
+    ]
+  },
+  {
+    id: 'MSG105',
+    name: 'Đỗ Minh Tú',
+    lastMsg: 'Đau khớp gối khi vận động...',
+    date: '01-05-2026',
+    time: '08:23',
+    unread: false,
+    messages: [
+      { sender: 'patient', text: 'Bác sĩ ơi, khớp gối của em cứ đi lại nhiều là bị đau nhức nhối.', time: '08:23' }
+    ]
+  },
+  {
+    id: 'MSG106',
+    name: 'Đức Minh Tuan',
+    lastMsg: 'Hay bị chóng mặt hoa mắt lúc sáng...',
+    date: '25-04-2026',
+    time: '09:15',
+    unread: false,
+    messages: [
+      { sender: 'patient', text: 'Gần đây buổi sáng thức dậy em hay bị hoa mắt chóng mặt lắm.', time: '09:15' }
+    ]
+  }
+];
+
 function App() {
   const [role, setRole] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
+  const [previousView, setPreviousView] = useState(null);
+  const [doctorThreads, setDoctorThreads] = useState(INITIAL_DOCTOR_THREADS);
 
   // Popup Toast Notification State
   const [toasts, setToasts] = useState([]);
+
+  // Custom Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: 'Xác nhận',
+    message: '',
+    onConfirm: null,
+    onCancel: null
+  });
+
+  const showConfirm = (message, onConfirm, title = 'Xác nhận') => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   // Database states to make forms functional
   const [diseases, setDiseases] = useState(INITIAL_DISEASES);
@@ -269,9 +593,40 @@ function App() {
 
   // Scenarios state at App root level for CRUD functional state
   const [scenarios, setScenarios] = useState([
-    { id: 'SC001', name: 'Tư vấn cảm cúm & đặt lịch khám', status: 'Hoạt động', lastUpdated: '05/05/2026 - 15:40', nodeCount: 11 },
-    { id: 'SC002', name: 'Tra cứu thông tin thuốc & liều lượng', status: 'Nháp', lastUpdated: '05/05/2026 - 08:20', nodeCount: 6 },
-    { id: 'SC003', name: 'Đăng ký khám bệnh ban đầu', status: 'Hoạt động', lastUpdated: '04/05/2026 - 16:17', nodeCount: 8 }
+    { 
+      id: 'SC001', 
+      name: 'Tư vấn cảm cúm & đặt lịch khám', 
+      status: 'Hoạt động', 
+      lastUpdated: '05-05-2026 - 15:40', 
+      nodeCount: 12,
+      nodes: SC001_NODES,
+      connections: SC001_CONNECTIONS
+    },
+    { 
+      id: 'SC002', 
+      name: 'Tra cứu thông tin thuốc & liều lượng', 
+      status: 'Nháp', 
+      lastUpdated: '05-05-2026 - 08:20', 
+      nodeCount: 6,
+      nodes: SC002_NODES,
+      connections: SC002_CONNECTIONS
+    },
+    { 
+      id: 'SC003', 
+      name: 'Đăng ký khám bệnh ban đầu', 
+      status: 'Hoạt động', 
+      lastUpdated: '04-05-2026 - 16:17', 
+      nodeCount: 8,
+      nodes: SC003_NODES,
+      connections: SC003_CONNECTIONS
+    }
+  ]);
+
+  // Hoisted feedbacks state to synchronize dashboards and reviews
+  const [feedbacks, setFeedbacks] = useState([
+    { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24-05-2026' },
+    { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23-05-2026' },
+    { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22-05-2026' }
   ]);
 
   // Manager Specific State databases
@@ -325,12 +680,16 @@ function App() {
     }
   };
 
-  const handleNavigate = (view) => {
+  const handleNavigate = (view, id = null) => {
     let actualView = view;
     let keepActiveConv = false;
     if (view === 'patient-consultation-keep') {
       actualView = 'patient-consultation';
       keepActiveConv = true;
+    }
+    
+    if (actualView !== currentView) {
+      setPreviousView(currentView);
     }
     
     setCurrentView(actualView);
@@ -357,30 +716,37 @@ function App() {
       setActivePatientConvId(newId);
     }
 
-    // Reset selectedId only when returning to dashboards, main lists, or profiles
-    if (
-      actualView.endsWith('-list') || 
-      actualView === 'dashboard' || 
-      actualView === 'manager-dashboard' ||
-      actualView === 'doctor-dashboard' ||
-      actualView === 'patient-dashboard' ||
-      actualView === 'patient-consultation' ||
-      actualView === 'patient-schedule' ||
-      actualView === 'patient-medical-data' ||
-      actualView === 'profile' || 
-      actualView === 'chatbot-scenarios' || 
-      actualView === 'ai-evaluation' ||
-      actualView === 'clinic-info' ||
-      actualView === 'clinic-feedback' ||
-      actualView === 'appointment-calendar' ||
-      actualView === 'doctor-shifts' ||
-      actualView === 'reports-analytics' ||
-      actualView === 'doctor-schedule' ||
-      actualView === 'doctor-appointments' ||
-      actualView === 'doctor-messages' ||
-      actualView === 'doctor-medicines'
-    ) {
-      setSelectedId(null);
+    if (id) {
+      setSelectedId(id);
+      if (actualView === 'patient-consultation' && id.startsWith('PCONV')) {
+        setActivePatientConvId(id);
+      }
+    } else {
+      // Reset selectedId only when returning to dashboards, main lists, or profiles
+      if (
+        actualView.endsWith('-list') || 
+        actualView === 'dashboard' || 
+        actualView === 'manager-dashboard' ||
+        actualView === 'doctor-dashboard' ||
+        actualView === 'patient-dashboard' ||
+        actualView === 'patient-consultation' ||
+        actualView === 'patient-schedule' ||
+        actualView === 'patient-medical-data' ||
+        actualView === 'profile' || 
+        actualView === 'chatbot-scenarios' || 
+        actualView === 'ai-evaluation' ||
+        actualView === 'clinic-info' ||
+        actualView === 'clinic-feedback' ||
+        actualView === 'appointment-calendar' ||
+        actualView === 'doctor-shifts' ||
+        actualView === 'reports-analytics' ||
+        actualView === 'doctor-schedule' ||
+        actualView === 'doctor-appointments' ||
+        actualView === 'doctor-messages' ||
+        actualView === 'doctor-medicines'
+      ) {
+        setSelectedId(null);
+      }
     }
   };
 
@@ -439,6 +805,7 @@ function App() {
         <Navbar
           role={role}
           currentView={currentView}
+          previousView={previousView}
           onNavigate={handleNavigate}
           onSelectId={setSelectedId}
           diseases={diseases}
@@ -447,6 +814,10 @@ function App() {
           doctors={doctors}
           reminders={reminders}
           appointments={appointments}
+          scenarios={scenarios}
+          conversations={conversations}
+          doctorThreads={doctorThreads}
+          patientConversations={patientConversations}
         />
         <main className="content-body">
           
@@ -506,7 +877,10 @@ function App() {
           {role === 'patient' && currentView === 'patient-medical-data' && (
             <PatientMedicalData
               onNavigate={handleNavigate}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
               diseases={diseases}
+              medicines={medicines}
               triggerToast={triggerToast}
             />
           )}
@@ -517,6 +891,10 @@ function App() {
               onNavigate={handleNavigate}
               onSelectConversation={setSelectedId}
               onSelectId={setSelectedId}
+              diseases={diseases}
+              medicines={medicines}
+              scenarios={scenarios}
+              conversations={conversations}
               triggerToast={triggerToast}
             />
           )}
@@ -532,6 +910,7 @@ function App() {
               medicines={medicines}
               setMedicines={setMedicines}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -546,6 +925,7 @@ function App() {
               medicines={medicines}
               setMedicines={setMedicines}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -558,6 +938,7 @@ function App() {
               scenarios={scenarios}
               setScenarios={setScenarios}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -578,6 +959,9 @@ function App() {
             <ManagerDashboard
               onNavigate={handleNavigate}
               onSelectId={setSelectedId}
+              appointments={appointments}
+              patients={patients}
+              feedbacks={feedbacks}
               triggerToast={triggerToast}
             />
           )}
@@ -598,7 +982,10 @@ function App() {
               patients={patients}
               setPatients={setPatients}
               doctors={doctors}
+              feedbacks={feedbacks}
+              setFeedbacks={setFeedbacks}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -611,6 +998,7 @@ function App() {
               doctors={doctors}
               setDoctors={setDoctors}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -623,6 +1011,7 @@ function App() {
               reminders={reminders}
               setReminders={setReminders}
               triggerToast={triggerToast}
+              showConfirm={showConfirm}
             />
           )}
 
@@ -636,6 +1025,8 @@ function App() {
           {role === 'doctor' && currentView === 'doctor-dashboard' && (
             <DoctorDashboard
               onNavigate={handleNavigate}
+              appointments={appointments}
+              patients={patients}
               triggerToast={triggerToast}
             />
           )}
@@ -643,6 +1034,9 @@ function App() {
           {role === 'doctor' && currentView === 'doctor-schedule' && (
             <DoctorSchedule
               onNavigate={handleNavigate}
+              appointments={appointments}
+              selectedId={selectedId}
+              setAppointments={setAppointments}
               triggerToast={triggerToast}
             />
           )}
@@ -650,6 +1044,8 @@ function App() {
           {role === 'doctor' && currentView === 'doctor-appointments' && (
             <DoctorAppointments
               onNavigate={handleNavigate}
+              appointments={appointments}
+              setAppointments={setAppointments}
               triggerToast={triggerToast}
             />
           )}
@@ -657,7 +1053,13 @@ function App() {
           {role === 'doctor' && currentView === 'doctor-messages' && (
             <DoctorMessages
               onNavigate={handleNavigate}
+              patients={patients}
+              setPatients={setPatients}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
               triggerToast={triggerToast}
+              threads={doctorThreads}
+              setThreads={setDoctorThreads}
             />
           )}
 
@@ -669,6 +1071,7 @@ function App() {
             <DoctorMedicalRecords
               currentView={currentView}
               onNavigate={handleNavigate}
+              previousView={previousView}
               selectedId={selectedId}
               onSelectId={setSelectedId}
               patients={patients}
@@ -873,6 +1276,59 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* Custom Confirm Modal Popup */}
+      {confirmModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div className="card animate-fade-in" style={{
+            width: '90%',
+            maxWidth: '400px',
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            margin: 0
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-dark)', fontWeight: 700 }}>
+              {confirmModal.title}
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
+              <button 
+                onClick={confirmModal.onCancel}
+                className="btn btn-outline"
+                style={{ padding: '8px 16px', fontSize: '0.82rem', fontWeight: 600 }}
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm}
+                className="btn"
+                style={{ padding: '8px 18px', fontSize: '0.82rem', backgroundColor: '#ef4444', borderColor: '#ef4444', color: '#fff', fontWeight: 600 }}
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

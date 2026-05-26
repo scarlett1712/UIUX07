@@ -101,72 +101,72 @@ export default function AccountProfile({ role }) {
                 Thông tin cơ bản
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Họ và tên</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Họ và tên</span>
                   <input
                     type="text"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Số điện thoại</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Số điện thoại</span>
                   <input
                     type="text"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Ngày sinh</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Ngày sinh</span>
                   <input
                     type="date"
                     value={patientDob}
                     onChange={(e) => setPatientDob(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Giới tính</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Giới tính</span>
                   <select
                     value={patientGender}
                     onChange={(e) => setPatientGender(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   >
                     <option value="Nam">Nam</option>
                     <option value="Nữ">Nữ</option>
                   </select>
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vai trò</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Vai trò</span>
                   <input
                     type="text"
                     value="Người dùng"
                     disabled
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px', backgroundColor: '#f1f5f9' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', backgroundColor: '#f1f5f9', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Địa chỉ</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Địa chỉ</span>
                   <input
                     type="text"
                     value={patientAddress}
                     onChange={(e) => setPatientAddress(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function AccountProfile({ role }) {
                 value={patientNotes}
                 onChange={(e) => setPatientNotes(e.target.value)}
                 className="form-input"
-                style={{ width: '100%', height: '80px', padding: '10px 12px', resize: 'none', lineHeight: '1.4' }}
+                style={{ width: '100%', height: '80px', padding: '10px 12px', resize: 'none', lineHeight: '1.4', fontSize: '0.88rem' }}
               />
             </div>
 
@@ -200,14 +200,14 @@ export default function AccountProfile({ role }) {
                 Chỉ số sức khỏe
               </h3>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nhóm máu</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Nhóm máu</span>
                   <select
                     value={patientBlood}
                     onChange={(e) => setPatientBlood(e.target.value)}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   >
                     <option value="A">A</option>
                     <option value="B">B</option>
@@ -216,36 +216,36 @@ export default function AccountProfile({ role }) {
                   </select>
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Chiều cao (cm)</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Chiều cao (cm)</span>
                   <input
                     type="number"
                     value={patientHeight}
                     onChange={(e) => setPatientHeight(Number(e.target.value))}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Cân nặng (kg)</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Cân nặng (kg)</span>
                   <input
                     type="number"
                     value={patientWeight}
                     onChange={(e) => setPatientWeight(Number(e.target.value))}
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
                   />
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span className="form-group-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>BMI</span>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>BMI</span>
                   <input
                     type="text"
                     value={bmi}
                     disabled
                     className="form-input"
-                    style={{ width: '100%', height: '40px', padding: '8px 12px', backgroundColor: '#f1f5f9', fontWeight: 'bold', color: 'var(--primary)' }}
+                    style={{ width: '100%', height: '36px', padding: '6px 12px', backgroundColor: '#f1f5f9', fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.88rem' }}
                   />
                 </div>
               </div>

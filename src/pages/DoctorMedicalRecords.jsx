@@ -4,6 +4,7 @@ import { Search, Filter, ArrowLeft, Printer, Plus, Trash2, Camera, Clipboard, X,
 export default function DoctorMedicalRecords({
   currentView,
   onNavigate,
+  previousView,
   selectedId,
   onSelectId,
   patients,
@@ -295,7 +296,13 @@ export default function DoctorMedicalRecords({
         
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <button className="back-btn" onClick={() => onNavigate('doctor-medical-records')}>
+          <button className="back-btn" onClick={() => {
+            if (previousView === 'doctor-messages') {
+              onNavigate('doctor-messages');
+            } else {
+              onNavigate('doctor-medical-records');
+            }
+          }}>
             <ArrowLeft size={16} />
           </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
@@ -304,44 +311,43 @@ export default function DoctorMedicalRecords({
         {/* Profile Card & Details Grid */}
         <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr 1fr', gap: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', alignItems: 'center' }}>
             {/* Avatar placeholder */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '1px solid var(--border-color)', paddingRight: '20px' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: 'var(--primary)', marginBottom: '8px' }}>
-                <Camera size={28} style={{ margin: '0 auto' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: '1px solid var(--border-color)', paddingRight: '16px', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fbcfe8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#db2777', marginBottom: '8px' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
-              <span style={{ fontSize: '0.68rem', padding: '3px 8px', backgroundColor: '#e2e8f0', borderRadius: '12px', fontWeight: 600 }}>{patient.id}</span>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)', display: 'block', wordBreak: 'break-word', lineHeight: '1.2' }}>{patient.name}</span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>Mã: {patient.id}</span>
             </div>
 
             {/* Col 1 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Họ và tên bệnh nhân</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{patient.name}</div>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Ngày sinh:</strong> <span style={{ color: 'var(--text-muted)' }}>{patient.dob}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Ngày sinh / Giới tính</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{patient.dob} ({patient.gender})</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Số điện thoại</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{patient.phone}</div>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Email:</strong> <span style={{ color: 'var(--text-muted)', wordBreak: 'break-all' }}>{patient.email || 'Chưa cập nhật'}</span>
               </div>
             </div>
 
             {/* Col 2 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Mã BHYT</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{patient.insurance || 'Không có BHYT'}</div>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Giới tính:</strong> <span style={{ color: 'var(--text-muted)' }}>{patient.gender}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Địa chỉ liên hệ</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{patient.address || 'Chưa cập nhật'}</div>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Bảo hiểm y tế:</strong> <span style={{ color: 'var(--text-muted)' }}>{patient.insurance || 'Không có BHYT'}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Email liên hệ</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{patient.email || 'Chưa cập nhật'}</div>
+            </div>
+
+            {/* Col 3 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Số điện thoại:</strong> <span style={{ color: 'var(--text-muted)' }}>{patient.phone}</span>
+              </div>
+              <div style={{ fontSize: '0.88rem' }}>
+                <strong style={{ color: 'var(--text-dark)', fontWeight: 600 }}>Địa chỉ:</strong> <span style={{ color: 'var(--text-muted)' }}>{patient.address || 'Chưa cập nhật'}</span>
               </div>
             </div>
           </div>

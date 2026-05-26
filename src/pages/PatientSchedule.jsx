@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatDate } from '../utils/date';
 import { Calendar, User, MapPin, Clock, DollarSign, ChevronRight, CheckCircle, Trash2, ArrowLeft } from 'lucide-react';
 
 const MOCK_DOCTORS = [
@@ -26,7 +27,8 @@ export default function PatientSchedule({
   onBookSuccess, 
   onNavigate,
   patientConversations = [],
-  activePatientConvId
+  activePatientConvId,
+  showConfirm
 }) {
   const [activeTab, setActiveTab] = useState(defaultTab || 'booked'); // 'booked' or 'create'
   
@@ -65,7 +67,7 @@ export default function PatientSchedule({
   const selectedApt = myAppointments.find(apt => apt.id === currentAptId) || myAppointments[0];
 
   const handleCancelAppointment = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn khám này?')) {
+    showConfirm('Bạn có chắc chắn muốn hủy lịch hẹn khám này?', () => {
       const updated = appointments.map(apt => {
         if (apt.id === id) {
           return { ...apt, status: 'Đã hủy' };
@@ -74,7 +76,7 @@ export default function PatientSchedule({
       });
       setAppointments(updated);
       triggerToast('Đã gửi yêu cầu hủy lịch khám thành công', 'info');
-    }
+    });
   };
 
   const handleBookAppointment = (e) => {
@@ -207,7 +209,7 @@ export default function PatientSchedule({
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <div><strong>Khoa:</strong> {apt.specialty}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                      <Calendar size={12} /> {apt.date} | <Clock size={12} /> {apt.time}
+                      <Calendar size={12} /> {formatDate(apt.date)} | <Clock size={12} /> {apt.time}
                     </div>
                   </div>
                 </div>
@@ -222,19 +224,19 @@ export default function PatientSchedule({
           </div>
 
           {/* Right panel: appointment details */}
-          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, overflowY: 'auto' }}>
+          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
             {selectedApt ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--primary)' }}>Chi tiết lịch hẹn</h3>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mã lịch khám: {selectedApt.id}</span>
+                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--primary)' }}>Chi tiết lịch hẹn</h3>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Mã lịch khám: {selectedApt.id}</span>
                   </div>
                   <span className="badge" style={{
                     backgroundColor: selectedApt.status === 'Đã xác nhận' ? '#d1fae5' : selectedApt.status === 'Đang xử lý' ? '#fef3c7' : '#fee2e2',
                     color: selectedApt.status === 'Đã xác nhận' ? '#065f46' : selectedApt.status === 'Đang xử lý' ? '#d97706' : '#dc2626',
-                    padding: '6px 14px',
-                    fontSize: '0.85rem',
+                    padding: '4px 10px',
+                    fontSize: '0.8rem',
                     fontWeight: '600'
                   }}>
                     {selectedApt.status}
@@ -242,8 +244,8 @@ export default function PatientSchedule({
                 </div>
 
                 {/* Doctor card */}
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#ffe2e2', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '6px 10px', borderRadius: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#ffe2e2', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg viewBox="0 0 100 100" width="100%" height="100%">
                       <circle cx="50" cy="50" r="50" fill="#dbeafe" />
                       <circle cx="50" cy="40" r="20" fill="#2563eb" />
@@ -251,50 +253,50 @@ export default function PatientSchedule({
                     </svg>
                   </div>
                   <div>
-                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '700', color: 'var(--primary)' }}>{selectedApt.doctorName}</h4>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedApt.specialty}</div>
+                    <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)' }}>{selectedApt.doctorName}</h4>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{selectedApt.specialty}</div>
                   </div>
                 </div>
 
                 {/* Details layout */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.88rem' }}>
-                    <Calendar size={18} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Ngày khám bệnh:</strong>
-                      <span style={{ color: 'var(--text-dark)' }}>{selectedApt.date}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
+                    <Calendar size={16} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+                    <div className="detail-row">
+                      <span className="detail-label">Ngày khám bệnh:</span>
+                      <span className="detail-value">{formatDate(selectedApt.date)}</span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.88rem' }}>
-                    <Clock size={18} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Thời gian ca khám:</strong>
-                      <span style={{ color: 'var(--text-dark)' }}>{selectedApt.time}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
+                    <Clock size={16} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+                    <div className="detail-row">
+                      <span className="detail-label">Thời gian ca khám:</span>
+                      <span className="detail-value">{selectedApt.time}</span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.88rem' }}>
-                    <MapPin size={18} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Địa điểm khám:</strong>
-                      <span style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>{selectedApt.location || 'Bệnh viện Bạch Mai, Giải Phóng, Hà Nội'}</span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.85rem' }}>
+                    <MapPin size={16} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
+                    <div className="detail-row" style={{ alignItems: 'flex-start' }}>
+                      <span className="detail-label">Địa điểm khám:</span>
+                      <span className="detail-value" style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>{selectedApt.location || 'Bệnh viện Bạch Mai, Giải Phóng, Hà Nội'}</span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.88rem' }}>
-                    <DollarSign size={18} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Phí dịch vụ khám:</strong>
-                      <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{selectedApt.fee || '350.000'} VND</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem' }}>
+                    <DollarSign size={16} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+                    <div className="detail-row">
+                      <span className="detail-label">Phí dịch vụ khám:</span>
+                      <span className="detail-value" style={{ color: 'var(--primary)', fontWeight: '600' }}>{selectedApt.fee || '350.000'} VND</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Symptoms description */}
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)', display: 'block', marginBottom: '6px' }}>Triệu chứng / Lý do khám bệnh:</strong>
-                  <div style={{ padding: '10px 14px', borderRadius: '8px', backgroundColor: '#f1f5f9', fontSize: '0.85rem', color: 'var(--text-dark)', fontStyle: 'italic', lineHeight: '1.4' }}>
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                  <strong style={{ fontSize: '0.82rem', color: 'var(--text-dark)', display: 'block', marginBottom: '4px' }}>Triệu chứng / Lý do khám bệnh:</strong>
+                  <div style={{ padding: '6px 10px', borderRadius: '8px', backgroundColor: '#f1f5f9', fontSize: '0.82rem', color: 'var(--text-dark)', fontStyle: 'italic', lineHeight: '1.4' }}>
                     {selectedApt.symptoms}
                   </div>
                 </div>
@@ -426,10 +428,10 @@ export default function PatientSchedule({
                     const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#14532d' }}>
-                        <div><strong>Bác sĩ khám:</strong> {doctor?.name} ({doctor?.specialty})</div>
-                        <div><strong>Thời gian:</strong> {bookingTime} | Ngày {bookingDate}</div>
-                        <div><strong>Địa điểm:</strong> {doctor?.location}</div>
-                        <div><strong>Chi phí dịch vụ:</strong> <span style={{ color: 'var(--primary)', fontWeight: '700' }}>{doctor?.fee} VND</span></div>
+                        <div className="detail-row"><span className="detail-label">Bác sĩ khám:</span> <span className="detail-value">{doctor?.name} ({doctor?.specialty})</span></div>
+                        <div className="detail-row"><span className="detail-label">Thời gian:</span> <span className="detail-value">{bookingTime} | Ngày {formatDate(bookingDate)}</span></div>
+                        <div className="detail-row"><span className="detail-label">Địa điểm:</span> <span className="detail-value">{doctor?.location}</span></div>
+                        <div className="detail-row"><span className="detail-label">Chi phí dịch vụ:</span> <span className="detail-value" style={{ color: 'var(--primary)', fontWeight: '700' }}>{doctor?.fee} VND</span></div>
                       </div>
                     );
                   })()}

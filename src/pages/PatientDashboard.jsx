@@ -11,7 +11,7 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
   const upcomingAppointment = myAppointments.length > 0 ? myAppointments[0] : {
     doctorName: 'BS. Nguyễn Văn B',
     specialty: 'Khoa Nội tổng quát',
-    time: '9:00 - 9:30 Thứ 6, 20/06/2026',
+    time: '9:00 - 9:30 Thứ 6, 20-06-2026',
     date: '2026-06-20',
     location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội',
     fee: '350.000',
@@ -20,10 +20,10 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
 
   // Recent epidemics & common diseases
   const recentEpidemics = [
-    { name: 'Cúm A / H5N1', desc: 'Sốt cao, ho, khó thở, lây lan nhanh qua đường hô hấp.', danger: 'Cao', count: '120 ca tuần qua' },
-    { name: 'Sốt xuất huyết', desc: 'Sốt cao đột ngột, phát ban, chảy máu cam, đau hốc mắt.', danger: 'Cao', count: '85 ca tuần qua' },
-    { name: 'Sởi', desc: 'Sốt, phát ban dạng nốt toàn thân, đỏ mắt, chảy nước mũi.', danger: 'Trung bình', count: '45 ca tuần qua' },
-    { name: 'Cúm mùa', desc: 'Hắt hơi, đau họng, nhức đầu ê ẩm, mệt mỏi toàn thân.', danger: 'Thấp', count: '310 ca tuần qua' }
+    { id: 'D002', name: 'Cúm A / H5N1', desc: 'Sốt cao, ho, khó thở, lây lan nhanh qua đường hô hấp.', danger: 'Cao', count: '120 ca tuần qua' },
+    { id: 'D007', name: 'Sốt xuất huyết', desc: 'Sốt cao đột ngột, phát ban, chảy máu cam, đau hốc mắt.', danger: 'Cao', count: '85 ca tuần qua' },
+    { id: 'D008', name: 'Sởi', desc: 'Sốt, phát ban dạng nốt toàn thân, đỏ mắt, chảy nước mũi.', danger: 'Trung bình', count: '45 ca tuần qua' },
+    { id: 'D002', name: 'Cúm mùa', desc: 'Hắt hơi, đau họng, nhức đầu ê ẩm, mệt mỏi toàn thân.', danger: 'Thấp', count: '310 ca tuần qua' }
   ];
 
   return (
@@ -148,7 +148,7 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
                 <div style={{ flexGrow: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>Đặt lịch khám</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>05/05/2026</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>05-05-2026</span>
                   </div>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                     BS. Nguyễn Văn A - Khoa Nội tổng quát
@@ -173,7 +173,7 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
               {recentEpidemics.map((epidemic, index) => (
                 <div 
                   key={index} 
-                  onClick={() => onNavigate('patient-medical-data')}
+                  onClick={() => onNavigate('patient-medical-data', epidemic.id)}
                   style={{
                     padding: '12px',
                     borderRadius: 'var(--radius-md)',
@@ -279,27 +279,27 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(15, 59, 122, 0.08)', paddingTop: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem' }}>
-                  <Clock size={16} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
-                    <strong style={{ color: 'var(--text-dark)' }}>Thời gian:</strong>{' '}
-                    <span style={{ color: 'var(--text-dark)' }}>{upcomingAppointment.time}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                  <Clock size={16} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+                  <div className="detail-row">
+                    <span className="detail-label">Thời gian:</span>
+                    <span className="detail-value">{upcomingAppointment.time}</span>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem' }}>
                   <MapPin size={16} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
-                    <strong style={{ color: 'var(--text-dark)' }}>Địa điểm:</strong>{' '}
-                    <span style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>{upcomingAppointment.location}</span>
+                  <div className="detail-row" style={{ alignItems: 'flex-start' }}>
+                    <span className="detail-label">Địa điểm:</span>
+                    <span className="detail-value" style={{ color: 'var(--text-muted)', lineHeight: '1.4' }}>{upcomingAppointment.location}</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.85rem' }}>
-                  <DollarSign size={16} style={{ color: 'var(--primary-light)', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
-                    <strong style={{ color: 'var(--text-dark)' }}>Phí khám bệnh:</strong>{' '}
-                    <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{upcomingAppointment.fee} VND</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                  <DollarSign size={16} style={{ color: 'var(--primary-light)', flexShrink: 0 }} />
+                  <div className="detail-row">
+                    <span className="detail-label">Phí khám bệnh:</span>
+                    <span className="detail-value" style={{ color: 'var(--primary)', fontWeight: '600' }}>{upcomingAppointment.fee} VND</span>
                   </div>
                 </div>
               </div>

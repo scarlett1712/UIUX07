@@ -1,20 +1,29 @@
 import React, { useState } from 'react';
 import { HeartHandshake, TrendingUp, TrendingDown, Pill, BookOpen, Bot, Star, Activity, ArrowRight } from 'lucide-react';
 
-export default function Dashboard({ onNavigate, onSelectConversation, onSelectId, triggerToast }) {
+export default function Dashboard({ 
+  onNavigate, 
+  onSelectConversation, 
+  onSelectId, 
+  diseases = [], 
+  medicines = [], 
+  scenarios = [], 
+  conversations = [], 
+  triggerToast 
+}) {
   const [activeSegment, setActiveSegment] = useState(null);
 
   const stats = [
-    { title: 'Tổng số bệnh', value: '128', trend: 'Tăng 2% so với tuần trước', isUp: true, icon: Activity },
-    { title: 'Tổng số thuốc', value: '278', trend: 'Tăng 1% so với tháng trước', isUp: true, icon: Pill },
-    { title: 'Tổng số kịch bản', value: '47', trend: 'Giảm 10% so với tuần trước', isUp: false, icon: BookOpen },
-    { title: 'Tổng số đánh giá mới', value: '13', trend: 'Tăng 8.2% so với hôm qua', isUp: true, icon: Star },
+    { title: 'Tổng số bệnh', value: diseases.length.toString(), trend: 'Xem chi tiết danh sách bệnh', isUp: true, icon: Activity, view: 'disease-list' },
+    { title: 'Tổng số thuốc', value: medicines.length.toString(), trend: 'Xem chi tiết danh mục thuốc', isUp: true, icon: Pill, view: 'medicine-list' },
+    { title: 'Tổng số kịch bản', value: scenarios.length.toString(), trend: 'Xem chi tiết kịch bản chatbot', isUp: true, icon: BookOpen, view: 'chatbot-scenarios' },
+    { title: 'Đánh giá cần duyệt', value: conversations.filter(c => c.status === 'Chưa duyệt').length.toString(), trend: 'Xem chi tiết đánh giá AI', isUp: true, icon: Star, view: 'ai-evaluation' },
   ];
 
   const activities = [
-    { id: 1, action: 'Chỉnh sửa thuốc', time: '05/05/2026 - 8:23', icon: Pill, type: 'medicine-edit', idRef: 'M001' },
-    { id: 2, action: 'Thêm thuốc', time: '05/05/2026 - 8:20', icon: Pill, type: 'medicine-add', idRef: null },
-    { id: 3, action: 'Chỉnh sửa kịch bản', time: '04/05/2026 - 16:17', icon: Bot, type: 'chatbot-scenario-edit', idRef: null },
+    { id: 1, action: 'Chỉnh sửa thuốc', time: '05-05-2026 - 8:23', icon: Pill, type: 'medicine-edit', idRef: 'M001' },
+    { id: 2, action: 'Thêm thuốc', time: '05-05-2026 - 8:20', icon: Pill, type: 'medicine-add', idRef: null },
+    { id: 3, action: 'Chỉnh sửa kịch bản', time: '04-05-2026 - 16:17', icon: Bot, type: 'chatbot-scenario-edit', idRef: null },
   ];
 
   const ratingsData = [
@@ -26,12 +35,12 @@ export default function Dashboard({ onNavigate, onSelectConversation, onSelectId
   ];
 
   const lowRatingConversations = [
-    { id: 'CONV001', name: 'Nguyễn Minh Anh', time: '05/05/2026 - 08:15', topic: 'Triệu chứng sốt, đau họng', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV002', name: 'Trần Thu Hà', time: '05/05/2026 - 09:40', topic: 'Tra cứu đơn thuốc cũ', rating: '2đ', ratingNum: 2 },
-    { id: 'CONV003', name: 'Lê Quốc Bảo', time: '05/05/2026 - 10:05', topic: 'Đặt lịch khám', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV004', name: 'Phạm Ngọc Linh', time: '05/05/2026 - 11:20', topic: 'Dị ứng da', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV005', name: 'Đỗ Hoàng Nam', time: '05/05/2026 - 13:45', topic: 'Chỉ số huyết áp', rating: '2đ', ratingNum: 2 },
-    { id: 'CONV006', name: 'Nguyễn Thị Mai', time: '05/05/2026 - 14:10', topic: 'Triệu chứng ho kéo dài', rating: '1đ', ratingNum: 1 },
+    { id: 'CONV001', name: 'Nguyễn Minh Anh', time: '05-05-2026 - 08:15', topic: 'Triệu chứng sốt, đau họng', rating: '1đ', ratingNum: 1 },
+    { id: 'CONV002', name: 'Trần Thu Hà', time: '05-05-2026 - 09:40', topic: 'Tra cứu đơn thuốc cũ', rating: '2đ', ratingNum: 2 },
+    { id: 'CONV003', name: 'Lê Quốc Bảo', time: '05-05-2026 - 10:05', topic: 'Đặt lịch khám', rating: '1đ', ratingNum: 1 },
+    { id: 'CONV004', name: 'Phạm Ngọc Linh', time: '05-05-2026 - 11:20', topic: 'Dị ứng da', rating: '1đ', ratingNum: 1 },
+    { id: 'CONV005', name: 'Đỗ Hoàng Nam', time: '05-05-2026 - 13:45', topic: 'Chỉ số huyết áp', rating: '2đ', ratingNum: 2 },
+    { id: 'CONV006', name: 'Nguyễn Thị Mai', time: '05-05-2026 - 14:10', topic: 'Triệu chứng ho kéo dài', rating: '1đ', ratingNum: 1 },
   ];
 
   // SVG calculations for Doughnut Chart
@@ -74,7 +83,15 @@ export default function Dashboard({ onNavigate, onSelectConversation, onSelectId
           {stats.map((stat, idx) => {
             const Icon = stat.icon;
             return (
-              <div key={idx} className="stat-card animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+              <div 
+                key={idx} 
+                className="stat-card animate-fade-in" 
+                style={{ animationDelay: `${idx * 0.1}s` }}
+                onClick={() => {
+                  onNavigate(stat.view);
+                  triggerToast(`Đang chuyển tới màn hình ${stat.title.toLowerCase()}`, 'info');
+                }}
+              >
                 <div className="flex justify-between align-center">
                   <span className="stat-title">{stat.title}</span>
                   <div className="activity-icon-wrapper" style={{ margin: 0, width: '24px', height: '24px' }}>

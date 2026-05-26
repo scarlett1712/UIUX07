@@ -1,26 +1,18 @@
 import React, { useState } from 'react';
+import { formatDate } from '../utils/date';
 import { Search, Filter, Calendar as CalendarIcon, Clock, Check, X, AlertCircle } from 'lucide-react';
 
-export default function DoctorAppointments({ onNavigate, triggerToast }) {
-  const [selectedAptId, setSelectedAptId] = useState('APT901'); // default first one
+export default function DoctorAppointments({ onNavigate, appointments = [], setAppointments, triggerToast }) {
+  const [selectedAptId, setSelectedAptId] = useState('APT008'); // default pending appointment
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-  
-  // Pending appointments list mock database (June 2026)
-  const [appointments, setAppointments] = useState([
-    { id: 'APT901', name: 'Vũ Anh Long', date: '2026-06-15', dayStr: 'Thứ 6 15/6', time: '8:00 - 9:00', symptom: 'Đau tai, chảy dịch', fullSymptom: 'Đau tai phải từ hôm qua, có dịch mủ vàng chảy ra kèm sốt nhẹ.', status: 'Chờ xác nhận' },
-    { id: 'APT902', name: 'Nguyễn Minh Anh', date: '2026-06-16', dayStr: 'Thứ 7 16/6', time: '9:00 - 10:00', symptom: 'Sốt cao, ho khan', fullSymptom: 'Sốt nóng lạnh 39 độ C kèm ho khan tức ngực.', status: 'Chờ xác nhận' },
-    { id: 'APT903', name: 'Trần Phương Huế', date: '2026-06-18', dayStr: 'Thứ 2 18/6', time: '15:00 - 16:00', symptom: 'Đau đầu, chóng mặt', fullSymptom: 'Đau nửa đầu vai gáy ê ẩm, chóng mặt khi đứng lên.', status: 'Chờ xác nhận' },
-    { id: 'APT904', name: 'Lê Hải Minh', date: '2026-06-21', dayStr: 'Thứ 5 21/6', time: '9:00 - 10:00', symptom: 'Khó thở nhẹ, tức ngực', fullSymptom: 'Cảm giác hụt hơi khi leo cầu thang, nặng ngực khi ngủ.', status: 'Chờ xác nhận' },
-    { id: 'APT905', name: 'Phan Quốc Bảo', date: '2026-06-22', dayStr: 'Thứ 6 22/6', time: '14:00 - 15:00', symptom: 'Ù tai lâu ngày', fullSymptom: 'Ù tai trái kéo dài hơn 1 tuần, nghe kém.', status: 'Chờ xác nhận' }
-  ]);
 
   const itemsPerPage = 4;
 
   const handleApprove = (id) => {
-    setAppointments(appointments.map(apt => apt.id === id ? { ...apt, status: 'Đã đồng ý' } : apt));
+    setAppointments(appointments.map(apt => apt.id === id ? { ...apt, status: 'Đã xác nhận' } : apt));
     triggerToast('Đã phê duyệt lịch hẹn khám thành công!', 'success');
   };
 
@@ -39,41 +31,82 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
     triggerToast('Đã từ chối lịch hẹn khám và gửi phản hồi!', 'info');
   };
 
-  const activeApt = appointments.find(apt => apt.id === selectedAptId) || appointments[0];
+  const getDayStr = (dateStr) => {
+    if (!dateStr) return '';
+    const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const date = new Date(dateStr);
+    const dayName = days[date.getDay()];
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    return `${dayName} ${day}/${month}`;
+  };
+
+  // Get appointments of Bs. Huy and map properties for compatibility
+  const myAppointments = appointments
+    .filter(a => a.doctorName === 'Bs. Huy')
+    .map(a => ({
+      ...a,
+      name: a.patientName || a.name || a.patient || 'Bệnh nhân',
+      symptom: a.symptom || a.symptoms || 'Khám lâm sàng',
+      fullSymptom: a.fullSymptom || a.symptoms || a.symptom || 'Khám lâm sàng',
+      dayStr: getDayStr(a.date)
+    }));
+
+  const activeApt = myAppointments.find(apt => apt.id === selectedAptId) || myAppointments[0];
 
   // Filters logic
-  const filteredApts = appointments.filter(apt => {
-    return apt.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           apt.symptom.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredApts = myAppointments.filter(apt => {
+    const term = searchQuery.toLowerCase();
+    const nameStr = (apt.name || '').toLowerCase();
+    const symptomStr = (apt.symptom || '').toLowerCase();
+    return nameStr.includes(term) || symptomStr.includes(term);
   });
 
-  const totalItems = filteredApts.length;
+  const sortedApts = [...filteredApts].sort((a, b) => {
+    const isAPending = a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý';
+    const isBPending = b.status === 'Chờ xác nhận' || b.status === 'Đang xử lý';
+    if (isAPending && !isBPending) return -1;
+    if (!isAPending && isBPending) return 1;
+    return 0;
+  });
+
+  const totalItems = sortedApts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedApts = filteredApts.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedApts = sortedApts.slice(startIndex, startIndex + itemsPerPage);
 
-  // Calendar render helpers (June 2026)
-  // June 1st 2026 is Monday (starts at index 0 if Mon=0)
-  const daysInMonth = 30;
-  const startOffset = 1; // Mon = index 1 in Sun-Sat scheme (Sun=0, Mon=1)
+  // Calendar render helpers dynamic
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const startOffset = new Date(currentYear, currentMonth, 1).getDay();
   const weekdays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
   
   const calendarCells = [];
   for (let i = 0; i < startOffset; i++) calendarCells.push(null);
   for (let i = 1; i <= daysInMonth; i++) calendarCells.push(i);
 
-  // June dates corresponding to appointments
-  const appointmentDays = [15, 16, 18, 21, 22];
+  // Pending days for calendar marking
+  const myPendingAppts = myAppointments.filter(a => {
+    const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    return a.date.startsWith(yearMonthStr) && (a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý');
+  });
+  const appointmentDays = myPendingAppts.map(a => {
+    const parts = a.date.split('-');
+    return parseInt(parts[2], 10);
+  });
 
   const handleCellClick = (day) => {
     if (!day) return;
-    const dateStr = `2026-06-${day < 10 ? '0' + day : day}`;
-    const matched = appointments.find(apt => apt.date === dateStr);
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dateStr = `${currentYear}-${monthStr}-${day < 10 ? '0' + day : day}`;
+    const matched = myAppointments.find(apt => apt.date === dateStr);
     if (matched) {
       setSelectedAptId(matched.id);
-      triggerToast(`Đã chọn lịch hẹn ngày ${day}/06/2026`, 'info');
+      triggerToast(`Đã chọn lịch hẹn ngày ${formatDate(dateStr)}`, 'info');
     } else {
-      triggerToast(`Không có yêu cầu lịch hẹn vào ngày ${day}/06/2026`, 'info');
+      triggerToast(`Không có yêu cầu lịch hẹn vào ngày ${formatDate(dateStr)}`, 'info');
     }
   };
 
@@ -131,7 +164,7 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
                   >
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-dark)' }}>
-                        {apt.dayStr} &nbsp;&bull;&nbsp; {apt.name}
+                        {formatDate(apt.date)} &nbsp;&bull;&nbsp; {apt.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                         {apt.time} &nbsp;&bull;&nbsp; {apt.symptom}
@@ -143,8 +176,8 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
                         fontSize: '0.7rem',
                         padding: '2px 8px',
                         borderRadius: '12px',
-                        backgroundColor: apt.status === 'Chờ xác nhận' ? '#fef3c7' : apt.status === 'Đã đồng ý' ? '#d1fae5' : '#fee2e2',
-                        color: apt.status === 'Chờ xác nhận' ? '#d97706' : apt.status === 'Đã đồng ý' ? '#065f46' : '#dc2626'
+                        backgroundColor: (apt.status === 'Chờ xác nhận' || apt.status === 'Đang xử lý') ? '#fef3c7' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
+                        color: (apt.status === 'Chờ xác nhận' || apt.status === 'Đang xử lý') ? '#d97706' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
                       }}>
                         {apt.status}
                       </span>
@@ -183,9 +216,20 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
           {/* Detailed Request Actions Panel */}
           {activeApt && (
             <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                 <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>Thông tin yêu cầu</h4>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mã: {activeApt.id}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="badge" style={{
+                    fontSize: '0.7rem',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    backgroundColor: (activeApt.status === 'Chờ xác nhận' || activeApt.status === 'Đang xử lý') ? '#fef3c7' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
+                    color: (activeApt.status === 'Chờ xác nhận' || activeApt.status === 'Đang xử lý') ? '#d97706' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
+                  }}>
+                    {activeApt.status}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mã: {activeApt.id}</span>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -195,7 +239,7 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
                 </div>
                 <div>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Thời gian đề xuất:</span>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{activeApt.dayStr} ({activeApt.time})</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{formatDate(activeApt.date)} ({activeApt.time})</div>
                 </div>
               </div>
 
@@ -303,7 +347,7 @@ export default function DoctorAppointments({ onNavigate, triggerToast }) {
             </div>
 
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
-              Bạn đang từ chối lịch hẹn của bệnh nhân <strong>{activeApt.name}</strong> ngày {activeApt.dayStr}. Vui lòng nhập lý do từ chối để hệ thống gửi thông báo phản hồi lại cho bệnh nhân:
+              Bạn đang từ chối lịch hẹn của bệnh nhân <strong>{activeApt.name}</strong> ngày {formatDate(activeApt.date)}. Vui lòng nhập lý do từ chối để hệ thống gửi thông báo phản hồi lại cho bệnh nhân:
             </p>
 
             <div className="form-group" style={{ marginBottom: '16px' }}>

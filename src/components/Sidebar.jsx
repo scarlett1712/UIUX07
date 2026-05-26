@@ -41,18 +41,20 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           <>
             {/* Trang chủ */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'dashboard' ? 'active' : ''}`}
                 onClick={() => onNavigate('dashboard')}
               >
                 <LayoutDashboard size={20} />
                 <span>Trang chủ</span>
-              </a>
+              </button>
             </div>
 
             {/* Dữ liệu y tế */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${
                   currentView.includes('disease') || currentView.includes('medicine') ? 'active' : ''
                 }`}
@@ -60,46 +62,50 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               >
                 <Database size={20} />
                 <span>Dữ liệu y tế</span>
-              </a>
+              </button>
               
               {isMedicalExpanded && (
                 <div className="sidebar-submenu">
-                  <a
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView.includes('disease') ? 'active' : ''}`}
                     onClick={() => onNavigate('disease-list')}
                   >
                     Bệnh
-                  </a>
-                  <a
+                  </button>
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView.includes('medicine') ? 'active' : ''}`}
                     onClick={() => onNavigate('medicine-list')}
                   >
                     Thuốc
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
 
             {/* Kịch bản Chatbot */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView.includes('chatbot') ? 'active' : ''}`}
                 onClick={() => onNavigate('chatbot-scenarios')}
               >
                 <Bot size={20} />
                 <span>Kịch bản Chatbot</span>
-              </a>
+              </button>
             </div>
 
             {/* Đánh giá & kiểm duyệt AI */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView.includes('ai-evaluation') ? 'active' : ''}`}
                 onClick={() => onNavigate('ai-evaluation')}
               >
                 <Star size={20} />
                 <span>Đánh giá & kiểm duyệt AI</span>
-              </a>
+              </button>
             </div>
           </>
         ) : role === 'manager' ? (
@@ -107,18 +113,20 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           <>
             {/* Trang chủ */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'manager-dashboard' ? 'active' : ''}`}
                 onClick={() => onNavigate('manager-dashboard')}
               >
                 <LayoutDashboard size={20} />
                 <span>Trang chủ</span>
-              </a>
+              </button>
             </div>
 
             {/* Quản lý (Phòng khám, Lịch khám, Bệnh nhân) */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${
                   currentView === 'clinic-info' || currentView === 'clinic-feedback' || currentView.includes('appointment') || currentView.includes('patient') ? 'active' : ''
                 }`}
@@ -126,35 +134,39 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               >
                 <Building size={20} />
                 <span>Quản lý</span>
-              </a>
+              </button>
               
               {isManagementExpanded && (
                 <div className="sidebar-submenu">
-                  <a
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView === 'clinic-info' || currentView === 'clinic-feedback' ? 'active' : ''}`}
                     onClick={() => onNavigate('clinic-info')}
                   >
                     Phòng khám
-                  </a>
-                  <a
+                  </button>
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView.includes('appointment') ? 'active' : ''}`}
                     onClick={() => onNavigate('appointment-calendar')}
                   >
                     Lịch khám
-                  </a>
-                  <a
+                  </button>
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView.includes('patient') ? 'active' : ''}`}
                     onClick={() => onNavigate('patient-list')}
                   >
                     Bệnh nhân
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
 
             {/* Điều phối bác sĩ */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${
                   currentView.includes('doctor') ? 'active' : ''
                 }`}
@@ -162,46 +174,50 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               >
                 <Stethoscope size={20} />
                 <span>Điều phối bác sĩ</span>
-              </a>
+              </button>
               
               {isDoctorExpanded && (
                 <div className="sidebar-submenu">
-                  <a
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView === 'doctor-list' || currentView === 'doctor-details' || currentView === 'doctor-edit' || currentView === 'doctor-add' ? 'active' : ''}`}
                     onClick={() => onNavigate('doctor-list')}
                   >
                     Danh sách
-                  </a>
-                  <a
+                  </button>
+                  <button
+                    type="button"
                     className={`sidebar-sublink ${currentView === 'doctor-shifts' ? 'active' : ''}`}
                     onClick={() => onNavigate('doctor-shifts')}
                   >
                     Lịch trực
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
 
             {/* Nhắc lịch */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView.includes('reminder') ? 'active' : ''}`}
                 onClick={() => onNavigate('reminder-list')}
               >
                 <Bell size={20} />
                 <span>Nhắc lịch</span>
-              </a>
+              </button>
             </div>
 
             {/* Báo cáo, phân tích */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'reports-analytics' ? 'active' : ''}`}
                 onClick={() => onNavigate('reports-analytics')}
               >
                 <BarChart2 size={20} />
                 <span>Báo cáo, phân tích</span>
-              </a>
+              </button>
             </div>
           </>
         ) : role === 'patient' ? (
@@ -209,46 +225,50 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           <>
             {/* Trang chủ */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'patient-dashboard' ? 'active' : ''}`}
                 onClick={() => onNavigate('patient-dashboard')}
               >
                 <LayoutDashboard size={20} />
                 <span>Trang chủ</span>
-              </a>
+              </button>
             </div>
 
             {/* Tư vấn sức khỏe */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'patient-consultation' || currentView === 'patient-schedule-create' ? 'active' : ''}`}
                 onClick={() => onNavigate('patient-consultation')}
               >
                 <Bot size={20} />
                 <span>Tư vấn sức khỏe</span>
-              </a>
+              </button>
             </div>
 
             {/* Lịch khám */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'patient-schedule' ? 'active' : ''}`}
                 onClick={() => onNavigate('patient-schedule')}
               >
                 <Calendar size={20} />
                 <span>Lịch khám</span>
-              </a>
+              </button>
             </div>
 
             {/* Dữ liệu y tế */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'patient-medical-data' ? 'active' : ''}`}
                 onClick={() => onNavigate('patient-medical-data')}
               >
                 <Database size={20} />
                 <span>Dữ liệu y tế</span>
-              </a>
+              </button>
             </div>
           </>
         ) : (
@@ -256,51 +276,56 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           <>
             {/* Trang chủ */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'doctor-dashboard' ? 'active' : ''}`}
                 onClick={() => onNavigate('doctor-dashboard')}
               >
                 <LayoutDashboard size={20} />
                 <span>Trang chủ</span>
-              </a>
+              </button>
             </div>
 
             {/* Lịch khám */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'doctor-schedule' ? 'active' : ''}`}
                 onClick={() => onNavigate('doctor-schedule')}
               >
                 <Calendar size={20} />
                 <span>Lịch khám</span>
-              </a>
+              </button>
             </div>
 
             {/* Quản lý lịch hẹn */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'doctor-appointments' ? 'active' : ''}`}
                 onClick={() => onNavigate('doctor-appointments')}
               >
                 <Clipboard size={20} />
                 <span>Quản lý lịch hẹn</span>
-              </a>
+              </button>
             </div>
 
             {/* Tin nhắn */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${currentView === 'doctor-messages' ? 'active' : ''}`}
                 onClick={() => onNavigate('doctor-messages')}
               >
                 <MessageCircle size={20} />
                 <span>Tin nhắn</span>
-              </a>
+              </button>
             </div>
 
             {/* Hồ sơ bệnh án */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${
                   currentView === 'doctor-medical-records' || currentView.includes('doctor-patient-') ? 'active' : ''
                 }`}
@@ -308,12 +333,13 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               >
                 <Users size={20} />
                 <span>Hồ sơ bệnh án</span>
-              </a>
+              </button>
             </div>
 
             {/* Tra cứu thuốc */}
             <div className="sidebar-item">
-              <a
+              <button
+                type="button"
                 className={`sidebar-link ${
                   currentView === 'doctor-medicines' || currentView.includes('doctor-medicine-') ? 'active' : ''
                 }`}
@@ -321,7 +347,7 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
               >
                 <Database size={20} />
                 <span>Tra cứu thuốc</span>
-              </a>
+              </button>
             </div>
           </>
         )}
@@ -379,13 +405,14 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
           </div>
         </div>
         <button 
+          type="button"
           onClick={onLogout} 
           style={{ 
             marginTop: '10px', 
             width: '100%', 
             background: 'transparent', 
             border: 'none', 
-            color: 'rgba(255,255,255,0.4)', 
+            color: 'rgba(255,255,255,0.8)', 
             cursor: 'pointer', 
             fontSize: '0.8rem',
             textAlign: 'center' 
