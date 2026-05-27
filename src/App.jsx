@@ -701,7 +701,18 @@ function App() {
       const newOrUpdatedConv = {
         id: ratedConv.id,
         name: 'Lương Hương Giang',
-        time: ratedConv.date && ratedConv.date !== 'Vừa xong' ? ratedConv.date : new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(',', ' -'),
+        time: (() => {
+          if (ratedConv.date && ratedConv.date !== 'Vừa xong' && ratedConv.date.includes('-') && ratedConv.date.includes(':')) {
+            return ratedConv.date;
+          }
+          const now = new Date();
+          const dd = String(now.getDate()).padStart(2, '0');
+          const mm = String(now.getMonth() + 1).padStart(2, '0');
+          const yyyy = now.getFullYear();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const min = String(now.getMinutes()).padStart(2, '0');
+          return `${dd}-${mm}-${yyyy} - ${hh}:${min}`;
+        })(),
         topic: ratedConv.topic || 'Triệu chứng của bệnh nhân',
         rating: ratedConv.rating,
         ratingNum: ratedConv.ratingNum,

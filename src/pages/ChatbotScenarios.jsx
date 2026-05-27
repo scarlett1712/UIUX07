@@ -232,9 +232,15 @@ export default function ChatbotScenarios({
     const updatedScenarios = [...scenarios];
     const existingIdx = scenarios.findIndex((s) => s.id === scenarioId);
     const nodeCount = nodes.length;
-    const timeString = new Date()
-      .toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
-      .replace(',', ' -');
+    const timeString = (() => {
+      const now = new Date();
+      const dd = String(now.getDate()).padStart(2, '0');
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const yyyy = now.getFullYear();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      return `${dd}-${mm}-${yyyy} - ${hh}:${min}`;
+    })();
 
     const finalStatus = statusOverride || scenarioStatus;
 
