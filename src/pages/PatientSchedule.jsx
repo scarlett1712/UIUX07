@@ -175,9 +175,9 @@ export default function PatientSchedule({
 
       {/* TAB 1: BOOKED APPOINTMENTS LIST & DETAILS */}
       {activeTab === 'booked' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 130px)', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', alignItems: 'start' }}>
           {/* Left panel: list of appointments */}
-          <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
+          <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0 }}>
             <h3 style={{ fontSize: '0.95rem', margin: '4px 0', color: 'var(--text-dark)' }}>Danh sách cuộc hẹn</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -224,7 +224,7 @@ export default function PatientSchedule({
           </div>
 
           {/* Right panel: appointment details */}
-          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
+          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0 }}>
             {selectedApt ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>

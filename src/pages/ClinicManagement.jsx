@@ -355,44 +355,42 @@ export default function ClinicManagement({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: 'calc(100vh - var(--header-height) - 220px)', overflowY: 'auto', paddingRight: '4px' }}>
-              {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => (
-                <div key={f.id} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 600 }}>{f.name}</span>
-                      <span style={{ display: 'inline-flex', color: '#eab308' }}>
-                        {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                        {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
+            {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => (
+              <div key={f.id} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 600 }}>{f.name}</span>
+                    <span style={{ display: 'inline-flex', color: '#eab308' }}>
+                      {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                      {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
+                    </span>
                   </div>
-                  
-                  <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
-                  
-                  {f.response ? (
-                    <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                      <input
-                        type="text"
-                        placeholder="Nhập nội dung phản hồi đánh giá này..."
-                        value={feedbackReplyText[f.id] || ''}
-                        onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
-                        style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem' }}
-                      />
-                      <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
-                        Gửi phản hồi
-                      </button>
-                    </div>
-                  )}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
                 </div>
-              ))}
-            </div>
+                
+                <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
+                
+                {f.response ? (
+                  <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    <input
+                      type="text"
+                      placeholder="Nhập nội dung phản hồi đánh giá này..."
+                      value={feedbackReplyText[f.id] || ''}
+                      onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
+                      style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem' }}
+                    />
+                    <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
+                      Gửi phản hồi
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
 
             {/* Pagination Bar */}
             <div className="list-pagination-bar">
@@ -426,7 +424,7 @@ export default function ClinicManagement({
   // 2. VIEW APPOINTMENT CALENDAR GRID
   if (currentView === 'appointment-calendar') {
     return (
-      <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '16px', height: 'calc(100vh - var(--header-height) - 100px)' }}>
+      <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '16px', height: '100%' }}>
         {/* Left filter bar */}
         <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '14px', height: 'fit-content' }}>
           <div>
@@ -846,7 +844,7 @@ export default function ClinicManagement({
               <tr>
                 <th style={{ width: '80px' }}>Mã BN</th>
                 <th>Họ tên</th>
-                <th style={{ width: '100px' }}>Ngày sinh</th>
+                <th style={{ width: '150px', whiteSpace: 'nowrap' }}>Ngày sinh</th>
                 <th style={{ width: '80px' }}>Giới tính</th>
                 <th>Số điện thoại</th>
                 <th>Email</th>
@@ -861,7 +859,7 @@ export default function ClinicManagement({
                 }}>
                   <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.id}</td>
                   <td style={{ fontWeight: 600 }}>{p.name}</td>
-                  <td>{p.dob}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{p.dob}</td>
                   <td>{p.gender}</td>
                   <td>{p.phone}</td>
                   <td>{p.email}</td>
@@ -968,7 +966,7 @@ export default function ClinicManagement({
 
         <div style={{ marginTop: '16px' }}>
           <h3 style={{ fontSize: '1rem', color: 'var(--primary)', marginBottom: '10px' }}>Lịch sử khám chữa bệnh</h3>
-          <div className="custom-table-container" style={{ maxHeight: '250px', overflowY: 'auto' }}>
+          <div className="custom-table-container">
             <table className="custom-table">
               <thead>
                 <tr>

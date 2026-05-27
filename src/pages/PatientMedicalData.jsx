@@ -84,10 +84,10 @@ export default function PatientMedicalData({
         }
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 150px)', alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: List of Diseases or Medicines */}
-        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
+        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0 }}>
           <h3 style={{ fontSize: '0.95rem', margin: '4px 0', color: 'var(--text-dark)', fontWeight: '600' }}>
             {activeTab === 'diseases' ? "Danh sách bệnh lý & dịch bệnh" : "Danh mục dược phẩm"}
           </h3>
@@ -162,7 +162,7 @@ export default function PatientMedicalData({
         </div>
 
         {/* RIGHT COLUMN: Details Pane */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, overflowY: 'auto' }}>
+        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0 }}>
           {activeTab === 'diseases' ? (
             selectedDisease ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

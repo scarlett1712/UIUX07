@@ -258,10 +258,10 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
       </div>
 
       {/* Main Grid: Left Slots View vs Right Calendar View */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 100px)', alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: Slots list & details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
           {/* TOP SECTION: List of all scheduled appointments */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -451,7 +451,7 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
         </div>
 
         {/* RIGHT COLUMN: Grid Calendar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

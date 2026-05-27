@@ -689,7 +689,7 @@ export default function ChatbotScenarios({
           </div>
         </div>
 
-        <div className="canvas-container-outer" style={{ height: 'calc(100vh - var(--header-height) - 240px)' }}>
+        <div className="canvas-container-outer">
           <div ref={canvasRef} className="canvas-area" style={{ cursor: 'default' }}>
             <svg className="flow-svg-connections">
               {renderConnections()}
@@ -754,7 +754,7 @@ export default function ChatbotScenarios({
         </div>
 
         {/* Canvas grid panels */}
-        <div className="canvas-container-outer" style={{ height: 'calc(100vh - var(--header-height) - 120px)' }}>
+        <div className="canvas-container-outer">
           {/* Node templates sidebar */}
           <div className="canvas-sidebar">
             <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
@@ -987,7 +987,7 @@ export default function ChatbotScenarios({
         </div>
 
         {/* Split screen layout */}
-        <div className="simulator-layout" style={{ height: 'calc(100vh - var(--header-height) - 100px)' }}>
+        <div className="simulator-layout">
           {/* Left side: Canvas flow visual */}
           <div className="canvas-container-outer" style={{ height: '100%' }}>
             <div ref={canvasRef} className="canvas-area" style={{ cursor: 'default' }}>

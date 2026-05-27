@@ -169,6 +169,201 @@ export default function DoctorMedicalRecords({
     }, 1500);
   };
 
+  const renderModals = () => {
+    return (
+      <>
+        {showPrintModal && printedPrescriptionData && (
+          <div className="shift-modal-backdrop" style={{ zIndex: 2000 }}>
+            <div className="shift-modal-card" style={{ maxWidth: '520px', padding: '24px', borderRadius: '8px', border: '2px solid #334155' }}>
+              
+              {/* Action Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '16px' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Printer size={16} /> Xem trước bản in đơn thuốc
+                </span>
+                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={handleClosePrintModal}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Printable Area block */}
+              <div className="prescription-card" style={{ border: '1px solid #94a3b8', padding: '20px', backgroundColor: '#fff', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'monospace, sans-serif', color: '#0f172a' }}>
+                
+                {/* Clinic Banner */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px double #475569', paddingBottom: '8px' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>PHÒNG KHÁM ĐA KHOA MEDICONSULT</div>
+                    <div style={{ fontSize: '0.65rem' }}>Đ/c: Cầu Giấy, Hà Nội - Hotline: 1900 6039</div>
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '0.65rem' }}>
+                    <strong>Mã đơn:</strong> RX-{Date.now().toString().slice(-6)}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div style={{ textAlign: 'center', margin: '8px 0' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '1px' }}>ĐƠN THUỐC Y KHOA</h2>
+                  <span style={{ fontSize: '0.7rem' }}>Bác sĩ khám: <strong>Dương Gia Huy</strong></span>
+                </div>
+
+                {/* Patient Info */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '8px', fontSize: '0.72rem', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px' }}>
+                  <div>
+                    Họ tên: <strong>{printedPrescriptionData.patientName}</strong>
+                  </div>
+                  <div>
+                    Ngày sinh: {printedPrescriptionData.dob}
+                  </div>
+                  <div>
+                    Giới tính: {printedPrescriptionData.gender}
+                  </div>
+                  <div>
+                    BHYT: {printedPrescriptionData.insurance}
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    Số điện thoại: {printedPrescriptionData.phone}
+                  </div>
+                </div>
+
+                {/* Diagnosis */}
+                <div style={{ fontSize: '0.75rem', lineHeight: 1.4 }}>
+                  <strong>Chẩn đoán bệnh lý:</strong> {printedPrescriptionData.diagnosis}
+                </div>
+
+                {/* Prescribed Drugs list */}
+                <div>
+                  <strong style={{ fontSize: '0.75rem', display: 'block', marginBottom: '6px' }}>Thuốc kê đơn chi tiết:</strong>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #475569', textAlign: 'left' }}>
+                        <th style={{ padding: '4px', width: '30px' }}>STT</th>
+                        <th style={{ padding: '4px' }}>Tên thuốc / Hoạt chất</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'center' }}>Số lượng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {printedPrescriptionData.drugs.map((d, idx) => (
+                        <React.Fragment key={d.id}>
+                          <tr style={{ fontWeight: 700 }}>
+                            <td style={{ padding: '4px' }}>{idx + 1}</td>
+                            <td style={{ padding: '4px' }}>{d.name} ({d.activeIngredient})</td>
+                            <td style={{ padding: '4px', textAlign: 'center' }}>{d.qty}</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px dashed #e2e8f0' }}>
+                            <td />
+                            <td colSpan="2" style={{ padding: '0 4px 4px 4px', fontStyle: 'italic', color: '#475569', fontSize: '0.65rem' }}>
+                              HDSD: {d.usage}
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Signature Block */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px', fontSize: '0.7rem', marginTop: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
+                  <div style={{ fontSize: '0.62rem', fontStyle: 'italic', color: '#475569' }}>
+                    Lưu ý: Uống thuốc đúng giờ, đúng liều lượng chỉ định. Tái khám sau khi hết thuốc nếu triệu chứng không thuyên giảm.
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div>Ngày {printedPrescriptionData.date}</div>
+                    <div style={{ fontWeight: 700, margin: '4px 0' }}>Bác sĩ điều trị</div>
+                    <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 }}>
+                      <svg viewBox="0 0 100 50" width="80" height="30" stroke="#1e40af" strokeWidth="1.5" fill="none">
+                        <path d="M10,20 Q30,10 50,20 T90,20 M30,15 L40,35 T60,25" />
+                      </svg>
+                    </div>
+                    <div style={{ fontWeight: 800 }}>Dương Gia Huy</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Print trigger buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                <button 
+                  onClick={handleClosePrintModal} 
+                  className="btn btn-outline" 
+                  style={{ padding: '8px 16px', fontSize: '0.8rem' }}
+                >
+                  Đóng lại
+                </button>
+                <button 
+                  onClick={handlePrintTrigger} 
+                  className="btn btn-primary" 
+                  style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Printer size={14} /> In đơn thuốc y khoa
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {selectedHistoryItem && (
+          <div className="shift-modal-backdrop" style={{ zIndex: 1999 }}>
+            <div className="shift-modal-card" style={{ maxWidth: '460px', padding: '24px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '16px' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clipboard size={16} /> Chi tiết lịch sử khám bệnh
+                </span>
+                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setSelectedHistoryItem(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem', color: '#334155' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <strong>Bệnh nhân:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.name}</span>
+                  </div>
+                  <div>
+                    <strong>Mã hồ sơ:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.id}</span>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <strong>Ngày khám:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.date}</span>
+                  </div>
+                  <div>
+                    <strong>Bác sĩ phụ trách:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.doctor}</span>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                  <strong style={{ display: 'block', marginBottom: '4px' }}>Chẩn đoán bệnh lý:</strong>
+                  <div style={{ padding: '8px 12px', backgroundColor: '#f0f9ff', borderLeft: '3px solid #0284c7', color: '#0369a1', fontWeight: 600, borderRadius: '4px' }}>
+                    {selectedHistoryItem.diagnosis}
+                  </div>
+                </div>
+
+                <div>
+                  <strong style={{ display: 'block', marginBottom: '4px' }}>Đơn thuốc & Hướng dẫn điều trị:</strong>
+                  <div style={{ padding: '10px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', borderRadius: '6px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                    {selectedHistoryItem.treatment}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button 
+                  onClick={() => setSelectedHistoryItem(null)} 
+                  className="btn btn-primary" 
+                  style={{ padding: '8px 20px', fontSize: '0.8rem' }}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
   // --- VIEWS ---
 
   // 1. PATIENTS DATABASE LIST VIEW
@@ -233,7 +428,7 @@ export default function DoctorMedicalRecords({
               <tr>
                 <th style={{ width: '80px' }}>Mã BN</th>
                 <th>Họ tên</th>
-                <th style={{ width: '100px' }}>Ngày sinh</th>
+                <th style={{ width: '150px', whiteSpace: 'nowrap' }}>Ngày sinh</th>
                 <th style={{ width: '80px' }}>Giới tính</th>
                 <th>Số điện thoại</th>
                 <th>Email</th>
@@ -248,7 +443,7 @@ export default function DoctorMedicalRecords({
                 }}>
                   <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.id}</td>
                   <td style={{ fontWeight: 600 }}>{p.name}</td>
-                  <td>{p.dob}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{p.dob}</td>
                   <td>{p.gender}</td>
                   <td>{p.phone}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{p.email}</td>
@@ -300,7 +495,7 @@ export default function DoctorMedicalRecords({
             </button>
           </div>
         </div>
-
+        {renderModals()}
       </div>
     );
   }
@@ -467,6 +662,7 @@ export default function DoctorMedicalRecords({
           </div>
         </div>
 
+        {renderModals()}
       </div>
     );
   }
@@ -485,10 +681,10 @@ export default function DoctorMedicalRecords({
         </div>
 
         {/* Split Grid: Form Input vs Active Prescribed Items list */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 100px)', alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', alignItems: 'start' }}>
           
           {/* Left: Input Form */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', height: '100%', overflowY: 'auto', margin: 0 }}>
+          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', margin: 0 }}>
             <h3 style={{ margin: '0 0 6px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Kết luận khám bệnh</h3>
             
             <div className="form-group">
@@ -630,7 +826,7 @@ export default function DoctorMedicalRecords({
           </div>
 
           {/* Right: Active Prescribed list */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', margin: 0 }}>
+          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0 }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Đơn thuốc đang kê</h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Bệnh nhân: <strong>{patient.name}</strong></span>
@@ -698,203 +894,10 @@ export default function DoctorMedicalRecords({
           </div>
 
         </div>
-
+        {renderModals()}
       </div>
     );
   }
 
-  // --- PRINTABLE PRESCRIPTION MODAL SHEET (Medical layout) ---
-  return (
-    <>
-      {showPrintModal && printedPrescriptionData && (
-        <div className="shift-modal-backdrop" style={{ zIndex: 2000 }}>
-          <div className="shift-modal-card" style={{ maxWidth: '520px', padding: '24px', borderRadius: '8px', border: '2px solid #334155' }}>
-            
-            {/* Action Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '16px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Printer size={16} /> Xem trước bản in đơn thuốc
-              </span>
-              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={handleClosePrintModal}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Printable Area block */}
-            <div className="prescription-card" style={{ border: '1px solid #94a3b8', padding: '20px', backgroundColor: '#fff', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'monospace, sans-serif', color: '#0f172a' }}>
-              
-              {/* Clinic Banner */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px double #475569', paddingBottom: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>PHÒNG KHÁM ĐA KHOA MEDICONSULT</div>
-                  <div style={{ fontSize: '0.65rem' }}>Đ/c: Cầu Giấy, Hà Nội - Hotline: 1900 6039</div>
-                </div>
-                <div style={{ textAlign: 'right', fontSize: '0.65rem' }}>
-                  <strong>Mã đơn:</strong> RX-{Date.now().toString().slice(-6)}
-                </div>
-              </div>
-
-              {/* Title */}
-              <div style={{ textAlign: 'center', margin: '8px 0' }}>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, letterSpacing: '1px' }}>ĐƠN THUỐC Y KHOA</h2>
-                <span style={{ fontSize: '0.7rem' }}>Bác sĩ khám: <strong>Dương Gia Huy</strong></span>
-              </div>
-
-              {/* Patient Info */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '8px', fontSize: '0.72rem', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px' }}>
-                <div>
-                  Họ tên: <strong>{printedPrescriptionData.patientName}</strong>
-                </div>
-                <div>
-                  Ngày sinh: {printedPrescriptionData.dob}
-                </div>
-                <div>
-                  Giới tính: {printedPrescriptionData.gender}
-                </div>
-                <div>
-                  BHYT: {printedPrescriptionData.insurance}
-                </div>
-                <div style={{ gridColumn: 'span 2' }}>
-                  Số điện thoại: {printedPrescriptionData.phone}
-                </div>
-              </div>
-
-              {/* Diagnosis */}
-              <div style={{ fontSize: '0.75rem', lineHeight: 1.4 }}>
-                <strong>Chẩn đoán bệnh lý:</strong> {printedPrescriptionData.diagnosis}
-              </div>
-
-              {/* Prescribed Drugs list */}
-              <div>
-                <strong style={{ fontSize: '0.75rem', display: 'block', marginBottom: '6px' }}>Thuốc kê đơn chi tiết:</strong>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #475569', textAlign: 'left' }}>
-                      <th style={{ padding: '4px', width: '30px' }}>STT</th>
-                      <th style={{ padding: '4px' }}>Tên thuốc / Hoạt chất</th>
-                      <th style={{ padding: '4px', width: '80px', textAlign: 'center' }}>Số lượng</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {printedPrescriptionData.drugs.map((d, idx) => (
-                      <React.Fragment key={d.id}>
-                        <tr style={{ fontWeight: 700 }}>
-                          <td style={{ padding: '4px' }}>{idx + 1}</td>
-                          <td style={{ padding: '4px' }}>{d.name} ({d.activeIngredient})</td>
-                          <td style={{ padding: '4px', textAlign: 'center' }}>{d.qty}</td>
-                        </tr>
-                        <tr style={{ borderBottom: '1px dashed #e2e8f0' }}>
-                          <td />
-                          <td colSpan="2" style={{ padding: '0 4px 4px 4px', fontStyle: 'italic', color: '#475569', fontSize: '0.65rem' }}>
-                            HDSD: {d.usage}
-                          </td>
-                        </tr>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Signature Block */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px', fontSize: '0.7rem', marginTop: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '10px' }}>
-                <div style={{ fontSize: '0.62rem', fontStyle: 'italic', color: '#475569' }}>
-                  Lưu ý: Uống thuốc đúng giờ, đúng liều lượng chỉ định. Tái khám sau khi hết thuốc nếu triệu chứng không thuyên giảm.
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div>Ngày {printedPrescriptionData.date}</div>
-                  <div style={{ fontWeight: 700, margin: '4px 0' }}>Bác sĩ điều trị</div>
-                  <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.7 }}>
-                    <svg viewBox="0 0 100 50" width="80" height="30" stroke="#1e40af" strokeWidth="1.5" fill="none">
-                      <path d="M10,20 Q30,10 50,20 T90,20 M30,15 L40,35 T60,25" />
-                    </svg>
-                  </div>
-                  <div style={{ fontWeight: 800 }}>Dương Gia Huy</div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Print trigger buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-              <button 
-                onClick={handleClosePrintModal} 
-                className="btn btn-outline" 
-                style={{ padding: '8px 16px', fontSize: '0.8rem' }}
-              >
-                Đóng lại
-              </button>
-              <button 
-                onClick={handlePrintTrigger} 
-                className="btn btn-primary" 
-                style={{ padding: '8px 16px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Printer size={14} /> In đơn thuốc y khoa
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Medical History Detail Popup Modal */}
-      {selectedHistoryItem && (
-        <div className="shift-modal-backdrop" style={{ zIndex: 1999 }}>
-          <div className="shift-modal-card" style={{ maxWidth: '460px', padding: '24px', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '16px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Clipboard size={16} /> Chi tiết lịch sử khám bệnh
-              </span>
-              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setSelectedHistoryItem(null)}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem', color: '#334155' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <strong>Bệnh nhân:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.name}</span>
-                </div>
-                <div>
-                  <strong>Mã hồ sơ:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.id}</span>
-                </div>
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <strong>Ngày khám:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.date}</span>
-                </div>
-                <div>
-                  <strong>Bác sĩ phụ trách:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.doctor}</span>
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
-                <strong style={{ display: 'block', marginBottom: '4px' }}>Chẩn đoán bệnh lý:</strong>
-                <div style={{ padding: '8px 12px', backgroundColor: '#f0f9ff', borderLeft: '3px solid #0284c7', color: '#0369a1', fontWeight: 600, borderRadius: '4px' }}>
-                  {selectedHistoryItem.diagnosis}
-                </div>
-              </div>
-
-              <div>
-                <strong style={{ display: 'block', marginBottom: '4px' }}>Đơn thuốc & Hướng dẫn điều trị:</strong>
-                <div style={{ padding: '10px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', borderRadius: '6px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-                  {selectedHistoryItem.treatment}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-              <button 
-                onClick={() => setSelectedHistoryItem(null)} 
-                className="btn btn-primary" 
-                style={{ padding: '8px 20px', fontSize: '0.8rem' }}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+  return renderModals();
 }

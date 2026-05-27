@@ -224,7 +224,7 @@ export default function AccountProfile({ role, triggerToast }) {
   // --- RENDER PATIENT ACCOUNT SETTINGS ---
   if (role === 'patient') {
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: 'calc(100vh - var(--header-height) - 70px)', overflowY: 'auto', paddingRight: '4px' }}>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
             Cài đặt tài khoản
@@ -479,7 +479,7 @@ export default function AccountProfile({ role, triggerToast }) {
 
   // --- RENDER ORIGINAL PROFILE DETAILS FOR OTHER ROLES (EXPERT, MANAGER, DOCTOR) ---
   return (
-    <div className="profile-container animate-fade-in" style={{ height: 'calc(100vh - var(--header-height) - 70px)' }}>
+    <div className="profile-container animate-fade-in">
       {/* Left side info card */}
       <div className="profile-sidebar">
         <div className="profile-large-avatar">
