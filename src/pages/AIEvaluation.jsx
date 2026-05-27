@@ -7,7 +7,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Nguyễn Minh Anh',
     time: '05-05-2026 - 08:15',
     topic: 'Triệu chứng sốt, đau họng',
-    rating: '1đ',
+    rating: '★',
     ratingNum: 1,
     status: 'Chưa duyệt',
     transcript: [
@@ -24,7 +24,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Trần Thu Hà',
     time: '05-05-2026 - 09:40',
     topic: 'Tra cứu đơn thuốc cũ',
-    rating: '2đ',
+    rating: '★★',
     ratingNum: 2,
     status: 'Chưa duyệt',
     transcript: [
@@ -41,7 +41,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Lê Quốc Bảo',
     time: '05-05-2026 - 10:05',
     topic: 'Đặt lịch khám',
-    rating: '1đ',
+    rating: '★',
     ratingNum: 1,
     status: 'Đã duyệt',
     transcript: [
@@ -58,7 +58,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Phạm Ngọc Linh',
     time: '05-05-2026 - 11:20',
     topic: 'Dị ứng da',
-    rating: '1đ',
+    rating: '★',
     ratingNum: 1,
     status: 'Cần chỉnh sửa',
     transcript: [
@@ -75,7 +75,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Vũ Văn Thanh',
     time: '05-05-2026 - 13:30',
     topic: 'Tư vấn tiêm chủng',
-    rating: '5đ',
+    rating: '★★★★★',
     ratingNum: 5,
     status: 'Đã duyệt',
     transcript: [
@@ -90,7 +90,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Đặng Thị Thu',
     time: '05-05-2026 - 14:15',
     topic: 'Triệu chứng đau tai',
-    rating: '3đ',
+    rating: '★★★',
     ratingNum: 3,
     status: 'Chưa duyệt',
     transcript: [
@@ -105,7 +105,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Hoàng Minh Đức',
     time: '05-05-2026 - 15:45',
     topic: 'Kê đơn vitamin',
-    rating: '4đ',
+    rating: '★★★★',
     ratingNum: 4,
     status: 'Đã duyệt',
     transcript: [
@@ -120,7 +120,7 @@ const INITIAL_CONVERSATIONS = [
     name: 'Trần Minh Quang',
     time: '05-05-2026 - 16:20',
     topic: 'Triệu chứng đau đầu',
-    rating: '2đ',
+    rating: '★★',
     ratingNum: 2,
     status: 'Cần chỉnh sửa',
     transcript: [
@@ -170,6 +170,65 @@ export default function AIEvaluation({
         ...activeConv.errors,
         [field]: !activeConv.errors[field]
       }
+    });
+  };
+  const handleToggleFlagMessage = (index) => {
+    if (!activeConv) return;
+    const updatedTranscript = (activeConv.transcript || []).map((msg, idx) => {
+      if (idx === index) {
+        const nextFlagged = !msg.flagged;
+        return {
+          ...msg,
+          flagged: nextFlagged,
+          errorType: nextFlagged ? 'Sai lệch chuyên môn y tế' : ''
+        };
+      }
+      return msg;
+    });
+
+    const derivedErrors = { medical: false, hallucination: false, tone: false, logic: false };
+    updatedTranscript.forEach(m => {
+      if (m.flagged) {
+        if (m.errorType === 'Sai lệch chuyên môn y tế') derivedErrors.medical = true;
+        if (m.errorType === 'Ảo giác hệ thống') derivedErrors.hallucination = true;
+        if (m.errorType === 'Thái độ không phù hợp') derivedErrors.tone = true;
+        if (m.errorType === 'Lỗi logic điều hướng kịch bản') derivedErrors.logic = true;
+      }
+    });
+
+    setActiveConv({
+      ...activeConv,
+      transcript: updatedTranscript,
+      errors: derivedErrors
+    });
+  };
+
+  const handleUpdateMsgErrorType = (index, type) => {
+    if (!activeConv) return;
+    const updatedTranscript = (activeConv.transcript || []).map((msg, idx) => {
+      if (idx === index) {
+        return {
+          ...msg,
+          errorType: type
+        };
+      }
+      return msg;
+    });
+
+    const derivedErrors = { medical: false, hallucination: false, tone: false, logic: false };
+    updatedTranscript.forEach(m => {
+      if (m.flagged) {
+        if (m.errorType === 'Sai lệch chuyên môn y tế') derivedErrors.medical = true;
+        if (m.errorType === 'Ảo giác hệ thống') derivedErrors.hallucination = true;
+        if (m.errorType === 'Thái độ không phù hợp') derivedErrors.tone = true;
+        if (m.errorType === 'Lỗi logic điều hướng kịch bản') derivedErrors.logic = true;
+      }
+    });
+
+    setActiveConv({
+      ...activeConv,
+      transcript: updatedTranscript,
+      errors: derivedErrors
     });
   };
 
@@ -245,11 +304,11 @@ export default function AIEvaluation({
               className="filter-select"
             >
               <option value="Tất cả">Tất cả đánh giá</option>
-              <option value="5đ">5 sao</option>
-              <option value="4đ">4 sao</option>
-              <option value="3đ">3 sao</option>
-              <option value="2đ">2 sao</option>
-              <option value="1đ">1 sao</option>
+              <option value="5">★★★★★ (5 sao)</option>
+              <option value="4">★★★★☆ (4 sao)</option>
+              <option value="3">★★★☆☆ (3 sao)</option>
+              <option value="2">★★☆☆☆ (2 sao)</option>
+              <option value="1">★☆☆☆☆ (1 sao)</option>
             </select>
 
             <select
@@ -417,111 +476,194 @@ export default function AIEvaluation({
 
             {/* Scroll messages */}
             <div className="audit-chat-scroll">
-              {activeConv.transcript.map((msg, index) => (
-                <div key={index} className={`audit-msg-row ${msg.sender} ${msg.flagged ? 'flagged-error' : ''}`}>
-                  <div className="audit-msg-label">
-                    {msg.sender === 'bot' ? (
-                      <>
+              {activeConv.transcript.map((msg, index) => {
+                if (msg.sender === 'bot') {
+                  return (
+                    <div
+                      key={index}
+                      className={`audit-msg-row bot ${msg.flagged ? 'flagged-error' : ''}`}
+                      onClick={() => handleToggleFlagMessage(index)}
+                      style={{ cursor: 'pointer' }}
+                      title={msg.flagged ? "Nhấn để bỏ đánh dấu lỗi" : "Nhấn để đánh dấu lỗi"}
+                    >
+                      <div className="audit-msg-label">
                         <Sparkles size={10} style={{ color: 'var(--primary-light)' }} />
                         <span>Trợ lý AI</span>
-                        {msg.flagged && <span className="error-badge">{msg.errorType}</span>}
-                      </>
-                    ) : (
-                      <>
+                        {msg.flagged && (
+                          <span className="error-badge" style={{ marginLeft: '6px', fontSize: '0.7rem' }}>
+                            {msg.errorType}
+                          </span>
+                        )}
+                      </div>
+                      <div className="audit-msg-body" style={{ position: 'relative' }}>
+                        {msg.text}
+                        {msg.flagged && (
+                          <div
+                            className="inline-error-select-container"
+                            style={{
+                              marginTop: '8px',
+                              borderTop: '1px dashed #fca5a5',
+                              paddingTop: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span style={{ fontSize: '0.72rem', color: '#dc2626', fontWeight: '600' }}>
+                              Loại lỗi:
+                            </span>
+                            <select
+                              value={msg.errorType || 'Sai lệch chuyên môn y tế'}
+                              onChange={(e) => handleUpdateMsgErrorType(index, e.target.value)}
+                              style={{
+                                fontSize: '0.72rem',
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                border: '1px solid #fca5a5',
+                                backgroundColor: '#fff',
+                                color: '#dc2626',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <option value="Sai lệch chuyên môn y tế">Sai lệch chuyên môn y tế</option>
+                              <option value="Ảo giác hệ thống">Ảo giác hệ thống</option>
+                              <option value="Thái độ không phù hợp">Thái độ không phù hợp</option>
+                              <option value="Lỗi logic điều hướng kịch bản">Lỗi logic điều hướng kịch bản</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div key={index} className="audit-msg-row patient">
+                      <div className="audit-msg-label">
                         <Heart size={10} style={{ color: 'red' }} />
                         <span>Bệnh nhân ({activeConv.name})</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="audit-msg-body">{msg.text}</div>
-                </div>
-              ))}
+                      </div>
+                      <div className="audit-msg-body">{msg.text}</div>
+                    </div>
+                  );
+                }
+              })}
             </div>
           </div>
 
           {/* Right Column: Error classification and Notes */}
-          <div className="audit-right-col">
-            {/* Error types checklist card */}
-            <div className="card" style={{ margin: 0 }}>
-              <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
-                Phân loại lỗi hệ thống AI
+          <div className="audit-right-col" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '4px', marginBottom: '12px' }}>
+              {/* Error types checklist card */}
+              <div className="card" style={{ margin: 0 }}>
+                <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
+                  Phân loại lỗi hệ thống AI
+                </div>
+                <div className="error-checklist" style={{ padding: '6px 0 0 0' }}>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={activeConv.errors.medical}
+                      onChange={() => handleUpdateCheckbox('medical')}
+                    />
+                    <span><strong>Sai lệch kiến thức chuyên môn y tế</strong> (Sai đơn thuốc, sai lời khuyên)</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={activeConv.errors.hallucination}
+                      onChange={() => handleUpdateCheckbox('hallucination')}
+                    />
+                    <span><strong>Ảo giác AI (Hallucination)</strong> (Bịa đặt thông tin thuốc)</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={activeConv.errors.tone}
+                      onChange={() => handleUpdateCheckbox('tone')}
+                    />
+                    <span><strong>Thái độ ứng xử không phù hợp</strong> (Lời nói thiếu lịch sự)</span>
+                  </label>
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={activeConv.errors.logic}
+                      onChange={() => handleUpdateCheckbox('logic')}
+                    />
+                    <span><strong>Lỗi logic điều hướng kịch bản</strong> (Vào sai luồng bệnh án)</span>
+                  </label>
+                </div>
               </div>
-              <div className="error-checklist" style={{ padding: '6px 0 0 0' }}>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={activeConv.errors.medical}
-                    onChange={() => handleUpdateCheckbox('medical')}
-                  />
-                  <span><strong>Sai lệch kiến thức chuyên môn y tế</strong> (Sai đơn thuốc, sai lời khuyên)</span>
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={activeConv.errors.hallucination}
-                    onChange={() => handleUpdateCheckbox('hallucination')}
-                  />
-                  <span><strong>Ảo giác AI (Hallucination)</strong> (Bịa đặt thông tin thuốc)</span>
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={activeConv.errors.tone}
-                    onChange={() => handleUpdateCheckbox('tone')}
-                  />
-                  <span><strong>Thái độ ứng xử không phù hợp</strong> (Lời nói thiếu lịch sự)</span>
-                </label>
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={activeConv.errors.logic}
-                    onChange={() => handleUpdateCheckbox('logic')}
-                  />
-                  <span><strong>Lỗi logic điều hướng kịch bản</strong> (Vào sai luồng bệnh án)</span>
-                </label>
-              </div>
-            </div>
 
-            {/* Related scenarios card */}
-            <div className="card" style={{ margin: 0 }}>
-              <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
-                Kịch bản Chatbot liên quan
-              </div>
-              <div style={{ padding: '10px 0 0 0' }}>
-                <div className="scenario-link-box">
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Tên luồng chạy:</div>
-                    <div className="scenario-link-name">Tư vấn cảm cúm & đặt lịch khám</div>
+              {/* Related scenarios card */}
+              <div className="card" style={{ margin: 0 }}>
+                <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
+                  Kịch bản Chatbot liên quan
+                </div>
+                <div style={{ padding: '10px 0 0 0' }}>
+                  <div className="scenario-link-box">
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Tên luồng chạy:</div>
+                      <div className="scenario-link-name">Tư vấn cảm cúm & đặt lịch khám</div>
+                    </div>
+                    <button
+                      onClick={() => onNavigate('chatbot-scenario-edit')}
+                      className="btn btn-outline"
+                      style={{ padding: '4px 8px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '3px' }}
+                    >
+                      <Edit2 size={10} /> Sửa kịch bản
+                    </button>
                   </div>
-                  <button
-                    onClick={() => onNavigate('chatbot-scenario-edit')}
-                    className="btn btn-outline"
-                    style={{ padding: '4px 8px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '3px' }}
-                  >
-                    <Edit2 size={10} /> Sửa kịch bản
-                  </button>
+                </div>
+              </div>
+
+              {/* Patient Feedback Details Card */}
+              {(activeConv.userFeedback || (activeConv.userProblems && activeConv.userProblems.length > 0)) && (
+                <div className="card" style={{ margin: 0, backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }}>
+                  <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid #bae6fd', background: 'transparent', color: '#0369a1' }}>
+                    Phản hồi từ Người dùng (Bệnh nhân)
+                  </div>
+                  <div style={{ padding: '10px 0 0 0', fontSize: '0.82rem', color: '#0c4a6e', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {activeConv.userProblems && activeConv.userProblems.length > 0 && (
+                      <div>
+                        <strong>Các vấn đề báo cáo:</strong>{' '}
+                        <span className="badge" style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}>
+                          {activeConv.userProblems.join(', ')}
+                        </span>
+                      </div>
+                    )}
+                    {activeConv.userFeedback && (
+                      <div>
+                        <strong>Nội dung nhận xét/góp ý:</strong>
+                        <div style={{ fontStyle: 'italic', backgroundColor: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #e0f2fe', marginTop: '4px' }}>
+                          "{activeConv.userFeedback}"
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Expert notes card */}
+              <div className="card" style={{ margin: 0, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
+                  Ghi chú & Chỉ thị của Chuyên gia
+                </div>
+                <div style={{ padding: '10px 0 0 0', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <textarea
+                    value={activeConv.notes}
+                    onChange={(e) => setActiveConv({ ...activeConv, notes: e.target.value })}
+                    placeholder="Ghi nhận sai sót..."
+                    className="form-input form-textarea"
+                    style={{ width: '100%', flexGrow: 1, minHeight: '80px' }}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Expert notes card */}
-            <div className="card" style={{ margin: 0, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              <div className="audit-section-header" style={{ padding: '0 0 8px 0', borderBottom: '1px solid var(--border-color)', background: 'transparent' }}>
-                Ghi chú & Chỉ thị của Chuyên gia
-              </div>
-              <div style={{ padding: '10px 0 0 0', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <textarea
-                  value={activeConv.notes}
-                  onChange={(e) => setActiveConv({ ...activeConv, notes: e.target.value })}
-                  placeholder="Ghi nhận sai sót..."
-                  className="form-input form-textarea"
-                  style={{ width: '100%', flexGrow: 1, minHeight: '80px' }}
-                />
-              </div>
-            </div>
-
             {/* Action buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-4" style={{ flexShrink: 0 }}>
               <button
                 className="btn btn-cancel"
                 onClick={() => handleSaveAudit('Cần chỉnh sửa')}

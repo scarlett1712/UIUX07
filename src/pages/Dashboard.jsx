@@ -26,22 +26,27 @@ export default function Dashboard({
     { id: 3, action: 'Chỉnh sửa kịch bản', time: '04-05-2026 - 16:17', icon: Bot, type: 'chatbot-scenario-edit', idRef: null },
   ];
 
+  const totalConvs = conversations.length || 1;
+  const starCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  conversations.forEach(c => {
+    const num = c.ratingNum || 5;
+    if (starCounts[num] !== undefined) {
+      starCounts[num]++;
+    }
+  });
+
   const ratingsData = [
-    { label: '1 điểm', value: 15, color: '#3b82f6', percentage: '15%' },
-    { label: '2 điểm', value: 10, color: '#ef4444', percentage: '10%' },
-    { label: '3 điểm', value: 20, color: '#06b6d4', percentage: '20%' },
-    { label: '4 điểm', value: 35, color: '#a855f7', percentage: '35%' },
-    { label: '5 điểm', value: 20, color: '#10b981', percentage: '20%' },
+    { label: '★', value: Math.round((starCounts[1] / totalConvs) * 100), color: '#3b82f6', percentage: `${Math.round((starCounts[1] / totalConvs) * 100)}%` },
+    { label: '★★', value: Math.round((starCounts[2] / totalConvs) * 100), color: '#ef4444', percentage: `${Math.round((starCounts[2] / totalConvs) * 100)}%` },
+    { label: '★★★', value: Math.round((starCounts[3] / totalConvs) * 100), color: '#06b6d4', percentage: `${Math.round((starCounts[3] / totalConvs) * 100)}%` },
+    { label: '★★★★', value: Math.round((starCounts[4] / totalConvs) * 100), color: '#a855f7', percentage: `${Math.round((starCounts[4] / totalConvs) * 100)}%` },
+    { label: '★★★★★', value: Math.round((starCounts[5] / totalConvs) * 100), color: '#10b981', percentage: `${Math.round((starCounts[5] / totalConvs) * 100)}%` },
   ];
 
-  const lowRatingConversations = [
-    { id: 'CONV001', name: 'Nguyễn Minh Anh', time: '05-05-2026 - 08:15', topic: 'Triệu chứng sốt, đau họng', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV002', name: 'Trần Thu Hà', time: '05-05-2026 - 09:40', topic: 'Tra cứu đơn thuốc cũ', rating: '2đ', ratingNum: 2 },
-    { id: 'CONV003', name: 'Lê Quốc Bảo', time: '05-05-2026 - 10:05', topic: 'Đặt lịch khám', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV004', name: 'Phạm Ngọc Linh', time: '05-05-2026 - 11:20', topic: 'Dị ứng da', rating: '1đ', ratingNum: 1 },
-    { id: 'CONV005', name: 'Đỗ Hoàng Nam', time: '05-05-2026 - 13:45', topic: 'Chỉ số huyết áp', rating: '2đ', ratingNum: 2 },
-    { id: 'CONV006', name: 'Nguyễn Thị Mai', time: '05-05-2026 - 14:10', topic: 'Triệu chứng ho kéo dài', rating: '1đ', ratingNum: 1 },
-  ];
+  const sumRatings = conversations.reduce((acc, c) => acc + (c.ratingNum || 5), 0);
+  const avgRating = conversations.length > 0 ? (sumRatings / conversations.length).toFixed(1) : '0.0';
+
+  const lowRatingConversations = conversations.filter(c => c.ratingNum <= 3);
 
   // SVG calculations for Doughnut Chart
   const radius = 60;
@@ -169,7 +174,7 @@ export default function Dashboard({
               </svg>
               <div className="chart-center-text">
                 <div className="chart-center-value">
-                  {activeSegment !== null ? ratingsData[activeSegment].percentage : '4.2'}
+                  {activeSegment !== null ? ratingsData[activeSegment].percentage : `${avgRating} ★`}
                 </div>
                 <div className="chart-center-label">
                   {activeSegment !== null ? ratingsData[activeSegment].label : 'Điểm trung bình'}

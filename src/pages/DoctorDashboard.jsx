@@ -101,7 +101,10 @@ export default function DoctorDashboard({
     if (!day) return;
     setSelectedDate(day);
     const monthStr = String(currentMonth + 1).padStart(2, '0');
-    triggerToast(`Đang xem lịch khám ngày ${day}/${monthStr}/${currentYear}`, 'info');
+    const dayStr = String(day).padStart(2, '0');
+    const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+    onNavigate('doctor-schedule', dateStr);
+    triggerToast(`Đang chuyển tới lịch trực ngày ${day}/${monthStr}/${currentYear}`, 'info');
   };
 
   return (

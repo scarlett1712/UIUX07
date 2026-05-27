@@ -24,8 +24,13 @@ export default function DoctorMedicalRecords({
   
   // Current drug input states
   const [selectedDrugId, setSelectedDrugId] = useState('');
+  const [drugSearchQuery, setDrugSearchQuery] = useState('');
+  const [showDrugSuggestions, setShowDrugSuggestions] = useState(false);
   const [drugQty, setDrugQty] = useState('');
   const [drugUsage, setDrugUsage] = useState('');
+
+  // Selected history item popup state
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   // Printable prescription modal state
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -45,14 +50,16 @@ export default function DoctorMedicalRecords({
     );
     setPrescribedDrugs([]);
     setSelectedDrugId('');
+    setDrugSearchQuery('');
+    setShowDrugSuggestions(false);
     setDrugQty('');
     setDrugUsage('');
     onNavigate('doctor-patient-diagnose');
   };
 
   const handleAddDrug = () => {
-    if (!selectedDrugId) {
-      triggerToast('Vui lòng chọn thuốc kê đơn', 'error');
+    if (!drugSearchQuery.trim()) {
+      triggerToast('Vui lòng nhập hoặc chọn thuốc kê đơn', 'error');
       return;
     }
     if (!drugQty.trim()) {
@@ -64,11 +71,14 @@ export default function DoctorMedicalRecords({
       return;
     }
 
-    const drug = medicines.find(m => m.id === selectedDrugId);
-    if (!drug) return;
+    const drug = medicines.find(m => m.name.toLowerCase() === drugSearchQuery.trim().toLowerCase() || m.id === selectedDrugId) || {
+      id: `custom-${Date.now()}`,
+      name: drugSearchQuery.trim(),
+      activeIngredient: 'Tự nhập'
+    };
 
     // Check if drug already in list
-    if (prescribedDrugs.some(d => d.id === selectedDrugId)) {
+    if (prescribedDrugs.some(d => d.name.toLowerCase() === drug.name.toLowerCase())) {
       triggerToast('Thuốc này đã được thêm vào đơn thuốc', 'error');
       return;
     }
@@ -85,6 +95,7 @@ export default function DoctorMedicalRecords({
     ]);
 
     // Reset drug inputs
+    setDrugSearchQuery('');
     setSelectedDrugId('');
     setDrugQty('');
     setDrugUsage('');
@@ -106,7 +117,8 @@ export default function DoctorMedicalRecords({
       return;
     }
 
-    const dateToday = new Date().toLocaleDateString('vi-VN');
+    const todayObj = new Date();
+    const dateToday = `${String(todayObj.getDate()).padStart(2, '0')}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${todayObj.getFullYear()}`;
     const newRecord = {
       date: dateToday,
       diagnosis: diagnosis,
@@ -151,6 +163,10 @@ export default function DoctorMedicalRecords({
 
   const handlePrintTrigger = () => {
     triggerToast('Đang kết nối máy in để in đơn thuốc...', 'success');
+    setTimeout(() => {
+      setShowPrintModal(false);
+      onNavigate('doctor-patient-details');
+    }, 1500);
   };
 
   // --- VIEWS ---
@@ -412,35 +428,43 @@ export default function DoctorMedicalRecords({
             </button>
           </div>
 
-          <table className="custom-table" style={{ fontSize: '0.8rem' }}>
-            <thead>
-              <tr>
-                <th style={{ width: '60px' }}>STT</th>
-                <th style={{ width: '120px' }}>Ngày khám</th>
-                <th>Chẩn đoán bệnh</th>
-                <th>Phác đồ điều trị / Kê đơn thuốc</th>
-                <th style={{ width: '100px' }}>Bác sĩ khám</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patient.medicalHistory.map((h, idx) => (
-                <tr key={idx}>
-                  <td>{patient.medicalHistory.length - idx}</td>
-                  <td style={{ fontWeight: 600 }}>{h.date}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{h.diagnosis}</td>
-                  <td style={{ color: 'var(--text-muted)' }}>{h.treatment}</td>
-                  <td>{h.doctor}</td>
-                </tr>
-              ))}
-              {patient.medicalHistory.length === 0 && (
+          <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+            <table className="custom-table" style={{ fontSize: '0.8rem', margin: 0 }}>
+              <thead>
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Chưa có lịch sử bệnh án nào được ghi nhận.
-                  </td>
+                  <th style={{ width: '60px' }}>STT</th>
+                  <th style={{ width: '120px' }}>Ngày khám</th>
+                  <th>Chẩn đoán bệnh</th>
+                  <th>Phác đồ điều trị / Kê đơn thuốc</th>
+                  <th style={{ width: '100px' }}>Bác sĩ khám</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {patient.medicalHistory.map((h, idx) => (
+                  <tr 
+                    key={idx} 
+                    onClick={() => setSelectedHistoryItem(h)} 
+                    style={{ cursor: 'pointer' }}
+                    title="Nhấn để xem chi tiết lịch sử khám"
+                    className="hover-row"
+                  >
+                    <td>{patient.medicalHistory.length - idx}</td>
+                    <td style={{ fontWeight: 600 }}>{h.date}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{h.diagnosis}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>{h.treatment}</td>
+                    <td>{h.doctor}</td>
+                  </tr>
+                ))}
+                {patient.medicalHistory.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      Chưa có lịch sử bệnh án nào được ghi nhận.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>
@@ -461,10 +485,10 @@ export default function DoctorMedicalRecords({
         </div>
 
         {/* Split Grid: Form Input vs Active Prescribed Items list */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 100px)', alignItems: 'stretch' }}>
           
           {/* Left: Input Form */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', height: '100%', overflowY: 'auto', margin: 0 }}>
             <h3 style={{ margin: '0 0 6px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Kết luận khám bệnh</h3>
             
             <div className="form-group">
@@ -493,19 +517,82 @@ export default function DoctorMedicalRecords({
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px', marginTop: '6px' }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700 }}>Thêm thuốc kê đơn</h4>
               
-              <div className="form-group" style={{ marginBottom: '10px' }}>
+              <div className="form-group" style={{ marginBottom: '10px', position: 'relative' }}>
                 <span className="form-group-label" style={{ fontSize: '0.78rem', display: 'block', marginBottom: '3px' }}>Chọn loại thuốc</span>
-                <select
-                  value={selectedDrugId}
-                  onChange={(e) => setSelectedDrugId(e.target.value)}
-                  className="form-select"
-                  style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}
-                >
-                  <option value="">-- Chọn thuốc trong kho --</option>
-                  {medicines.map(m => (
-                    <option key={m.id} value={m.id}>{m.name} ({m.activeIngredient})</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <input
+                    type="text"
+                    value={drugSearchQuery}
+                    onChange={(e) => {
+                      setDrugSearchQuery(e.target.value);
+                      setShowDrugSuggestions(true);
+                    }}
+                    onFocus={() => setShowDrugSuggestions(true)}
+                    placeholder="Nhập tên thuốc hoặc chọn..."
+                    className="form-input"
+                    style={{ flexGrow: 1, padding: '6px', fontSize: '0.8rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDrugSuggestions(!showDrugSuggestions)}
+                    className="btn btn-outline"
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', minWidth: '32px' }}
+                  >
+                    ▼
+                  </button>
+                </div>
+                {showDrugSuggestions && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: '#fff',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    zIndex: 100,
+                    boxShadow: 'var(--shadow-md)',
+                    maxHeight: '180px',
+                    overflowY: 'auto',
+                    marginTop: '2px'
+                  }}>
+                    {medicines
+                      .filter(m => 
+                        !drugSearchQuery.trim() || 
+                        m.name.toLowerCase().includes(drugSearchQuery.toLowerCase()) ||
+                        m.activeIngredient.toLowerCase().includes(drugSearchQuery.toLowerCase())
+                      )
+                      .map(m => (
+                        <div
+                           key={m.id}
+                           onClick={() => {
+                             setDrugSearchQuery(m.name);
+                             setSelectedDrugId(m.id);
+                             setShowDrugSuggestions(false);
+                           }}
+                           style={{
+                             padding: '8px 12px',
+                             cursor: 'pointer',
+                             borderBottom: '1px solid #f1f5f9',
+                             fontSize: '0.8rem',
+                             color: 'var(--text-dark)'
+                           }}
+                           onMouseDown={(e) => e.preventDefault()}
+                        >
+                           <strong>{m.name}</strong> <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>({m.activeIngredient})</span>
+                        </div>
+                      ))}
+                    {medicines.filter(m => 
+                      !drugSearchQuery.trim() || 
+                      m.name.toLowerCase().includes(drugSearchQuery.toLowerCase()) ||
+                      m.activeIngredient.toLowerCase().includes(drugSearchQuery.toLowerCase())
+                    ).length === 0 && (
+                      <div style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Không tìm thấy thuốc khớp, có thể tự nhập
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="form-group" style={{ marginBottom: '10px' }}>
@@ -543,7 +630,7 @@ export default function DoctorMedicalRecords({
           </div>
 
           {/* Right: Active Prescribed list */}
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '430px' }}>
+          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', margin: 0 }}>
             <div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 700, color: 'var(--text-dark)' }}>Đơn thuốc đang kê</h3>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Bệnh nhân: <strong>{patient.name}</strong></span>
@@ -745,6 +832,66 @@ export default function DoctorMedicalRecords({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Medical History Detail Popup Modal */}
+      {selectedHistoryItem && (
+        <div className="shift-modal-backdrop" style={{ zIndex: 1999 }}>
+          <div className="shift-modal-card" style={{ maxWidth: '460px', padding: '24px', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '16px' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Clipboard size={16} /> Chi tiết lịch sử khám bệnh
+              </span>
+              <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setSelectedHistoryItem(null)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem', color: '#334155' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <strong>Bệnh nhân:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.name}</span>
+                </div>
+                <div>
+                  <strong>Mã hồ sơ:</strong> <span style={{ color: '#0f172a', fontWeight: 600 }}>{patient.id}</span>
+                </div>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <strong>Ngày khám:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.date}</span>
+                </div>
+                <div>
+                  <strong>Bác sĩ phụ trách:</strong> <span style={{ color: 'var(--text-dark)' }}>{selectedHistoryItem.doctor}</span>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                <strong style={{ display: 'block', marginBottom: '4px' }}>Chẩn đoán bệnh lý:</strong>
+                <div style={{ padding: '8px 12px', backgroundColor: '#f0f9ff', borderLeft: '3px solid #0284c7', color: '#0369a1', fontWeight: 600, borderRadius: '4px' }}>
+                  {selectedHistoryItem.diagnosis}
+                </div>
+              </div>
+
+              <div>
+                <strong style={{ display: 'block', marginBottom: '4px' }}>Đơn thuốc & Hướng dẫn điều trị:</strong>
+                <div style={{ padding: '10px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', borderRadius: '6px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                  {selectedHistoryItem.treatment}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button 
+                onClick={() => setSelectedHistoryItem(null)} 
+                className="btn btn-primary" 
+                style={{ padding: '8px 20px', fontSize: '0.8rem' }}
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}

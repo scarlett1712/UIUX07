@@ -141,6 +141,14 @@ export default function DoctorCoordinator({
     return shifts.filter(s => s.date === dateStr);
   };
 
+  const getClashesForDay = (day) => {
+    if (!day) return [];
+    const dayStr = day.toString().padStart(2, '0');
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dateStr = `${dayStr}/${monthStr}/${currentYear}`;
+    return clashAlerts.filter(c => c.date === dateStr);
+  };
+
   const handleAddShift = (day) => {
     if (!day) return;
     setSelectedShiftDay(day);
@@ -413,6 +421,7 @@ export default function DoctorCoordinator({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(64px, 1fr)', backgroundColor: '#e2e8f0', gap: '1px' }}>
                 {calendarCells.map((day, idx) => {
                   const dayShifts = getShiftsForDay(day);
+                  const dayClashes = getClashesForDay(day);
                   return (
                     <div
                       key={idx}
@@ -442,6 +451,32 @@ export default function DoctorCoordinator({
                         >
                           <div>{s.title}</div>
                           <div style={{ fontSize: '0.55rem', opacity: 0.8 }}>{s.time}</div>
+                        </div>
+                      ))}
+                      {dayClashes.map((c) => (
+                        <div
+                          key={`clash-${c.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            padding: '2px 4px',
+                            borderRadius: '3px',
+                            backgroundColor: '#fee2e2',
+                            color: '#dc2626',
+                            fontSize: '0.62rem',
+                            fontWeight: '700',
+                            border: '1px solid #fca5a5',
+                            marginTop: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                          title={`${c.doctor} bị trùng ${c.count} ca trực`}
+                        >
+                          <AlertTriangle size={10} style={{ flexShrink: 0, color: '#dc2626' }} />
+                          <span>Trùng: {c.doctor} ({c.count} ca)</span>
                         </div>
                       ))}
                     </div>

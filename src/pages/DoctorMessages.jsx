@@ -20,6 +20,7 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
     if (selectedId) {
       if (selectedId.startsWith('MSG') && threads.some(t => t.id === selectedId)) {
         setActiveThreadId(selectedId);
+        onSelectId(null);
       } else if (selectedId.startsWith('P')) {
         const patient = patients.find(p => p.id === selectedId);
         if (patient) {
@@ -28,9 +29,10 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
             setActiveThreadId(matchedThread.id);
           }
         }
+        onSelectId(null);
       }
     }
-  }, [selectedId, threads, patients]);
+  }, [selectedId, threads, patients, onSelectId]);
 
   const activeThread = threads.find(t => t.id === activeThreadId) || threads[0];
 
@@ -202,7 +204,13 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
       )}
 
       {/* Layout Grid columns: Chat Lists vs Chat Room */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', height: '560px', alignItems: 'stretch' }}>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '320px 1fr', 
+        gap: '20px', 
+        height: hasEscalatedSession ? 'calc(100vh - var(--header-height) - 210px)' : 'calc(100vh - var(--header-height) - 130px)', 
+        alignItems: 'stretch' 
+      }}>
         
         {/* LEFT COLUMN: Queue threads */}
         <div className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>

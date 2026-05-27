@@ -38,7 +38,7 @@
   --radius-lg: 14px;
   --radius-full: 9999px;
 
-  font-size: 15px;
+  font-size: 13.8px;
   box-sizing: border-box;
 }
 
@@ -46,14 +46,18 @@
   box-sizing: inherit;
 }
 
-body {
+html, body, #root {
+  height: 100vh;
   margin: 0;
+  overflow: hidden;
+}
+
+body {
   font-family: var(--font-sans);
   background-color: var(--bg-main);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -87,8 +91,9 @@ button, input, select, textarea {
 /* App Containers */
 .app-wrapper {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
+  overflow: hidden;
 }
 
 .main-content {
@@ -96,15 +101,18 @@ button, input, select, textarea {
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   background-color: var(--bg-main);
+  overflow: hidden;
 }
 
 .content-body {
-  padding: 16px 20px;
+  padding: 12px 16px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  height: calc(100vh - var(--header-height));
+  overflow: hidden;
 }
 
 /* Typography styles */
@@ -395,6 +403,14 @@ button, input, select, textarea {
   justify-content: center;
   color: var(--white);
   box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logo-circle:hover {
+  background-color: var(--white);
+  color: var(--primary);
+  transform: scale(1.05);
 }
 
 .sidebar-menu {
@@ -568,7 +584,7 @@ button, input, select, textarea {
 
 .navbar-search {
   position: relative;
-  width: 220px;
+  width: 350px;
 }
 
 .navbar-search input {
@@ -595,7 +611,7 @@ button, input, select, textarea {
   position: absolute;
   top: 110%;
   left: 0;
-  width: 320px;
+  width: 100%;
   background-color: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -1318,7 +1334,7 @@ button, input, select, textarea {
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
-  height: 440px;
+  height: 100%;
 }
 
 .canvas-sidebar {
@@ -1516,7 +1532,7 @@ button, input, select, textarea {
   border: 1px solid var(--border-color);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  height: 440px; /* Aligned height with canvas */
+  height: 100%;
 }
 
 .chatgpt-header {

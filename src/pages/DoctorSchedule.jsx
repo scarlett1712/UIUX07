@@ -33,10 +33,24 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
     }
   };
 
-  // Auto select appointment from selectedId (navigated from Dashboard)
+  // Auto select appointment or date from selectedId (navigated from Dashboard)
   useEffect(() => {
     if (selectedId && lastHandledId.current !== selectedId) {
       lastHandledId.current = selectedId;
+      
+      // Check if selectedId is a date string in YYYY-MM-DD format
+      if (selectedId.includes('-') && selectedId.split('-').length === 3 && !selectedId.startsWith('APT') && !selectedId.startsWith('MSG') && !selectedId.startsWith('P')) {
+        const parts = selectedId.split('-');
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // 0-indexed
+        const day = parseInt(parts[2], 10);
+        setCurrentYear(year);
+        setCurrentMonth(month);
+        setSelectedDay(day);
+        setSelectedAppointment(null);
+        return;
+      }
+
       const apt = appointments.find(a => a.id === selectedId);
       if (apt) {
         const parts = apt.date.split('-');
@@ -53,6 +67,9 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
             id: apt.id,
             time: apt.time,
             patient: apt.patientName || apt.name || apt.patient || 'Bệnh nhân',
+            gender: apt.gender || 'Nam',
+            dob: apt.dob || '25-08-2000',
+            phone: apt.phone || '0912345678',
             symptom: apt.symptoms || apt.symptom || 'Khám tổng quát',
             notes: apt.notes || '',
             status: apt.status
@@ -241,10 +258,10 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
       </div>
 
       {/* Main Grid: Left Slots View vs Right Calendar View */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 100px)', alignItems: 'stretch' }}>
         
         {/* LEFT COLUMN: Slots list & details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
           
           {/* TOP SECTION: List of all scheduled appointments */}
           <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -373,7 +390,7 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
                       fontWeight: 500, 
                       color: '#1e293b' 
                     }}>
-                      {selectedAppointment.dob ? selectedAppointment.dob.split('-').reverse().join('-') : '18-05-2003'}
+                      {selectedAppointment.dob ? (selectedAppointment.dob.includes('-') && selectedAppointment.dob.split('-')[0].length === 4 ? selectedAppointment.dob.split('-').reverse().join('-') : selectedAppointment.dob) : '18-05-2003'}
                     </div>
                   </div>
                 </div>
@@ -434,7 +451,7 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
         </div>
 
         {/* RIGHT COLUMN: Grid Calendar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
           
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

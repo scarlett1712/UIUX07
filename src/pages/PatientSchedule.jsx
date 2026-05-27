@@ -175,7 +175,7 @@ export default function PatientSchedule({
 
       {/* TAB 1: BOOKED APPOINTMENTS LIST & DETAILS */}
       {activeTab === 'booked' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', height: 'calc(100vh - 200px)', minHeight: '400px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 130px)', alignItems: 'stretch' }}>
           {/* Left panel: list of appointments */}
           <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
             <h3 style={{ fontSize: '0.95rem', margin: '4px 0', color: 'var(--text-dark)' }}>Danh sách cuộc hẹn</h3>

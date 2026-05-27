@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle } from 'lucide-react';
+import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle, Star } from 'lucide-react';
 
 export default function PatientConsultation({ 
   onNavigate, 
@@ -8,7 +8,8 @@ export default function PatientConsultation({
   conversations = [],
   setConversations,
   activeConvId,
-  setActiveConvId
+  setActiveConvId,
+  syncPatientConversation
 }) {
   const [inputText, setInputText] = useState('');
   
@@ -28,7 +29,55 @@ export default function PatientConsultation({
   const [isCamOff, setIsCamOff] = useState(false);
   const [callDuration, setCallDuration] = useState('00:00');
 
+  const [selectedStars, setSelectedStars] = useState(0);
+  const [selectedProblems, setSelectedProblems] = useState([]);
+  const [feedbackText, setFeedbackText] = useState('');
+
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0];
+
+  useEffect(() => {
+    if (activeConv) {
+      setSelectedStars(activeConv.ratingNum || 0);
+      setSelectedProblems(activeConv.feedbackProblems || []);
+      setFeedbackText(activeConv.feedbackComment || '');
+    }
+  }, [activeConvId, activeConv]);
+
+  const handleSubmitRating = () => {
+    if (selectedStars === 0) return;
+
+    const ratingString = '★'.repeat(selectedStars);
+    
+    setConversations(prev => prev.map(c => {
+      if (c.id === activeConvId) {
+        return {
+          ...c,
+          status: 'Hoàn thành',
+          rated: true,
+          rating: ratingString,
+          ratingNum: selectedStars,
+          feedbackComment: feedbackText,
+          feedbackProblems: selectedProblems
+        };
+      }
+      return c;
+    }));
+
+    if (syncPatientConversation) {
+      syncPatientConversation({
+        id: activeConv.id,
+        topic: activeConv.topic,
+        date: activeConv.date,
+        messages: activeConv.messages,
+        rating: ratingString,
+        ratingNum: selectedStars,
+        feedbackComment: feedbackText,
+        feedbackProblems: selectedProblems
+      });
+    }
+
+    triggerToast('Cảm ơn bạn đã gửi đánh giá chatbot!', 'success');
+  };
 
   // Auto scroll to bottom when messages list updates
   useEffect(() => {
@@ -286,7 +335,7 @@ export default function PatientConsultation({
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: '16px', height: 'calc(100vh - 100px)', minHeight: '500px' }}>
+    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: '16px', height: 'calc(100vh - var(--header-height) - 40px)' }}>
       
       {/* LEFT COLUMN: Conversation List */}
       <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
@@ -510,12 +559,164 @@ export default function PatientConsultation({
               </div>
             );
           })}
+          {/* Rating Card automatically triggers when scenario has completed advice or is finished */}
+          {(activeConv.status === 'Hoàn thành' || activeConv.showActions || activeConv.messages.some(m => m.isAptCard)) && (
+            <div style={{
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1.5px solid var(--primary-light)',
+              backgroundColor: '#f8fafc',
+              boxShadow: 'var(--shadow-sm)',
+              margin: '12px 0',
+              width: '100%',
+              maxWidth: '85%',
+              alignSelf: 'flex-start',
+              animation: 'fadeIn 0.3s ease'
+            }}>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700' }}>
+                Đánh giá chất lượng tư vấn của Chatbot
+              </h4>
+              
+              {!activeConv.rated ? (
+                <div>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setSelectedStars(star)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        <Star
+                          size={20}
+                          fill={star <= selectedStars ? '#eab308' : 'none'}
+                          color={star <= selectedStars ? '#eab308' : '#94a3b8'}
+                          style={{ transition: 'all 0.15s ease' }}
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedStars > 0 && selectedStars <= 3 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-dark)' }}>
+                        Bạn gặp vấn đề gì?
+                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                        {[
+                          'Thông tin y tế chưa chính xác',
+                          'Phản hồi chậm / không đúng trọng tâm',
+                          'Thái độ / giọng điệu chưa phù hợp',
+                          'Lỗi hiển thị / kịch bản'
+                        ].map(prob => (
+                          <label key={prob} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--text-dark)' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedProblems.includes(prob)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedProblems([...selectedProblems, prob]);
+                                } else {
+                                  setSelectedProblems(selectedProblems.filter(p => p !== prob));
+                                }
+                              }}
+                            />
+                            {prob}
+                          </label>
+                        ))}
+                      </div>
+                      <textarea
+                        placeholder="Nhập nhận xét của bạn..."
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        style={{
+                          width: '100%',
+                          minHeight: '60px',
+                          padding: '8px',
+                          fontSize: '0.78rem',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          outline: 'none',
+                          resize: 'vertical'
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {selectedStars >= 4 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '600' }}>
+                        Cảm ơn bạn đã đánh giá tốt!
+                      </span>
+                      <textarea
+                        placeholder="Nhập thêm góp ý để chúng tôi hoàn thiện hơn..."
+                        value={feedbackText}
+                        onChange={(e) => setFeedbackText(e.target.value)}
+                        style={{
+                          width: '100%',
+                          minHeight: '60px',
+                          padding: '8px',
+                          fontSize: '0.78rem',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-color)',
+                          outline: 'none',
+                          resize: 'vertical'
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSubmitRating}
+                    disabled={selectedStars === 0}
+                    style={{
+                      padding: '6px 16px',
+                      fontSize: '0.78rem',
+                      backgroundColor: selectedStars === 0 ? 'var(--border-color)' : 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: selectedStars === 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Gửi đánh giá
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={16}
+                        fill={star <= activeConv.ratingNum ? '#eab308' : 'none'}
+                        color={star <= activeConv.ratingNum ? '#eab308' : '#94a3b8'}
+                      />
+                    ))}
+                  </div>
+                  {activeConv.ratingNum <= 3 && activeConv.feedbackProblems?.length > 0 && (
+                    <div style={{ margin: '4px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <strong>Vấn đề:</strong> {activeConv.feedbackProblems.join(', ')}
+                    </div>
+                  )}
+                  {activeConv.feedbackComment && (
+                    <div style={{ fontStyle: 'italic', marginTop: '4px' }}>
+                      "{activeConv.feedbackComment}"
+                    </div>
+                  )}
+                  <div style={{ marginTop: '8px', color: '#16a34a', fontWeight: '600', fontSize: '0.75rem' }}>
+                    ✓ Đã ghi nhận đánh giá. Cảm ơn ý kiến đóng góp của bạn!
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {/* Empty element to scroll to bottom */}
           <div ref={messagesEndRef} />
         </div>
 
         {/* Quick Suggestions */}
-        {!isConsultingDoctor && activeConv.status === 'Đang tư vấn' && (
+        {!isConsultingDoctor && (
           <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflow: 'hidden', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
             {['Sốt', 'Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
               <button
@@ -554,10 +755,9 @@ export default function PatientConsultation({
           
           <input
             type="text"
-            placeholder={activeConv.status === 'Hoàn thành' ? "Cuộc hội thoại đã kết thúc..." : "Nhập tình trạng sức khỏe của bạn tại đây..."}
+            placeholder="Nhập tình trạng sức khỏe của bạn tại đây..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            disabled={activeConv.status === 'Hoàn thành'}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             style={{
               flexGrow: 1,
@@ -571,11 +771,11 @@ export default function PatientConsultation({
 
           <button 
             onClick={() => handleSendMessage()}
-            disabled={activeConv.status === 'Hoàn thành' || !inputText.trim()}
+            disabled={!inputText.trim()}
             style={{
               padding: '8px',
               borderRadius: '8px',
-              backgroundColor: activeConv.status === 'Hoàn thành' || !inputText.trim() ? 'var(--border-color)' : 'var(--primary)',
+              backgroundColor: !inputText.trim() ? 'var(--border-color)' : 'var(--primary)',
               color: '#fff',
               border: 'none',
               cursor: 'pointer',
@@ -659,7 +859,7 @@ export default function PatientConsultation({
 
         {/* Action Panel */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeConv.showActions && activeConv.status === 'Đang tư vấn' && (
+          {activeConv.showActions && (activeConv.status === 'Đang tư vấn' || activeConv.status === 'Hoàn thành') && (
             <div style={{
               display: 'flex',
               flexDirection: 'column',

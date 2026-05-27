@@ -6,6 +6,7 @@ export default function Navbar({
   currentView,
   previousView,
   onNavigate,
+  onLogout,
   onSelectId,
   diseases,
   medicines,
@@ -21,8 +22,10 @@ export default function Navbar({
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
+  const profileDropdownRef = useRef(null);
 
   // Initial mock notifications for each role
   const [notificationsList, setNotificationsList] = useState({
@@ -68,6 +71,9 @@ export default function Navbar({
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -796,55 +802,188 @@ export default function Navbar({
           )}
         </div>
 
-        {/* Profile Pill */}
-        <div className="navbar-profile-pill" style={{ cursor: 'pointer' }} onClick={() => onNavigate('profile')}>
-          <div className="profile-pill-text">
-            <div className="profile-pill-name">
-              {role === 'expert' 
-                ? 'Mai Thùy Linh' 
-                : role === 'manager' 
-                ? 'Nguyễn Nhật Linh' 
-                : role === 'patient'
-                ? 'Lương Hương Giang'
-                : 'Dương Gia Huy'}
+        {/* Profile Pill & Dropdown Wrapper */}
+        <div ref={profileDropdownRef} style={{ position: 'relative' }}>
+          <div
+            className="navbar-profile-pill"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+          >
+            <div className="profile-pill-text">
+              <div className="profile-pill-name">
+                {role === 'expert' 
+                  ? 'Mai Thùy Linh' 
+                  : role === 'manager' 
+                  ? 'Nguyễn Nhật Linh' 
+                  : role === 'patient'
+                  ? 'Lương Hương Giang'
+                  : 'Dương Gia Huy'}
+              </div>
+              <div className="profile-pill-role">
+                {role === 'expert' 
+                  ? 'Chuyên gia' 
+                  : role === 'manager' 
+                  ? 'Quản lý' 
+                  : role === 'patient'
+                  ? 'Người dùng'
+                  : 'Bác sĩ'}
+              </div>
             </div>
-            <div className="profile-pill-role">
-              {role === 'expert' 
-                ? 'Chuyên gia' 
-                : role === 'manager' 
-                ? 'Quản lý' 
-                : role === 'patient'
-                ? 'Người dùng'
-                : 'Bác sĩ'}
+            <div className="profile-pill-avatar">
+              {role === 'expert' ? (
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                  <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                  <circle cx="50" cy="40" r="20" fill="#db2777" />
+                  <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+                </svg>
+              ) : role === 'manager' ? (
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                  <circle cx="50" cy="50" r="50" fill="#fef3c7" />
+                  <circle cx="50" cy="40" r="20" fill="#d97706" />
+                  <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
+                </svg>
+              ) : role === 'patient' ? (
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                  <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                  <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                  <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                  <circle cx="50" cy="50" r="50" fill="#dbeafe" />
+                  <circle cx="50" cy="40" r="20" fill="#2563eb" />
+                  <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
+                </svg>
+              )}
             </div>
           </div>
-          <div className="profile-pill-avatar">
-            {role === 'expert' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
-                <circle cx="50" cy="40" r="20" fill="#db2777" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
-              </svg>
-            ) : role === 'manager' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#fef3c7" />
-                <circle cx="50" cy="40" r="20" fill="#d97706" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
-              </svg>
-            ) : role === 'patient' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
-                <circle cx="50" cy="40" r="20" fill="#4f46e5" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#dbeafe" />
-                <circle cx="50" cy="40" r="20" fill="#2563eb" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
-              </svg>
-            )}
-          </div>
+
+          {/* Profile Dropdown Popover */}
+          {showProfileDropdown && (
+            <div className="profile-dropdown-card animate-fade-in" style={{
+              position: 'absolute',
+              top: '50px',
+              right: '0',
+              width: '240px',
+              backgroundColor: '#fff',
+              border: '1px solid var(--border-color)',
+              borderRadius: '20px',
+              boxShadow: 'var(--shadow-lg)',
+              padding: '0',
+              overflow: 'hidden',
+              zIndex: 999999,
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              {/* Header profile info */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 20px',
+                backgroundColor: '#f8fafc',
+                borderBottom: '1px solid #f1f5f9'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-dark)' }}>
+                    {role === 'expert' 
+                      ? 'Mai Thùy Linh' 
+                      : role === 'manager' 
+                      ? 'Nguyễn Nhật Linh' 
+                      : role === 'patient'
+                      ? 'Lương Hương Giang'
+                      : 'Dương Gia Huy'}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--primary)' }}>
+                    {role === 'expert' 
+                      ? 'Chuyên gia' 
+                      : role === 'manager' 
+                      ? 'Quản lý' 
+                      : role === 'patient'
+                      ? 'Người dùng'
+                      : 'Bác sĩ'}
+                  </span>
+                </div>
+                <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                  {role === 'expert' ? (
+                    <svg viewBox="0 0 100 100" width="100%" height="100%">
+                      <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                      <circle cx="50" cy="40" r="20" fill="#db2777" />
+                      <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+                    </svg>
+                  ) : role === 'manager' ? (
+                    <svg viewBox="0 0 100 100" width="100%" height="100%">
+                      <circle cx="50" cy="50" r="50" fill="#fef3c7" />
+                      <circle cx="50" cy="40" r="20" fill="#d97706" />
+                      <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
+                    </svg>
+                  ) : role === 'patient' ? (
+                    <svg viewBox="0 0 100 100" width="100%" height="100%">
+                      <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                      <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                      <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 100 100" width="100%" height="100%">
+                      <circle cx="50" cy="50" r="50" fill="#dbeafe" />
+                      <circle cx="50" cy="40" r="20" fill="#2563eb" />
+                      <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+
+              {/* Menu items */}
+              <button
+                onClick={() => {
+                  setShowProfileDropdown(false);
+                  onNavigate('profile');
+                }}
+                className="profile-dropdown-btn"
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid #f1f5f9',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: 'var(--text-dark)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'background-color 0.2s',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                Tài khoản
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowProfileDropdown(false);
+                  if (onLogout) onLogout();
+                }}
+                className="profile-dropdown-btn"
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: 'var(--text-dark)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'background-color 0.2s',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

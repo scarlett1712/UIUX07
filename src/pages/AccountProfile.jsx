@@ -1,93 +1,244 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Mail, Phone, MapPin, Shield, Check, Calendar, Heart } from 'lucide-react';
+import { Award, Mail, Phone, MapPin, Shield, Check, Calendar, Heart, Edit2, AlertCircle } from 'lucide-react';
 
-export default function AccountProfile({ role }) {
-  // --- DEFAULT ROLE STATES (EXPERT, MANAGER, DOCTOR) ---
-  const [profile, setProfile] = useState({
-    name: 'Mai Thùy Linh',
-    email: 'linh.maithuy@mediconsult.vn',
-    phone: '0987 654 321',
-    address: 'Bệnh viện Đại học Y Hà Nội',
-    specialty: 'Chuyên gia Tai Mũi Họng & Thẩm định AI',
+export default function AccountProfile({ role, triggerToast }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // --- PATIENT SPECIFIC STATES ---
+  const [originalPatientData, setOriginalPatientData] = useState({
+    name: 'Lương Hương Giang',
+    phone: '0123456789',
+    dob: '05-05-2000',
+    gender: 'Nữ',
+    address: 'Cầu Giấy, Hà Nội',
+    notes: 'Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.',
+    blood: 'O',
+    height: 165,
+    weight: 52
+  });
+
+  const convertDMYToYMD = (dmy) => {
+    if (!dmy || !dmy.includes('-')) return dmy;
+    const parts = dmy.split('-');
+    if (parts.length === 3 && parts[0].length === 2) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dmy;
+  };
+
+  const convertYMDToDMY = (ymd) => {
+    if (!ymd || !ymd.includes('-')) return ymd;
+    const parts = ymd.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return ymd;
+  };
+
+  const [patientName, setPatientName] = useState(originalPatientData.name);
+  const [patientPhone, setPatientPhone] = useState(originalPatientData.phone);
+  const [patientDob, setPatientDob] = useState(convertDMYToYMD(originalPatientData.dob));
+  const [patientGender, setPatientGender] = useState(originalPatientData.gender);
+  const [patientAddress, setPatientAddress] = useState(originalPatientData.address);
+  const [patientNotes, setPatientNotes] = useState(originalPatientData.notes);
+  const [patientBlood, setPatientBlood] = useState(originalPatientData.blood);
+  const [patientHeight, setPatientHeight] = useState(originalPatientData.height);
+  const [patientWeight, setPatientWeight] = useState(originalPatientData.weight);
+
+  const isPatientFieldModified = (field, currentVal) => {
+    return originalPatientData[field] !== currentVal;
+  };
+
+  const handleSavePatientProfile = () => {
+    const updated = {
+      name: patientName,
+      phone: patientPhone,
+      dob: convertYMDToDMY(patientDob),
+      gender: patientGender,
+      address: patientAddress,
+      notes: patientNotes,
+      blood: patientBlood,
+      height: patientHeight,
+      weight: patientWeight
+    };
+    setOriginalPatientData(updated);
+    setIsEditing(false);
+    setIsSaved(true);
+    if (triggerToast) {
+      triggerToast('Đã lưu thay đổi thông tin tài khoản thành công!', 'success');
+    }
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleCancelPatientEdit = () => {
+    setPatientName(originalPatientData.name);
+    setPatientPhone(originalPatientData.phone);
+    setPatientDob(convertDMYToYMD(originalPatientData.dob));
+    setPatientGender(originalPatientData.gender);
+    setPatientAddress(originalPatientData.address);
+    setPatientNotes(originalPatientData.notes);
+    setPatientBlood(originalPatientData.blood);
+    setPatientHeight(originalPatientData.height);
+    setPatientWeight(originalPatientData.weight);
+    setIsEditing(false);
+    if (triggerToast) {
+      triggerToast('Đã hủy bỏ các thay đổi', 'info');
+    }
+  };
+
+  // --- OTHER ROLES STATES (EXPERT, MANAGER, DOCTOR) ---
+  const [originalProfile, setOriginalProfile] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    specialty: '',
+    twoStep: true,
     notifications: {
-      newError: true,
+      newError: false,
       weeklyReport: false,
-      scenarioUpdate: true
+      scenarioUpdate: false
     }
   });
 
-  const [isSaved, setIsSaved] = useState(false);
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    specialty: '',
+    twoStep: true,
+    notifications: {
+      newError: false,
+      weeklyReport: false,
+      scenarioUpdate: false
+    }
+  });
+
+  const [twoStepVal, setTwoStepVal] = useState(true);
 
   useEffect(() => {
+    let defaultProfile = {
+      name: 'Mai Thùy Linh',
+      email: 'linh.maithuy@mediconsult.vn',
+      phone: '0987 654 321',
+      address: 'Bệnh viện Đại học Y Hà Nội',
+      specialty: 'Chuyên gia Tai Mũi Họng & Thẩm định AI',
+      twoStep: true,
+      notifications: {
+        newError: true,
+        weeklyReport: false,
+        scenarioUpdate: true
+      }
+    };
+
     if (role === 'manager') {
-      setProfile({
+      defaultProfile = {
         name: 'Nguyễn Nhật Linh',
         email: 'linh.nguyennhat@mediconsult.vn',
         phone: '0906 052 026',
         address: 'Phòng khám Đa khoa MediConsult',
         specialty: 'Quản trị nhân sự & Điều phối dịch vụ phòng khám',
+        twoStep: true,
         notifications: {
           newError: true,
           weeklyReport: true,
           scenarioUpdate: false
         }
-      });
+      };
     } else if (role === 'doctor') {
-      setProfile({
+      defaultProfile = {
         name: 'Dương Gia Huy',
         email: 'huy.duonggia@mediconsult.vn',
         phone: '0977 889 900',
         address: 'Khoa Nội tổng quát - Phòng khám Đa khoa MediConsult',
         specialty: 'Bác sĩ chuyên khoa Nội tổng quát & Chẩn đoán hình ảnh',
+        twoStep: true,
         notifications: {
           newError: true,
           weeklyReport: true,
           scenarioUpdate: false
         }
-      });
+      };
     } else if (role === 'expert') {
-      setProfile({
+      defaultProfile = {
         name: 'Mai Thùy Linh',
         email: 'linh.maithuy@mediconsult.vn',
         phone: '0987 654 321',
         address: 'Bệnh viện Đại học Y Hà Nội',
         specialty: 'Chuyên gia Tai Mũi Họng & Thẩm định AI',
+        twoStep: true,
         notifications: {
           newError: true,
           weeklyReport: false,
           scenarioUpdate: true
         }
-      });
+      };
     }
+
+    setProfile(JSON.parse(JSON.stringify(defaultProfile)));
+    setOriginalProfile(JSON.parse(JSON.stringify(defaultProfile)));
+    setTwoStepVal(defaultProfile.twoStep);
+    setIsEditing(false);
   }, [role]);
 
-  // --- PATIENT SPECIFIC STATES ---
-  const [patientName, setPatientName] = useState('Lương Hương Giang');
-  const [patientPhone, setPatientPhone] = useState('0123456789');
-  const [patientDob, setPatientDob] = useState('2000-05-05');
-  const [patientGender, setPatientGender] = useState('Nữ');
-  const [patientAddress, setPatientAddress] = useState('Cầu Giấy, Hà Nội');
-  const [patientNotes, setPatientNotes] = useState('Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.');
-  
-  const [patientBlood, setPatientBlood] = useState('O');
-  const [patientHeight, setPatientHeight] = useState(165);
-  const [patientWeight, setPatientWeight] = useState(52);
+  const isProfileFieldModified = (field) => {
+    if (field === 'twoStep') {
+      return originalProfile.twoStep !== twoStepVal;
+    }
+    if (field.startsWith('notifications.')) {
+      const subField = field.split('.')[1];
+      return originalProfile.notifications[subField] !== profile.notifications[subField];
+    }
+    return originalProfile[field] !== profile[field];
+  };
+
+  const handleSaveProfile = () => {
+    const updated = {
+      ...profile,
+      twoStep: twoStepVal
+    };
+    setOriginalProfile(JSON.parse(JSON.stringify(updated)));
+    setProfile(JSON.parse(JSON.stringify(updated)));
+    setIsEditing(false);
+    setIsSaved(true);
+    if (triggerToast) {
+      triggerToast('Đã lưu thay đổi thông tin tài khoản thành công!', 'success');
+    }
+    setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleCancelEdit = () => {
+    setProfile(JSON.parse(JSON.stringify(originalProfile)));
+    setTwoStepVal(originalProfile.twoStep);
+    setIsEditing(false);
+    if (triggerToast) {
+      triggerToast('Đã hủy bỏ các thay đổi', 'info');
+    }
+  };
 
   // Dynamic BMI calculation: weight (kg) / (height (m) ^ 2)
   const bmi = patientHeight > 0 ? (patientWeight / ((patientHeight / 100) ** 2)).toFixed(1) : '0.0';
 
-  const handleSaveProfile = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
-
-  // --- RENDER PATIENT ACCOUNT SETTINGS (IMAGE 3) ---
+  // --- RENDER PATIENT ACCOUNT SETTINGS ---
   if (role === 'patient') {
     return (
-      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
-          Cài đặt tài khoản
-        </h2>
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: 'calc(100vh - var(--header-height) - 70px)', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
+            Cài đặt tài khoản
+          </h2>
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.85rem' }}
+            >
+              <Edit2 size={14} /> Chỉnh sửa thông tin
+            </button>
+          )}
+        </div>
         
         {/* Double Column Grid Layout */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
@@ -104,70 +255,84 @@ export default function AccountProfile({ role }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Họ và tên</span>
-                  <input
-                    type="text"
-                    value={patientName}
-                    onChange={(e) => setPatientName(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('name', patientName) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientName}</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Số điện thoại</span>
-                  <input
-                    type="text"
-                    value={patientPhone}
-                    onChange={(e) => setPatientPhone(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={patientPhone}
+                      onChange={(e) => setPatientPhone(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('phone', patientPhone) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientPhone}</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Ngày sinh</span>
-                  <input
-                    type="date"
-                    value={patientDob}
-                    onChange={(e) => setPatientDob(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={patientDob}
+                      onChange={(e) => setPatientDob(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('dob', patientDob) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{convertYMDToDMY(patientDob)}</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Giới tính</span>
-                  <select
-                    value={patientGender}
-                    onChange={(e) => setPatientGender(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  >
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                  </select>
+                  {isEditing ? (
+                    <select
+                      value={patientGender}
+                      onChange={(e) => setPatientGender(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('gender', patientGender) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    >
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientGender}</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Vai trò</span>
-                  <input
-                    type="text"
-                    value="Người dùng"
-                    disabled
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', backgroundColor: '#f1f5f9', fontSize: '0.88rem' }}
-                  />
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-muted)' }}>Người dùng</div>
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Địa chỉ</span>
-                  <input
-                    type="text"
-                    value={patientAddress}
-                    onChange={(e) => setPatientAddress(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={patientAddress}
+                      onChange={(e) => setPatientAddress(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('address', patientAddress) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientAddress}</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -181,12 +346,16 @@ export default function AccountProfile({ role }) {
                 Tiền sử dị ứng và ghi chú quan trọng
               </p>
               
-              <textarea
-                value={patientNotes}
-                onChange={(e) => setPatientNotes(e.target.value)}
-                className="form-input"
-                style={{ width: '100%', height: '80px', padding: '10px 12px', resize: 'none', lineHeight: '1.4', fontSize: '0.88rem' }}
-              />
+              {isEditing ? (
+                <textarea
+                  value={patientNotes}
+                  onChange={(e) => setPatientNotes(e.target.value)}
+                  className={`form-input ${isPatientFieldModified('notes', patientNotes) ? 'input-modified' : 'input-unmodified'}`}
+                  style={{ width: '100%', height: '80px', padding: '10px 12px', resize: 'none', lineHeight: '1.4', fontSize: '0.88rem' }}
+                />
+              ) : (
+                <div style={{ fontSize: '0.9rem', lineHeight: '1.4', padding: '6px 0', color: 'var(--text-dark)', whiteSpace: 'pre-wrap' }}>{patientNotes}</div>
+              )}
             </div>
 
           </div>
@@ -203,50 +372,56 @@ export default function AccountProfile({ role }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Nhóm máu</span>
-                  <select
-                    value={patientBlood}
-                    onChange={(e) => setPatientBlood(e.target.value)}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  >
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="AB">AB</option>
-                    <option value="O">O</option>
-                  </select>
+                  {isEditing ? (
+                    <select
+                      value={patientBlood}
+                      onChange={(e) => setPatientBlood(e.target.value)}
+                      className={`form-input ${isPatientFieldModified('blood', patientBlood) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    >
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="AB">AB</option>
+                      <option value="O">O</option>
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientBlood}</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Chiều cao (cm)</span>
-                  <input
-                    type="number"
-                    value={patientHeight}
-                    onChange={(e) => setPatientHeight(Number(e.target.value))}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={patientHeight}
+                      onChange={(e) => setPatientHeight(Number(e.target.value))}
+                      className={`form-input ${isPatientFieldModified('height', patientHeight) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientHeight} cm</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Cân nặng (kg)</span>
-                  <input
-                    type="number"
-                    value={patientWeight}
-                    onChange={(e) => setPatientWeight(Number(e.target.value))}
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
-                  />
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={patientWeight}
+                      onChange={(e) => setPatientWeight(Number(e.target.value))}
+                      className={`form-input ${isPatientFieldModified('weight', patientWeight) ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', height: '36px', padding: '6px 12px', fontSize: '0.88rem' }}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{patientWeight} kg</div>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span className="form-group-label" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>BMI</span>
-                  <input
-                    type="text"
-                    value={bmi}
-                    disabled
-                    className="form-input"
-                    style={{ width: '100%', height: '36px', padding: '6px 12px', backgroundColor: '#f1f5f9', fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.88rem' }}
-                  />
+                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', padding: '6px 0', color: 'var(--primary)' }}>{bmi}</div>
                 </div>
               </div>
             </div>
@@ -265,31 +440,37 @@ export default function AccountProfile({ role }) {
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-          {isSaved && (
-            <div className="flex align-center gap-2" style={{ color: '#10b981', fontWeight: '600', fontSize: '0.9rem', marginRight: '10px', marginTop: '10px' }}>
-              <Check size={16} /> Đã lưu thông tin tài khoản!
+        {/* Action buttons bar (notification on the left, buttons on the right) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+          <div>
+            {isSaved && (
+              <div className="flex align-center gap-2 animate-fade-in" style={{ color: '#10b981', fontWeight: '600', fontSize: '0.9rem' }}>
+                <Check size={16} /> Đã lưu thông tin tài khoản!
+              </div>
+            )}
+          </div>
+
+          {isEditing && (
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                type="button" 
+                onClick={handleCancelPatientEdit}
+                className="btn btn-cancel animate-fade-in" 
+                style={{ padding: '10px 32px', margin: 0 }}
+              >
+                Hủy bỏ
+              </button>
+              
+              <button 
+                type="button" 
+                onClick={handleSavePatientProfile}
+                className="btn btn-save animate-fade-in" 
+                style={{ padding: '10px 36px', margin: 0 }}
+              >
+                Lưu thay đổi
+              </button>
             </div>
           )}
-          
-          <button 
-            type="button" 
-            onClick={() => triggerToast && triggerToast('Đã hủy bỏ các thay đổi', 'info')}
-            className="btn btn-cancel animate-fade-in" 
-            style={{ padding: '10px 32px', margin: 0 }}
-          >
-            Hủy bỏ
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={handleSaveProfile}
-            className="btn btn-save animate-fade-in" 
-            style={{ padding: '10px 36px', margin: 0 }}
-          >
-            Lưu thay đổi
-          </button>
         </div>
 
       </div>
@@ -298,7 +479,7 @@ export default function AccountProfile({ role }) {
 
   // --- RENDER ORIGINAL PROFILE DETAILS FOR OTHER ROLES (EXPERT, MANAGER, DOCTOR) ---
   return (
-    <div className="profile-container animate-fade-in">
+    <div className="profile-container animate-fade-in" style={{ height: 'calc(100vh - var(--header-height) - 70px)' }}>
       {/* Left side info card */}
       <div className="profile-sidebar">
         <div className="profile-large-avatar">
@@ -389,77 +570,128 @@ export default function AccountProfile({ role }) {
       </div>
 
       {/* Right side forms and configurations */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4" style={{ height: '100%', overflowY: 'auto', paddingRight: '4px' }}>
         {/* Profile details */}
         <div className="card" style={{ margin: 0 }}>
-          <h3 style={{ fontSize: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>
-            Thông tin cá nhân
-          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '1.25rem', margin: 0 }}>
+              Thông tin cá nhân
+            </h3>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 16px', fontSize: '0.85rem' }}
+              >
+                <Edit2 size={14} /> Chỉnh sửa thông tin
+              </button>
+            )}
+          </div>
 
           <div className="form-inputs-container">
             <div className="form-group">
               <span className="form-group-label">Họ và tên</span>
-              <input
-                type="text"
-                value={profile.name}
-                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                className="form-input"
-              />
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  className={`form-input ${isProfileFieldModified('name') ? 'input-modified' : 'input-unmodified'}`}
+                />
+              ) : (
+                <div style={{ fontSize: '0.9rem', fontWeight: '600', padding: '6px 0', color: 'var(--text-dark)' }}>{profile.name}</div>
+              )}
             </div>
 
             <div className="form-group">
               <span className="form-group-label">Email công tác</span>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  className="form-input"
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="email"
+                      value={profile.email}
+                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                      className={`form-input ${isProfileFieldModified('email') ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', paddingLeft: '40px' }}
+                    />
+                    <Mail size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                    <Mail size={16} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)' }}>{profile.email}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="form-group">
               <span className="form-group-label">Số điện thoại liên hệ</span>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  className="form-input"
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <Phone size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      value={profile.phone}
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                      className={`form-input ${isProfileFieldModified('phone') ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', paddingLeft: '40px' }}
+                    />
+                    <Phone size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                    <Phone size={16} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)' }}>{profile.phone}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="form-group">
               <span className="form-group-label">Nơi công tác</span>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={profile.address}
-                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                  className="form-input"
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      value={profile.address}
+                      onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                      className={`form-input ${isProfileFieldModified('address') ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', paddingLeft: '40px' }}
+                    />
+                    <MapPin size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                    <MapPin size={16} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)' }}>{profile.address}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="form-group" style={{ gridColumn: 'span 2' }}>
               <span className="form-group-label">Chuyên môn học thuật / Quản trị</span>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  value={profile.specialty}
-                  onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
-                  className="form-input"
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <Award size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      value={profile.specialty}
+                      onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
+                      className={`form-input ${isProfileFieldModified('specialty') ? 'input-modified' : 'input-unmodified'}`}
+                      style={{ width: '100%', paddingLeft: '40px' }}
+                    />
+                    <Award size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                    <Award size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-dark)' }}>{profile.specialty}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -480,7 +712,16 @@ export default function AccountProfile({ role }) {
                   Yêu cầu mật khẩu xác thực OTP khi thay đổi các cấu hình hệ thống ảnh hưởng diện rộng.
                 </p>
               </div>
-              <input type="checkbox" defaultChecked style={{ marginLeft: 'auto', width: '20px', height: '20px' }} />
+              <input 
+                type="checkbox" 
+                checked={twoStepVal} 
+                disabled={!isEditing}
+                onChange={() => setTwoStepVal(!twoStepVal)}
+                style={{ marginLeft: 'auto', width: '20px', height: '20px', cursor: isEditing ? 'pointer' : 'default' }} 
+              />
+              {isEditing && isProfileFieldModified('twoStep') && (
+                <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold' }}>(Thay đổi)</span>
+              )}
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }} />
@@ -490,99 +731,131 @@ export default function AccountProfile({ role }) {
               <div className="flex flex-col gap-2">
                 {role === 'expert' ? (
                   <>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.newError') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.newError}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, newError: !profile.notifications.newError }
                         })}
                       />
-                      Thông báo ngay lập tức khi hội thoại AI bị khách hàng đánh giá 1 sao.
+                      <span>Thông báo ngay lập tức khi hội thoại AI bị khách hàng đánh giá 1 sao.</span>
+                      {isEditing && isProfileFieldModified('notifications.newError') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.scenarioUpdate') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.scenarioUpdate}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, scenarioUpdate: !profile.notifications.scenarioUpdate }
                         })}
                       />
-                      Thông báo khi có yêu cầu chỉnh sửa kịch bản từ hội đồng y khoa.
+                      <span>Thông báo khi có yêu cầu chỉnh sửa kịch bản từ hội đồng y khoa.</span>
+                      {isEditing && isProfileFieldModified('notifications.scenarioUpdate') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.weeklyReport') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.weeklyReport}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, weeklyReport: !profile.notifications.weeklyReport }
                         })}
                       />
-                      Gửi báo cáo tổng hợp hiệu năng đàm thoại AI hàng tuần.
+                      <span>Gửi báo cáo tổng hợp hiệu năng đàm thoại AI hàng tuần.</span>
+                      {isEditing && isProfileFieldModified('notifications.weeklyReport') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
                   </>
                 ) : role === 'doctor' ? (
                   <>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.newError') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.newError}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, newError: !profile.notifications.newError }
                         })}
                       />
-                      Thông báo khẩn cấp khi có ca hẹn khám mới hoặc yêu cầu tư vấn.
+                      <span>Thông báo khẩn cấp khi có ca hẹn khám mới hoặc yêu cầu tư vấn.</span>
+                      {isEditing && isProfileFieldModified('notifications.newError') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.scenarioUpdate') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.scenarioUpdate}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, scenarioUpdate: !profile.notifications.scenarioUpdate }
                         })}
                       />
-                      Thông báo khi bệnh nhân gửi yêu cầu tư vấn khẩn cấp trong ca trực.
+                      <span>Thông báo khi bệnh nhân gửi yêu cầu tư vấn khẩn cấp trong ca trực.</span>
+                      {isEditing && isProfileFieldModified('notifications.scenarioUpdate') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.weeklyReport') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.weeklyReport}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, weeklyReport: !profile.notifications.weeklyReport }
                         })}
                       />
-                      Gửi báo cáo tổng kết số lượt khám và đơn thuốc đã kê hàng tuần.
+                      <span>Gửi báo cáo tổng kết số lượt khám và đơn thuốc đã kê hàng tuần.</span>
+                      {isEditing && isProfileFieldModified('notifications.weeklyReport') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
                   </>
                 ) : (
                   <>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.newError') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.newError}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, newError: !profile.notifications.newError }
                         })}
                       />
-                      Thông báo khi có ca trùng lịch của bác sĩ hoặc có lịch khám bị hủy.
+                      <span>Thông báo khi có ca trùng lịch của bác sĩ hoặc có lịch khám bị hủy.</span>
+                      {isEditing && isProfileFieldModified('notifications.newError') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
-                    <label className="checkbox-label">
+                    <label className="checkbox-label" style={{ cursor: isEditing ? 'pointer' : 'default', fontWeight: isProfileFieldModified('notifications.weeklyReport') ? '700' : 'normal' }}>
                       <input
                         type="checkbox"
                         checked={profile.notifications.weeklyReport}
+                        disabled={!isEditing}
                         onChange={() => setProfile({
                           ...profile,
                           notifications: { ...profile.notifications, weeklyReport: !profile.notifications.weeklyReport }
                         })}
                       />
-                      Gửi báo cáo phân tích tài chính và doanh thu hàng tuần.
+                      <span>Gửi báo cáo phân tích tài chính và doanh thu hàng tuần.</span>
+                      {isEditing && isProfileFieldModified('notifications.weeklyReport') && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 'bold', marginLeft: '4px' }}>(Thay đổi)</span>
+                      )}
                     </label>
                   </>
                 )}
@@ -591,16 +864,37 @@ export default function AccountProfile({ role }) {
           </div>
         </div>
 
-        {/* Action button */}
-        <div className="flex justify-end gap-4" style={{ marginTop: '10px' }}>
-          {isSaved && (
-            <div className="flex align-center gap-2" style={{ color: '#10b981', fontWeight: '600', fontSize: '0.9rem' }}>
-              <Check size={16} /> Đã lưu thông tin tài khoản!
+        {/* Action buttons bar (notification on the left, buttons on the right) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+          <div>
+            {isSaved && (
+              <div className="flex align-center gap-2 animate-fade-in" style={{ color: '#10b981', fontWeight: '600', fontSize: '0.9rem' }}>
+                <Check size={16} /> Đã lưu thông tin tài khoản!
+              </div>
+            )}
+          </div>
+
+          {isEditing && (
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                type="button" 
+                onClick={handleCancelEdit}
+                className="btn btn-cancel animate-fade-in" 
+                style={{ padding: '10px 32px', margin: 0 }}
+              >
+                Hủy bỏ
+              </button>
+              
+              <button 
+                type="button" 
+                onClick={handleSaveProfile}
+                className="btn btn-save animate-fade-in" 
+                style={{ padding: '10px 36px', margin: 0 }}
+              >
+                Lưu thay đổi
+              </button>
             </div>
           )}
-          <button className="btn btn-primary animate-pulse" onClick={handleSaveProfile} style={{ padding: '12px 32px' }}>
-            Lưu thay đổi
-          </button>
         </div>
       </div>
     </div>

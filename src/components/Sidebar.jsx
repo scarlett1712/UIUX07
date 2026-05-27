@@ -27,10 +27,22 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
     }
   }, [currentView]);
 
+  const handleLogoClick = () => {
+    if (role === 'expert') {
+      onNavigate('dashboard');
+    } else if (role === 'manager') {
+      onNavigate('manager-dashboard');
+    } else if (role === 'doctor') {
+      onNavigate('doctor-dashboard');
+    } else if (role === 'patient') {
+      onNavigate('patient-dashboard');
+    }
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-logo-circle">
+        <div className="sidebar-logo-circle" onClick={handleLogoClick}>
           <Heart size={36} fill="currentColor" />
         </div>
       </div>
@@ -353,74 +365,6 @@ export default function Sidebar({ role, currentView, onNavigate, onLogout }) {
         )}
       </nav>
 
-      {/* Profile Footer */}
-      <div className="sidebar-footer">
-        <div className="sidebar-user" onClick={() => onNavigate('profile')}>
-          <div className="sidebar-avatar">
-            {role === 'expert' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
-                <circle cx="50" cy="40" r="20" fill="#db2777" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
-              </svg>
-            ) : role === 'manager' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#fef3c7" />
-                <circle cx="50" cy="40" r="20" fill="#d97706" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
-              </svg>
-            ) : role === 'patient' ? (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
-                <circle cx="50" cy="40" r="20" fill="#4f46e5" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 100 100" width="100%" height="100%">
-                <circle cx="50" cy="50" r="50" fill="#dbeafe" />
-                <circle cx="50" cy="40" r="20" fill="#2563eb" />
-                <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
-              </svg>
-            )}
-          </div>
-          <div style={{ flexGrow: 1, minWidth: 0 }}>
-            <div className="sidebar-user-name">
-              {role === 'expert'
-                ? 'Mai Thùy Linh'
-                : role === 'manager'
-                ? 'Nguyễn Nhật Linh'
-                : role === 'patient'
-                ? 'Lương Hương Giang'
-                : 'Dương Gia Huy'}
-            </div>
-            <div className="sidebar-user-role">
-              {role === 'expert'
-                ? 'Chuyên gia'
-                : role === 'manager'
-                ? 'Quản lý'
-                : role === 'patient'
-                ? 'Người dùng'
-                : 'Bác sĩ'}
-            </div>
-          </div>
-        </div>
-        <button 
-          type="button"
-          onClick={onLogout} 
-          style={{ 
-            marginTop: '10px', 
-            width: '100%', 
-            background: 'transparent', 
-            border: 'none', 
-            color: 'rgba(255,255,255,0.8)', 
-            cursor: 'pointer', 
-            fontSize: '0.8rem',
-            textAlign: 'center' 
-          }}
-        >
-          Đăng xuất
-        </button>
-      </div>
     </aside>
   );
 }

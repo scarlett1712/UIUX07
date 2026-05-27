@@ -215,7 +215,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Đau bụng âm ỉ vùng hố chậu phải',
     fullSymptom: 'Đau bụng âm ỉ vùng hố chậu phải kéo dài',
     gender: 'Nam',
-    dob: '1995-04-12',
+    dob: '12-04-1995',
     phone: '0987654321'
   },
   {
@@ -234,7 +234,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Sốt nhẹ, đau họng',
     fullSymptom: 'Sốt nhẹ, đau họng nhiều ngày',
     gender: 'Nữ',
-    dob: '2000-08-25',
+    dob: '25-08-2000',
     phone: '0912345678'
   },
   // Tomorrow's appointments (May 27, 2026) for Bs. Huy
@@ -254,7 +254,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Mỏi mắt, nhức đầu',
     fullSymptom: 'Mỏi mắt, nhức đầu kéo dài',
     gender: 'Nữ',
-    dob: '1988-11-05',
+    dob: '05-11-1988',
     phone: '0905554433'
   },
   // Other days (May 7, May 9, May 11, May 14) for Bs. Huy to sync with existing mock schedule
@@ -274,7 +274,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Đau đầu, chóng mặt nhiều ngày',
     fullSymptom: 'Đau đầu, chóng mặt nhiều ngày, buồn nôn nhẹ',
     gender: 'Nam',
-    dob: '2015-06-18',
+    dob: '18-06-2015',
     phone: '0977889900'
   },
   {
@@ -293,7 +293,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Mỏi mắt, khô mắt',
     fullSymptom: 'Mỏi mắt, nhức mỏi cơ và khô giác mạc nhẹ',
     gender: 'Nam',
-    dob: '1992-03-14',
+    dob: '14-03-1992',
     phone: '0901223344'
   },
   {
@@ -312,7 +312,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Đau bụng thượng vị',
     fullSymptom: 'Đau tức vùng bụng thượng vị âm ỉ kéo dài',
     gender: 'Nữ',
-    dob: '1985-09-02',
+    dob: '02-09-1985',
     phone: '0933456789'
   },
   // Pending appointments (Chờ xác nhận / Đang xử lý) to show in Doctor's pending list and dashboard count
@@ -332,7 +332,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Đau tai, chảy dịch',
     fullSymptom: 'Đau tai phải từ hôm qua, có dịch mủ vàng chảy ra kèm sốt nhẹ',
     gender: 'Nam',
-    dob: '1990-10-10',
+    dob: '10-10-1990',
     phone: '0981112222'
   },
   {
@@ -351,7 +351,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Sốt cao, ho khan',
     fullSymptom: 'Sốt nóng lạnh 39 độ C kèm ho khan tức ngực',
     gender: 'Nữ',
-    dob: '2000-05-05',
+    dob: '05-05-2000',
     phone: '0123456789'
   },
   {
@@ -370,7 +370,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Ù tai lâu ngày',
     fullSymptom: 'Ù tai trái kéo dài hơn 1 tuần, nghe kém',
     gender: 'Nam',
-    dob: '1993-12-12',
+    dob: '12-12-1993',
     phone: '0979888777'
   },
   // Other doctors' appointments
@@ -390,7 +390,7 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Mỏi mắt nhức vai',
     fullSymptom: 'Mỏi mắt nhức vai gáy',
     gender: 'Nam',
-    dob: '1992-03-14',
+    dob: '14-03-1992',
     phone: '0901223344'
   },
   {
@@ -409,21 +409,29 @@ const INITIAL_APPOINTMENTS = [
     symptom: 'Nghẹt mũi, ù tai trái',
     fullSymptom: 'Nghẹt mũi, ù tai trái nhiều ngày',
     gender: 'Nữ',
-    dob: '1988-11-05',
+    dob: '05-11-1988',
     phone: '0905554433'
   }
 ];
 
 // Initial Mock Patients Database
 const INITIAL_PATIENTS = [
-  { id: 'P001', name: 'Đỗ Minh Tú', dob: '1995-04-12', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', medicalHistory: [
-    { date: '12-04-2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid' }
+  { id: 'P001', name: 'Đỗ Minh Tú', dob: '12-04-1995', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', medicalHistory: [
+    { date: '12-04-2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid dịch vị.' },
+    { date: '10-02-2026', diagnosis: 'Viêm họng cấp', doctor: 'Bs. Huy', treatment: 'Súc họng nước muối ấm, uống siro ho thảo dược.' }
   ] },
-  { id: 'P002', name: 'Nguyễn Minh Anh', dob: '2000-08-25', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [] },
-  { id: 'P003', name: 'Văn Thị Trinh', dob: '1988-11-05', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
-    { date: '01-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi, kháng histamin 7 ngày' }
+  { id: 'P002', name: 'Nguyễn Minh Anh', dob: '25-08-2000', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [
+    { date: '15-03-2026', diagnosis: 'Cảm cúm mùa', doctor: 'Bs. Huy', treatment: 'Paracetamol 500mg (10 viên) - Uống khi sốt; Amoxicillin 500mg (15 viên) - Ngày 3 viên uống sau ăn.' },
+    { date: '28-12-2025', diagnosis: 'Rối loạn tiêu hóa', doctor: 'Bs. Huy', treatment: 'Bổ sung men vi sinh Probiotics, Oresol uống bù nước khi cần.' }
   ] },
-  { id: 'P004', name: 'Lương Hương Giang', dob: '2000-05-05', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', medicalHistory: [] }
+  { id: 'P003', name: 'Văn Thị Trinh', dob: '05-11-1988', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
+    { date: '01-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi Corticoid, kháng histamin Loratadine 10mg trong 7 ngày.' },
+    { date: '14-11-2025', diagnosis: 'Viêm phế quan nhẹ', doctor: 'Bs. Huy', treatment: 'Uống thuốc ho thảo dược, kháng viêm Alphachymotrypsin.' }
+  ] },
+  { id: 'P004', name: 'Lương Hương Giang', dob: '05-05-2000', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', medicalHistory: [
+    { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.' },
+    { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.' }
+  ] }
 ];
 
 // Initial Mock Doctors
@@ -680,6 +688,39 @@ function App() {
     }
   };
 
+  const handleSyncPatientConversation = (ratedConv) => {
+    setConversations(prev => {
+      const exists = prev.some(c => c.id === ratedConv.id);
+      const transcript = (ratedConv.messages || []).map(m => ({
+        sender: m.sender === 'patient' ? 'patient' : m.sender,
+        text: m.text,
+        flagged: false,
+        errorType: ''
+      }));
+
+      const newOrUpdatedConv = {
+        id: ratedConv.id,
+        name: 'Lương Hương Giang',
+        time: ratedConv.date && ratedConv.date !== 'Vừa xong' ? ratedConv.date : new Date().toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }).replace(',', ' -'),
+        topic: ratedConv.topic || 'Triệu chứng của bệnh nhân',
+        rating: ratedConv.rating,
+        ratingNum: ratedConv.ratingNum,
+        status: 'Chưa duyệt',
+        transcript,
+        errors: { medical: false, hallucination: false, tone: false, logic: false },
+        userFeedback: ratedConv.feedbackComment || '',
+        userProblems: ratedConv.feedbackProblems || [],
+        notes: ''
+      };
+
+      if (exists) {
+        return prev.map(c => c.id === ratedConv.id ? newOrUpdatedConv : c);
+      } else {
+        return [newOrUpdatedConv, ...prev];
+      }
+    });
+  };
+
   const handleNavigate = (view, id = null) => {
     let actualView = view;
     let keepActiveConv = false;
@@ -807,6 +848,7 @@ function App() {
           currentView={currentView}
           previousView={previousView}
           onNavigate={handleNavigate}
+          onLogout={handleLogout}
           onSelectId={setSelectedId}
           diseases={diseases}
           medicines={medicines}
@@ -840,6 +882,7 @@ function App() {
               setConversations={setPatientConversations}
               activeConvId={activePatientConvId}
               setActiveConvId={setActivePatientConvId}
+              syncPatientConversation={handleSyncPatientConversation}
             />
           )}
 
@@ -849,6 +892,7 @@ function App() {
               setAppointments={setAppointments}
               triggerToast={triggerToast}
               onNavigate={handleNavigate}
+              showConfirm={showConfirm}
               defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
               patientConversations={patientConversations}
               activePatientConvId={activePatientConvId}
@@ -857,6 +901,8 @@ function App() {
                   if (c.id === activePatientConvId) {
                     return {
                       ...c,
+                      status: 'Hoàn thành',
+                      showActions: true,
                       messages: [
                         ...c.messages,
                         {

@@ -108,8 +108,16 @@ export default function ClinicManagement({
     } else if (currentView === 'patient-edit') {
       const item = patients.find(p => p.id === selectedId);
       if (item) {
-        setFormData(JSON.parse(JSON.stringify(item)));
-        setOriginalData(JSON.parse(JSON.stringify(item)));
+        // Convert dob from DD-MM-YYYY to YYYY-MM-DD for standard html date input
+        const cloned = JSON.parse(JSON.stringify(item));
+        if (cloned.dob && cloned.dob.includes('-')) {
+          const parts = cloned.dob.split('-');
+          if (parts.length === 3 && parts[0].length === 2) {
+            cloned.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+        }
+        setFormData(cloned);
+        setOriginalData(JSON.parse(JSON.stringify(cloned)));
       }
     }
   }, [currentView, selectedId, appointments, patients]);
@@ -168,11 +176,19 @@ export default function ClinicManagement({
       triggerToast('Tên bệnh nhân không được để trống', 'error');
       return;
     }
+    // Convert YYYY-MM-DD back to DD-MM-YYYY before saving to database state
+    const savedData = { ...formData };
+    if (savedData.dob && savedData.dob.includes('-')) {
+      const parts = savedData.dob.split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        savedData.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
     if (currentView === 'patient-add') {
-      setPatients([formData, ...patients]);
+      setPatients([savedData, ...patients]);
       triggerToast('Đã thêm hồ sơ bệnh nhân mới', 'success');
     } else {
-      setPatients(patients.map(p => p.id === formData.id ? formData : p));
+      setPatients(patients.map(p => p.id === savedData.id ? savedData : p));
       triggerToast('Đã cập nhật hồ sơ bệnh nhân', 'success');
     }
     onNavigate('patient-list');
@@ -339,42 +355,44 @@ export default function ClinicManagement({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => (
-              <div key={f.id} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600 }}>{f.name}</span>
-                    <span style={{ display: 'inline-flex', color: '#eab308' }}>
-                      {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                      {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
-                    </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: 'calc(100vh - var(--header-height) - 220px)', overflowY: 'auto', paddingRight: '4px' }}>
+              {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => (
+                <div key={f.id} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600 }}>{f.name}</span>
+                      <span style={{ display: 'inline-flex', color: '#eab308' }}>
+                        {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                        {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
+                  
+                  <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
+                  
+                  {f.response ? (
+                    <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                      <input
+                        type="text"
+                        placeholder="Nhập nội dung phản hồi đánh giá này..."
+                        value={feedbackReplyText[f.id] || ''}
+                        onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
+                        style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem' }}
+                      />
+                      <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
+                        Gửi phản hồi
+                      </button>
+                    </div>
+                  )}
                 </div>
-                
-                <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
-                
-                {f.response ? (
-                  <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                    <input
-                      type="text"
-                      placeholder="Nhập nội dung phản hồi đánh giá này..."
-                      value={feedbackReplyText[f.id] || ''}
-                      onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
-                      style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem' }}
-                    />
-                    <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
-                      Gửi phản hồi
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
 
             {/* Pagination Bar */}
             <div className="list-pagination-bar">
@@ -408,7 +426,7 @@ export default function ClinicManagement({
   // 2. VIEW APPOINTMENT CALENDAR GRID
   if (currentView === 'appointment-calendar') {
     return (
-      <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '16px', height: '100%' }}>
+      <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '16px', height: 'calc(100vh - var(--header-height) - 100px)' }}>
         {/* Left filter bar */}
         <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '14px', height: 'fit-content' }}>
           <div>
@@ -950,7 +968,7 @@ export default function ClinicManagement({
 
         <div style={{ marginTop: '16px' }}>
           <h3 style={{ fontSize: '1rem', color: 'var(--primary)', marginBottom: '10px' }}>Lịch sử khám chữa bệnh</h3>
-          <div className="custom-table-container">
+          <div className="custom-table-container" style={{ maxHeight: '250px', overflowY: 'auto' }}>
             <table className="custom-table">
               <thead>
                 <tr>

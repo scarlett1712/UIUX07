@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Play, Edit3, Trash2, Plus, Save, X, RotateCcw, AlertCircle, Send, Award, HelpCircle, ArrowLeft, Eye, Sparkles, User, FileText, Search, Filter, Undo2 } from 'lucide-react';
+import { Bot, Play, Edit3, Trash2, Plus, Save, X, RotateCcw, AlertCircle, Send, Award, HelpCircle, ArrowLeft, Eye, Sparkles, User, FileText, Search, Filter, Undo2, Star } from 'lucide-react';
 
 // Shift coordinates by X:+200px and Y:+20px to center on load
 const INITIAL_NODES = [
@@ -129,6 +129,20 @@ export default function ChatbotScenarios({
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInputValue, setChatInputValue] = useState('');
   const [isSimulatorRunning, setIsSimulatorRunning] = useState(false);
+  const [simStars, setSimStars] = useState(0);
+  const [simProblems, setSimProblems] = useState([]);
+  const [simComment, setSimComment] = useState('');
+  const [simRated, setSimRated] = useState(false);
+
+  const isLeafNode = (nodeId) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return false;
+    if (node.type === 'condition') {
+      return !node.choices || node.choices.length === 0 || node.choices.every(c => !c.nextNode);
+    }
+    return !connections.some(c => c.from === nodeId);
+  };
+
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -342,6 +356,10 @@ export default function ChatbotScenarios({
     setIsSimulatorRunning(true);
     setCurrentNodeId('start');
     setChatMessages([]);
+    setSimStars(0);
+    setSimProblems([]);
+    setSimComment('');
+    setSimRated(false);
     triggerToast('Khởi động kịch bản giả lập thành công!', 'success');
     
     const conn = connections.find((c) => c.from === 'start');
@@ -671,7 +689,7 @@ export default function ChatbotScenarios({
           </div>
         </div>
 
-        <div className="canvas-container-outer" style={{ height: '400px' }}>
+        <div className="canvas-container-outer" style={{ height: 'calc(100vh - var(--header-height) - 240px)' }}>
           <div ref={canvasRef} className="canvas-area" style={{ cursor: 'default' }}>
             <svg className="flow-svg-connections">
               {renderConnections()}
@@ -736,7 +754,7 @@ export default function ChatbotScenarios({
         </div>
 
         {/* Canvas grid panels */}
-        <div className="canvas-container-outer">
+        <div className="canvas-container-outer" style={{ height: 'calc(100vh - var(--header-height) - 120px)' }}>
           {/* Node templates sidebar */}
           <div className="canvas-sidebar">
             <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
@@ -969,7 +987,7 @@ export default function ChatbotScenarios({
         </div>
 
         {/* Split screen layout */}
-        <div className="simulator-layout">
+        <div className="simulator-layout" style={{ height: 'calc(100vh - var(--header-height) - 100px)' }}>
           {/* Left side: Canvas flow visual */}
           <div className="canvas-container-outer" style={{ height: '100%' }}>
             <div ref={canvasRef} className="canvas-area" style={{ cursor: 'default' }}>
@@ -1067,6 +1085,161 @@ export default function ChatbotScenarios({
                   );
                 })
               )}
+              {/* Rating Card automatically triggers when test simulation reaches a leaf node */}
+              {isSimulatorRunning && chatMessages.length > 0 && isLeafNode(currentNodeId) && (
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: '1.5px solid var(--primary-light)',
+                  backgroundColor: '#f8fafc',
+                  boxShadow: 'var(--shadow-sm)',
+                  margin: '12px 0',
+                  width: '100%',
+                  maxWidth: '85%',
+                  alignSelf: 'flex-start',
+                  animation: 'fadeIn 0.3s ease'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '700' }}>
+                    Đánh giá chất lượng kịch bản (Thử nghiệm)
+                  </h4>
+                  
+                  {!simRated ? (
+                    <div>
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setSimStars(star)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          >
+                            <Star
+                              size={20}
+                              fill={star <= simStars ? '#eab308' : 'none'}
+                              color={star <= simStars ? '#eab308' : '#94a3b8'}
+                              style={{ transition: 'all 0.15s ease' }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+
+                      {simStars > 0 && simStars <= 3 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-dark)' }}>
+                            Bạn gặp vấn đề gì?
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                            {[
+                              'Thông tin y tế chưa chính xác',
+                              'Phản hồi chậm / không đúng trọng tâm',
+                              'Thái độ / giọng điệu chưa phù hợp',
+                              'Lỗi hiển thị / kịch bản'
+                            ].map(prob => (
+                              <label key={prob} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 'normal', color: 'var(--text-dark)' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={simProblems.includes(prob)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSimProblems([...simProblems, prob]);
+                                    } else {
+                                      setSimProblems(simProblems.filter(p => p !== prob));
+                                    }
+                                  }}
+                                />
+                                {prob}
+                              </label>
+                            ))}
+                          </div>
+                          <textarea
+                            placeholder="Nhập nhận xét của bạn..."
+                            value={simComment}
+                            onChange={(e) => setSimComment(e.target.value)}
+                            style={{
+                              width: '100%',
+                              minHeight: '60px',
+                              padding: '8px',
+                              fontSize: '0.78rem',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
+                              outline: 'none',
+                              resize: 'vertical'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {simStars >= 4 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '600' }}>
+                            Cảm ơn bạn đã đánh giá tốt!
+                          </span>
+                          <textarea
+                            placeholder="Nhập thêm góp ý để chúng tôi hoàn thiện hơn..."
+                            value={simComment}
+                            onChange={(e) => setSimComment(e.target.value)}
+                            style={{
+                              width: '100%',
+                              minHeight: '60px',
+                              padding: '8px',
+                              fontSize: '0.78rem',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-color)',
+                              outline: 'none',
+                              resize: 'vertical'
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setSimRated(true);
+                          triggerToast('Cảm ơn chuyên gia đã gửi đánh giá thử nghiệm kịch bản!', 'success');
+                        }}
+                        disabled={simStars === 0}
+                        style={{
+                          padding: '6px 16px',
+                          fontSize: '0.78rem',
+                          backgroundColor: simStars === 0 ? 'var(--border-color)' : 'var(--primary)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: simStars === 0 ? 'not-allowed' : 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        Gửi đánh giá
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>
+                      <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={16}
+                            fill={star <= simStars ? '#eab308' : 'none'}
+                            color={star <= simStars ? '#eab308' : '#94a3b8'}
+                          />
+                        ))}
+                      </div>
+                      {simStars <= 3 && simProblems.length > 0 && (
+                        <div style={{ margin: '4px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          <strong>Vấn đề:</strong> {simProblems.join(', ')}
+                        </div>
+                      )}
+                      {simComment && (
+                        <div style={{ fontStyle: 'italic', marginTop: '4px' }}>
+                          "{simComment}"
+                        </div>
+                      )}
+                      <div style={{ marginTop: '8px', color: '#16a34a', fontWeight: '600', fontSize: '0.75rem' }}>
+                        ✓ Đã ghi nhận đánh giá thử nghiệm.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -1089,8 +1262,8 @@ export default function ChatbotScenarios({
               <div className="chatgpt-input-bar">
                 <input
                   type="text"
-                  placeholder={isSimulatorRunning ? "Hỏi trợ lý y khoa..." : "Nhấn bắt đầu kiểm thử để chat..."}
-                  disabled={!isSimulatorRunning}
+                  placeholder={isSimulatorRunning ? (isLeafNode(currentNodeId) ? "Kịch bản giả lập đã kết thúc..." : "Hỏi trợ lý y khoa...") : "Nhấn bắt đầu kiểm thử để chat..."}
+                  disabled={!isSimulatorRunning || isLeafNode(currentNodeId)}
                   value={chatInputValue}
                   onChange={(e) => setChatInputValue(e.target.value)}
                   onKeyDown={(e) => {
@@ -1100,7 +1273,7 @@ export default function ChatbotScenarios({
                 <button
                   className="chatgpt-send-btn"
                   onClick={handleSendSimulatorMsg}
-                  disabled={!isSimulatorRunning}
+                  disabled={!isSimulatorRunning || isLeafNode(currentNodeId)}
                 >
                   <Send size={12} />
                 </button>

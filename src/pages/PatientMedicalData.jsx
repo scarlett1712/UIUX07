@@ -84,7 +84,7 @@ export default function PatientMedicalData({
         }
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', height: 'calc(100vh - 200px)', minHeight: '450px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', height: 'calc(100vh - var(--header-height) - 150px)', alignItems: 'stretch' }}>
         
         {/* LEFT COLUMN: List of Diseases or Medicines */}
         <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0, overflowY: 'auto' }}>
