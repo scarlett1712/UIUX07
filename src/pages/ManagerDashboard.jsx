@@ -38,7 +38,7 @@ export default function ManagerDashboard({
   const upcomingAppointments = [
     { id: 'APT002', time: '08:00', patientName: 'Nguyễn Minh Anh', doctorName: 'Bs. B', status: 'Đã xác nhận' },
     { id: 'APT001', time: '11:30', patientName: 'Đỗ Minh Tú', doctorName: 'Bs. Huy', status: 'Đã xác nhận' },
-    { id: 'APT003', time: '14:00', patientName: 'Văn Thị Trinh', doctorName: 'Bs. C', status: 'Đang xử lý' }
+    { id: 'APT003', time: '14:00', patientName: 'Văn Thị Trinh', doctorName: 'Bs. C', status: 'Chờ xác nhận' }
   ];
 
   // System alerts / notifications

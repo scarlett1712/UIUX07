@@ -16,7 +16,7 @@ export default function DoctorDashboard({
   
   // Calculate stats dynamically
   const todayConfirmedCount = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date === todayStr && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý')).length;
-  const pendingCount = appointments.filter(a => a.doctorName === 'Bs. Huy' && (a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý')).length;
+  const pendingCount = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.status === 'Chờ xác nhận').length;
 
   const [selectedDate, setSelectedDate] = useState(today.getDate()); // default to today's date
 

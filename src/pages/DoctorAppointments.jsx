@@ -63,8 +63,8 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
   });
 
   const sortedApts = [...filteredApts].sort((a, b) => {
-    const isAPending = a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý';
-    const isBPending = b.status === 'Chờ xác nhận' || b.status === 'Đang xử lý';
+    const isAPending = a.status === 'Chờ xác nhận';
+    const isBPending = b.status === 'Chờ xác nhận';
     if (isAPending && !isBPending) return -1;
     if (!isAPending && isBPending) return 1;
     return 0;
@@ -90,7 +90,7 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
   // Pending days for calendar marking
   const myPendingAppts = myAppointments.filter(a => {
     const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-    return a.date.startsWith(yearMonthStr) && (a.status === 'Chờ xác nhận' || a.status === 'Đang xử lý');
+    return a.date.startsWith(yearMonthStr) && a.status === 'Chờ xác nhận';
   });
   const appointmentDays = myPendingAppts.map(a => {
     const parts = a.date.split('-');
@@ -176,8 +176,8 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
                         fontSize: '0.7rem',
                         padding: '2px 8px',
                         borderRadius: '12px',
-                        backgroundColor: (apt.status === 'Chờ xác nhận' || apt.status === 'Đang xử lý') ? '#fef3c7' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
-                        color: (apt.status === 'Chờ xác nhận' || apt.status === 'Đang xử lý') ? '#d97706' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
+                        backgroundColor: apt.status === 'Chờ xác nhận' ? '#fef3c7' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
+                        color: apt.status === 'Chờ xác nhận' ? '#d97706' : (apt.status === 'Đã đồng ý' || apt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
                       }}>
                         {apt.status}
                       </span>
@@ -223,8 +223,8 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
                     fontSize: '0.7rem',
                     padding: '2px 8px',
                     borderRadius: '12px',
-                    backgroundColor: (activeApt.status === 'Chờ xác nhận' || activeApt.status === 'Đang xử lý') ? '#fef3c7' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
-                    color: (activeApt.status === 'Chờ xác nhận' || activeApt.status === 'Đang xử lý') ? '#d97706' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
+                    backgroundColor: activeApt.status === 'Chờ xác nhận' ? '#fef3c7' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#d1fae5' : '#fee2e2',
+                    color: activeApt.status === 'Chờ xác nhận' ? '#d97706' : (activeApt.status === 'Đã đồng ý' || activeApt.status === 'Đã xác nhận') ? '#065f46' : '#dc2626'
                   }}>
                     {activeApt.status}
                   </span>

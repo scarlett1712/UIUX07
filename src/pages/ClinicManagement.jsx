@@ -83,7 +83,7 @@ export default function ClinicManagement({
         date: '2026-05-15',
         time: '08:00 - 09:00',
         specialty: 'Ngoại tổng quát',
-        status: 'Đang xử lý',
+        status: 'Chờ xác nhận',
         symptoms: ''
       });
     } else if (currentView === 'appointment-edit') {
@@ -583,7 +583,7 @@ export default function ClinicManagement({
                   {activeAptPopup.symptoms && <div><strong>Triệu chứng:</strong> {activeAptPopup.symptoms}</div>}
                   <div>
                     <strong>Trạng thái:</strong>{' '}
-                    <span className={`badge ${activeAptPopup.status === 'Đã xác nhận' ? 'badge-low' : activeAptPopup.status === 'Đang xử lý' ? 'badge-medium' : 'badge-high'}`}>
+                    <span className={`badge ${activeAptPopup.status === 'Đã xác nhận' ? 'badge-low' : activeAptPopup.status === 'Chờ xác nhận' ? 'badge-medium' : 'badge-high'}`}>
                       {activeAptPopup.status}
                     </span>
                   </div>
@@ -760,7 +760,7 @@ export default function ClinicManagement({
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className={`form-select ${isFieldModified('status') ? 'input-modified' : 'input-unmodified'}`}
             >
-              <option value="Đang xử lý">Đang xử lý</option>
+              <option value="Chờ xác nhận">Chờ xác nhận</option>
               <option value="Đã xác nhận">Đã xác nhận</option>
               <option value="Đã khám">Đã khám</option>
               <option value="Đã hủy">Đã hủy</option>

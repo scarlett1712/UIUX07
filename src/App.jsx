@@ -315,7 +315,7 @@ const INITIAL_APPOINTMENTS = [
     dob: '02-09-1985',
     phone: '0933456789'
   },
-  // Pending appointments (Chờ xác nhận / Đang xử lý) to show in Doctor's pending list and dashboard count
+  // Pending appointments (Chờ xác nhận) to show in Doctor's pending list and dashboard count
   {
     id: 'APT008',
     patientName: 'Vũ Anh Long',
@@ -403,7 +403,7 @@ const INITIAL_APPOINTMENTS = [
     date: getRelativeDate(0),
     time: '14:00 - 15:00',
     specialty: 'Tai mũi họng',
-    status: 'Đang xử lý',
+    status: 'Chờ xác nhận',
     fee: '400.000',
     symptoms: 'Nghẹt mũi, ù tai trái',
     symptom: 'Nghẹt mũi, ù tai trái',

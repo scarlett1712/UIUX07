@@ -108,7 +108,7 @@ export default function PatientSchedule({
       location: doctor.location,
       fee: doctor.fee,
       symptoms: bookingSymptoms || 'Khám sức khỏe tổng quát định kỳ',
-      status: 'Đang xử lý'
+      status: 'Chờ xác nhận'
     };
 
     setAppointments([newApt, ...appointments]);
@@ -198,8 +198,8 @@ export default function PatientSchedule({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <span style={{ fontWeight: '700', fontSize: '0.88rem', color: 'var(--primary)' }}>{apt.doctorName}</span>
                     <span className="badge" style={{
-                      backgroundColor: apt.status === 'Đã xác nhận' ? '#d1fae5' : apt.status === 'Đang xử lý' ? '#fef3c7' : '#fee2e2',
-                      color: apt.status === 'Đã xác nhận' ? '#065f46' : apt.status === 'Đang xử lý' ? '#d97706' : '#dc2626',
+                      backgroundColor: apt.status === 'Đã xác nhận' ? '#d1fae5' : apt.status === 'Chờ xác nhận' ? '#fef3c7' : '#fee2e2',
+                      color: apt.status === 'Đã xác nhận' ? '#065f46' : apt.status === 'Chờ xác nhận' ? '#d97706' : '#dc2626',
                       fontSize: '0.7rem'
                     }}>
                       {apt.status}
@@ -233,8 +233,8 @@ export default function PatientSchedule({
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Mã lịch khám: {selectedApt.id}</span>
                   </div>
                   <span className="badge" style={{
-                    backgroundColor: selectedApt.status === 'Đã xác nhận' ? '#d1fae5' : selectedApt.status === 'Đang xử lý' ? '#fef3c7' : '#fee2e2',
-                    color: selectedApt.status === 'Đã xác nhận' ? '#065f46' : selectedApt.status === 'Đang xử lý' ? '#d97706' : '#dc2626',
+                    backgroundColor: selectedApt.status === 'Đã xác nhận' ? '#d1fae5' : selectedApt.status === 'Chờ xác nhận' ? '#fef3c7' : '#fee2e2',
+                    color: selectedApt.status === 'Đã xác nhận' ? '#065f46' : selectedApt.status === 'Chờ xác nhận' ? '#d97706' : '#dc2626',
                     padding: '4px 10px',
                     fontSize: '0.8rem',
                     fontWeight: '600'
@@ -300,6 +300,15 @@ export default function PatientSchedule({
                     {selectedApt.symptoms}
                   </div>
                 </div>
+
+                {selectedApt.status === 'Đã từ chối' && selectedApt.reason && (
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#dc2626', display: 'block', marginBottom: '4px' }}>Lý do từ chối khám từ bác sĩ:</strong>
+                    <div style={{ padding: '6px 10px', borderRadius: '8px', backgroundColor: '#fff5f5', border: '1px solid #fee2e2', fontSize: '0.82rem', color: '#dc2626', fontWeight: 500, lineHeight: '1.4' }}>
+                      {selectedApt.reason}
+                    </div>
+                  </div>
+                )}
 
                 {/* Cancel Button */}
                 {selectedApt.status !== 'Đã hủy' && (
