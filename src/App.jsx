@@ -429,8 +429,17 @@ const INITIAL_PATIENTS = [
     { date: '14-11-2025', diagnosis: 'Viêm phế quan nhẹ', doctor: 'Bs. Huy', treatment: 'Uống thuốc ho thảo dược, kháng viêm Alphachymotrypsin.', cost: '220.000 VND', tests: ['Chụp X-quang phổi'] }
   ] },
   { id: 'P004', name: 'Lương Hương Giang', dob: '05-05-2000', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', blood: 'O', height: 165, weight: 52, notes: 'Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.', medicalHistory: [
-    { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng', 'Xét nghiệm HP qua hơi thở'] },
+    { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng', 'Xét nghiệm HP qua hơi thở'], rated: true, rating: 5, comment: 'rất ổn' },
     { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'] }
+  ] },
+  { id: 'P005', name: 'Trần Văn Hùng', dob: '14-07-1990', gender: 'Nam', phone: '0988776655', email: 'hung.tran@gmail.com', address: 'Hai Bà Trưng, Hà Nội', insurance: 'HN4012019920', blood: 'A', height: 175, weight: 70, notes: 'Không có bệnh nền.', medicalHistory: [
+    { date: '24-05-2026', diagnosis: 'Cảm cúm mùa', doctor: 'Bs. Huy', treatment: 'Nghỉ ngơi, uống Paracetamol khi sốt.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'], rated: true, rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.' }
+  ] },
+  { id: 'P006', name: 'Lê Thị Thảo', dob: '22-11-1993', gender: 'Nữ', phone: '0977665544', email: 'thao.le@gmail.com', address: 'Đống Đa, Hà Nội', insurance: 'HN4019938829', blood: 'B', height: 162, weight: 50, notes: 'Dị ứng phấn hoa.', medicalHistory: [
+    { date: '23-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi kháng viêm.', cost: '180.000 VND', tests: ['Nội soi mũi xoang'], rated: true, rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.' }
+  ] },
+  { id: 'P007', name: 'Phan Anh Tuấn', dob: '03-03-1985', gender: 'Nam', phone: '0966554433', email: 'tuan.phan@gmail.com', address: 'Thanh Xuân, Hà Nội', insurance: 'HN4018829910', blood: 'O', height: 170, weight: 65, notes: 'Không có tiền sử dị ứng.', medicalHistory: [
+    { date: '22-05-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'BS. Nguyễn Văn B', treatment: 'Thuốc kháng acid dịch vị.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng'], rated: true, rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.' }
   ] }
 ];
 
@@ -665,14 +674,45 @@ function App() {
   // Hoisted feedbacks state to synchronize dashboards and reviews
   const [feedbacks, setFeedbacks] = useState(() => {
     const cached = localStorage.getItem('feedbacks');
-    if (cached) {
-      try { return JSON.parse(cached); } catch (e) {}
-    }
-    return [
-      { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24-05-2026' },
-      { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23-05-2026' },
-      { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22-05-2026' }
+    const defaultFeedbacks = [
+      { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: '[Khám ngày 24-05-2026 - Bs. Huy] Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24-05-2026' },
+      { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: '[Khám ngày 23-05-2026 - Bs. C] Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23-05-2026' },
+      { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: '[Khám ngày 22-05-2026 - BS. Nguyễn Văn B] Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22-05-2026' },
+      { id: 4, name: 'Lương Hương Giang', rating: 5, comment: '[Khám ngày 22-04-2026 - Bs. Huy] rất ổn', response: 'ô sờ kê', date: '02-06-2026' }
     ];
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        let modified = false;
+        const migrated = parsed.map(f => {
+          if (f.name === 'Trần Văn Hùng' && !f.comment.startsWith('[Khám ngày')) {
+            modified = true;
+            return { ...f, comment: '[Khám ngày 24-05-2026 - Bs. Huy] ' + f.comment };
+          }
+          if (f.name === 'Lê Thị Thảo' && !f.comment.startsWith('[Khám ngày')) {
+            modified = true;
+            return { ...f, comment: '[Khám ngày 23-05-2026 - Bs. C] ' + f.comment };
+          }
+          if (f.name === 'Phan Anh Tuấn' && !f.comment.startsWith('[Khám ngày')) {
+            modified = true;
+            return { ...f, comment: '[Khám ngày 22-05-2026 - BS. Nguyễn Văn B] ' + f.comment };
+          }
+          return f;
+        });
+
+        if (!migrated.some(f => f.name === 'Lương Hương Giang')) {
+          modified = true;
+          migrated.push({ id: 4, name: 'Lương Hương Giang', rating: 5, comment: '[Khám ngày 22-04-2026 - Bs. Huy] rất ổn', response: 'ô sờ kê', date: '02-06-2026' });
+        }
+
+        if (modified) {
+          localStorage.setItem('feedbacks', JSON.stringify(migrated));
+          return migrated;
+        }
+        return parsed;
+      } catch (e) {}
+    }
+    return defaultFeedbacks;
   });
 
   // Manager Specific State databases
@@ -683,7 +723,12 @@ function App() {
   const [patients, setPatients] = useState(() => {
     const cached = localStorage.getItem('patients');
     if (cached) {
-      try { return JSON.parse(cached); } catch (e) {}
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.some(p => p.name === 'Trần Văn Hùng')) {
+          return parsed;
+        }
+      } catch (e) {}
     }
     const cachedPatientData = localStorage.getItem('patientData');
     if (cachedPatientData) {
@@ -769,6 +814,56 @@ function App() {
   useEffect(() => {
     localStorage.setItem('patientConversations', JSON.stringify(patientConversations));
   }, [patientConversations]);
+
+  // Startup synchronization between feedbacks and patient medical history
+  useEffect(() => {
+    let patientUpdated = false;
+    const updatedPatients = patients.map(p => {
+      let historyUpdated = false;
+      const updatedHistory = p.medicalHistory.map(visit => {
+        // Find if there is a feedback matching this patient name and visit date
+        const matchingFeedback = feedbacks.find(f => {
+          if (f.name !== p.name) return false;
+          const hasPrefixMatch = f.comment.includes(`Khám ngày ${visit.date}`);
+          const hasDateMatch = f.date === visit.date;
+          return hasPrefixMatch || hasDateMatch;
+        });
+
+        if (matchingFeedback) {
+          const rating = matchingFeedback.rating;
+          let bareComment = matchingFeedback.comment;
+          const match = matchingFeedback.comment.match(/^\[Khám ngày [^\]]+\]\s*(.*)$/);
+          if (match) {
+            bareComment = match[1];
+          }
+
+          if (!visit.rated || visit.rating !== rating || visit.comment !== bareComment) {
+            historyUpdated = true;
+            return {
+              ...visit,
+              rated: true,
+              rating,
+              comment: bareComment
+            };
+          }
+        }
+        return visit;
+      });
+
+      if (historyUpdated) {
+        patientUpdated = true;
+        return {
+          ...p,
+          medicalHistory: updatedHistory
+        };
+      }
+      return p;
+    });
+
+    if (patientUpdated) {
+      setPatients(updatedPatients);
+    }
+  }, []);
 
   // Floating Chatbot Widget states (Patient specific)
   const [showFloatingChat, setShowFloatingChat] = useState(false);

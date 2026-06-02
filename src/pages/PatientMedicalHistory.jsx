@@ -400,7 +400,7 @@ export default function PatientMedicalHistory({
                     Xem chi tiết
                   </button>
                   
-                  {!visit.rated && (
+                  {!visit.rated ? (
                     <button
                       onClick={(e) => handleOpenRateModal(index, e)}
                       className="btn btn-primary"
@@ -408,6 +408,27 @@ export default function PatientMedicalHistory({
                     >
                       Đánh giá ca khám
                     </button>
+                  ) : (
+                    <div style={{ 
+                      fontSize: '0.75rem', 
+                      backgroundColor: '#f8fafc', 
+                      padding: '8px 10px', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}>
+                      <div style={{ display: 'flex', gap: '2px', color: '#eab308' }}>
+                        {Array.from({ length: visit.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
+                        {Array.from({ length: 5 - (visit.rating || 5) }).map((_, i) => <Star key={i} size={12} />)}
+                      </div>
+                      {visit.comment && (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontStyle: 'italic', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.3' }}>
+                          "{visit.comment}"
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -448,6 +469,29 @@ export default function PatientMedicalHistory({
                     <div style={{ lineHeight: '1.4' }}>
                       <strong>📍 Địa điểm:</strong> {detailIndex === 0 ? 'Tầng 2, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội' : 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội'}
                     </div>
+                    {detailVisit.rated && (
+                      <div style={{ 
+                        marginTop: '8px', 
+                        paddingTop: '8px', 
+                        borderTop: '1px dashed var(--border-color)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong>⭐️ Đánh giá của bạn:</strong>
+                          <span style={{ display: 'flex', color: '#eab308' }}>
+                            {Array.from({ length: detailVisit.rating || 5 }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                            {Array.from({ length: 5 - (detailVisit.rating || 5) }).map((_, i) => <Star key={i} size={14} />)}
+                          </span>
+                        </div>
+                        {detailVisit.comment && (
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            "{detailVisit.comment}"
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
