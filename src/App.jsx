@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import LandingPage from './pages/LandingPage';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -19,6 +19,7 @@ import ClinicManagement from './pages/ClinicManagement';
 import DoctorCoordinator from './pages/DoctorCoordinator';
 import ReminderAlerts from './pages/ReminderAlerts';
 import ReportAnalytics from './pages/ReportAnalytics';
+import ExpertReports from './pages/ExpertReports';
 
 // Import Doctor pages
 import DoctorDashboard from './pages/DoctorDashboard';
@@ -33,8 +34,9 @@ import PatientDashboard from './pages/PatientDashboard';
 import PatientConsultation from './pages/PatientConsultation';
 import PatientSchedule from './pages/PatientSchedule';
 import PatientMedicalData from './pages/PatientMedicalData';
+import PatientMedicalHistory from './pages/PatientMedicalHistory';
 
-import { CheckCircle2, AlertTriangle, Info, Bot, Maximize2, MessageCircle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Info, Bot, Maximize2, MessageCircle, ShieldAlert } from 'lucide-react';
 
 // Initial Mock Diseases
 const INITIAL_DISEASES = [
@@ -198,7 +200,7 @@ const getRelativeDate = (offsetDays) => {
 
 // Initial Mock Appointments
 const INITIAL_APPOINTMENTS = [
-  // Today's appointments (May 26, 2026) for Bs. Huy
+  // Today's appointments (Monday, June 1, 2026 - Bs. Huy's duty day)
   {
     id: 'APT001',
     patientName: 'Đỗ Minh Tú',
@@ -206,7 +208,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Đỗ Minh Tú',
     name: 'Đỗ Minh Tú',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(0), // Today
+    date: getRelativeDate(0), // Monday (Mon)
     time: '11:30 - 12:30',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -225,7 +227,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Nguyễn Minh Anh',
     name: 'Nguyễn Minh Anh',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(0), // Today
+    date: getRelativeDate(0), // Monday (Mon)
     time: '10:00 - 11:00',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -237,7 +239,6 @@ const INITIAL_APPOINTMENTS = [
     dob: '25-08-2000',
     phone: '0912345678'
   },
-  // Tomorrow's appointments (May 27, 2026) for Bs. Huy
   {
     id: 'APT003',
     patientName: 'Văn Thị Trinh',
@@ -245,7 +246,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Văn Thị Trinh',
     name: 'Văn Thị Trinh',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(1), // Tomorrow
+    date: getRelativeDate(0), // Monday (Mon)
     time: '14:00 - 15:00',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -257,7 +258,7 @@ const INITIAL_APPOINTMENTS = [
     dob: '05-11-1988',
     phone: '0905554433'
   },
-  // Other days (May 7, May 9, May 11, May 14) for Bs. Huy to sync with existing mock schedule
+  // Past days (May 18 - Mon, May 22 - Fri, May 27 - Wed) for Bs. Huy to sync with duty shifts
   {
     id: 'APT005',
     patientName: 'Ngô Gia Bảo',
@@ -265,7 +266,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Ngô Gia Bảo',
     name: 'Ngô Gia Bảo',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(-19), // May 7
+    date: getRelativeDate(-14), // Monday May 18
     time: '8:00 - 9:00',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -284,7 +285,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Lê Hải Minh',
     name: 'Lê Hải Minh',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(-17), // May 9
+    date: getRelativeDate(-10), // Friday May 22
     time: '9:00 - 10:00',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -303,7 +304,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Trần Phương Huế',
     name: 'Trần Phương Huế',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(-12), // May 14
+    date: getRelativeDate(-5), // Wednesday May 27
     time: '15:00 - 16:00',
     specialty: 'Ngoại tổng quát',
     status: 'Đã xác nhận',
@@ -315,7 +316,7 @@ const INITIAL_APPOINTMENTS = [
     dob: '02-09-1985',
     phone: '0933456789'
   },
-  // Pending appointments (Chờ xác nhận) to show in Doctor's pending list and dashboard count
+  // Pending appointments (Chờ xác nhận) to show on Bs. Huy's duty days (June 3 - Wed, June 5 - Fri)
   {
     id: 'APT008',
     patientName: 'Vũ Anh Long',
@@ -323,7 +324,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Vũ Anh Long',
     name: 'Vũ Anh Long',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(2), // May 28
+    date: getRelativeDate(2), // June 3 (Wed)
     time: '8:00 - 9:00',
     specialty: 'Ngoại tổng quát',
     status: 'Chờ xác nhận',
@@ -342,7 +343,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Lương Hương Giang',
     name: 'Lương Hương Giang',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(3), // May 29
+    date: getRelativeDate(2), // June 3 (Wed)
     time: '9:00 - 10:00',
     specialty: 'Ngoại tổng quát',
     status: 'Chờ xác nhận',
@@ -361,7 +362,7 @@ const INITIAL_APPOINTMENTS = [
     patient: 'Phan Quốc Bảo',
     name: 'Phan Quốc Bảo',
     doctorName: 'Bs. Huy',
-    date: getRelativeDate(4), // May 30
+    date: getRelativeDate(4), // June 5 (Fri)
     time: '14:00 - 15:00',
     specialty: 'Ngoại tổng quát',
     status: 'Chờ xác nhận',
@@ -414,23 +415,22 @@ const INITIAL_APPOINTMENTS = [
   }
 ];
 
-// Initial Mock Patients Database
 const INITIAL_PATIENTS = [
-  { id: 'P001', name: 'Đỗ Minh Tú', dob: '12-04-1995', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', medicalHistory: [
-    { date: '12-04-2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid dịch vị.' },
-    { date: '10-02-2026', diagnosis: 'Viêm họng cấp', doctor: 'Bs. Huy', treatment: 'Súc họng nước muối ấm, uống siro ho thảo dược.' }
+  { id: 'P001', name: 'Đỗ Minh Tú', dob: '12-04-1995', gender: 'Nam', phone: '0987654321', email: 'tu.do@gmail.com', address: 'Ba Đình, Hà Nội', insurance: 'GD4019929831', blood: 'A', height: 172, weight: 68, notes: 'Dị ứng Penicillin. Tiền sử tăng huyết áp nhẹ.', medicalHistory: [
+    { date: '12-04-2026', diagnosis: 'Đau dạ dày nhẹ', doctor: 'Bs. Huy', treatment: 'Khám lâm sàng, kê đơn giảm tiết acid dịch vị.', cost: '300.000 VND', tests: ['Nội soi dạ dày'] },
+    { date: '10-02-2026', diagnosis: 'Viêm họng cấp', doctor: 'Bs. Huy', treatment: 'Súc họng nước muối ấm, uống siro ho thảo dược.', cost: '120.000 VND', tests: ['Nội soi tai mũi họng'] }
   ] },
-  { id: 'P002', name: 'Nguyễn Minh Anh', dob: '25-08-2000', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', medicalHistory: [
-    { date: '15-03-2026', diagnosis: 'Cảm cúm mùa', doctor: 'Bs. Huy', treatment: 'Paracetamol 500mg (10 viên) - Uống khi sốt; Amoxicillin 500mg (15 viên) - Ngày 3 viên uống sau ăn.' },
-    { date: '28-12-2025', diagnosis: 'Rối loạn tiêu hóa', doctor: 'Bs. Huy', treatment: 'Bổ sung men vi sinh Probiotics, Oresol uống bù nước khi cần.' }
+  { id: 'P002', name: 'Nguyễn Minh Anh', dob: '25-08-2000', gender: 'Nữ', phone: '0912345678', email: 'anh.nguyen@gmail.com', address: 'Hải Châu, Đà Nẵng', insurance: 'DN4012030192', blood: 'B', height: 160, weight: 48, notes: 'Dị ứng hải sản vỏ cứng. Tiền sử trào ngược dạ dày.', medicalHistory: [
+    { date: '15-03-2026', diagnosis: 'Cảm cúm mùa', doctor: 'Bs. Huy', treatment: 'Paracetamol 500mg (10 viên) - Uống khi sốt; Amoxicillin 500mg (15 viên) - Ngày 3 viên uống sau ăn.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'] },
+    { date: '28-12-2025', diagnosis: 'Rối loạn tiêu hóa', doctor: 'Bs. Huy', treatment: 'Bổ sung men vi sinh Probiotics, Oresol uống bù nước khi cần.', cost: '250.000 VND', tests: ['Siêu âm ổ bụng'] }
   ] },
-  { id: 'P003', name: 'Văn Thị Trinh', dob: '05-11-1988', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', medicalHistory: [
-    { date: '01-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi Corticoid, kháng histamin Loratadine 10mg trong 7 ngày.' },
-    { date: '14-11-2025', diagnosis: 'Viêm phế quan nhẹ', doctor: 'Bs. Huy', treatment: 'Uống thuốc ho thảo dược, kháng viêm Alphachymotrypsin.' }
+  { id: 'P003', name: 'Văn Thị Trinh', dob: '05-11-1988', gender: 'Nữ', phone: '0905554433', email: 'trinh.van@gmail.com', address: 'Quận 1, TP HCM', insurance: '', blood: 'AB', height: 158, weight: 50, notes: 'Không có tiền sử dị ứng thuốc hay bệnh nền nghiêm trọng.', medicalHistory: [
+    { date: '01-05-2026', diagnosis: 'Viêm mũi dị ứng', doctor: 'Bs. C', treatment: 'Thuốc xịt mũi Corticoid, kháng histamin Loratadine 10mg trong 7 ngày.', cost: '180.000 VND', tests: ['Nội soi mũi xoang'] },
+    { date: '14-11-2025', diagnosis: 'Viêm phế quan nhẹ', doctor: 'Bs. Huy', treatment: 'Uống thuốc ho thảo dược, kháng viêm Alphachymotrypsin.', cost: '220.000 VND', tests: ['Chụp X-quang phổi'] }
   ] },
-  { id: 'P004', name: 'Lương Hương Giang', dob: '05-05-2000', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', medicalHistory: [
-    { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.' },
-    { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.' }
+  { id: 'P004', name: 'Lương Hương Giang', dob: '05-05-2000', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', blood: 'O', height: 165, weight: 52, notes: 'Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.', medicalHistory: [
+    { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng', 'Xét nghiệm HP qua hơi thở'] },
+    { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'] }
   ] }
 ];
 
@@ -494,6 +494,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '05-05-2026',
     time: '08:15',
     unread: true,
+    accepted: false,
+    archived: false,
     messages: [
       { sender: 'patient', text: 'Mình bị sốt từ hôm qua, người mệt với đau đầu khá rõ. Hôm nay vẫn chưa đỡ, còn đau họng với hơi ho.', time: '21:57' },
       { sender: 'bot', text: 'Chào bạn, tôi là AI Chatbot. Bạn đã đo nhiệt độ chưa, khoảng bao nhiêu độ? Ngoài ra có bị ớn lạnh hay đau nhức người không?', time: '21:58' },
@@ -508,6 +510,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '04-05-2026',
     time: '10:05',
     unread: false,
+    accepted: true,
+    archived: false,
     messages: [
       { sender: 'patient', text: 'Chào bác sĩ, em bị đau bụng vùng trên rốn âm ỉ suốt từ tối qua đến giờ.', time: '09:50' },
       { sender: 'doctor', text: 'Đau có lan ra sau lưng không bạn? Bạn có cảm thấy buồn nôn hay ợ chua gì không?', time: '09:55' },
@@ -521,6 +525,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '02-05-2026',
     time: '18:01',
     unread: false,
+    accepted: false,
+    archived: false,
     messages: [
       { sender: 'patient', text: 'Chào bác sĩ, mắt trái em bị đỏ và sưng húp lên sau khi ngủ dậy.', time: '18:01' }
     ]
@@ -532,6 +538,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '01-05-2026',
     time: '22:21',
     unread: false,
+    accepted: false,
+    archived: false,
     messages: [
       { sender: 'patient', text: 'Chào bác sĩ, em bị ngạt mũi rát họng lâu ngày rồi, uống thuốc cảm thông thường không đỡ.', time: '22:21' }
     ]
@@ -543,6 +551,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '01-05-2026',
     time: '08:23',
     unread: false,
+    accepted: false,
+    archived: false,
     messages: [
       { sender: 'patient', text: 'Bác sĩ ơi, khớp gối của em cứ đi lại nhiều là bị đau nhức nhối.', time: '08:23' }
     ]
@@ -554,6 +564,8 @@ const INITIAL_DOCTOR_THREADS = [
     date: '25-04-2026',
     time: '09:15',
     unread: false,
+    accepted: false,
+    archived: true,
     messages: [
       { sender: 'patient', text: 'Gần đây buổi sáng thức dậy em hay bị hoa mắt chóng mặt lắm.', time: '09:15' }
     ]
@@ -562,10 +574,15 @@ const INITIAL_DOCTOR_THREADS = [
 
 function App() {
   const [role, setRole] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [landingInitialModal, setLandingInitialModal] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
-  const [previousView, setPreviousView] = useState(null);
+  const [navHistory, setNavHistory] = useState(['dashboard']);
+  const previousView = navHistory.length > 1 ? navHistory[navHistory.length - 2] : null;
   const [doctorThreads, setDoctorThreads] = useState(INITIAL_DOCTOR_THREADS);
+  const [activeDoctorThreadId, setActiveDoctorThreadId] = useState('MSG101');
 
   // Popup Toast Notification State
   const [toasts, setToasts] = useState([]);
@@ -656,6 +673,125 @@ function App() {
     { sender: 'bot', text: 'Chào Giang! Mình có thể giúp gì cho bạn hôm nay?' }
   ]);
   const [floatingInput, setFloatingInput] = useState('');
+  
+  const floatingChatScrollRef = useRef(null);
+
+  // Auto scroll to the bottom of the floating chat window
+  useEffect(() => {
+    if (showFloatingChat && floatingChatScrollRef.current) {
+      floatingChatScrollRef.current.scrollTop = floatingChatScrollRef.current.scrollHeight;
+    }
+  }, [floatingMessages, showFloatingChat]);
+
+  // Floating Chatbot Dragging States & Logic
+  const [hasDragged, setHasDragged] = useState(false);
+  const [chatPos, setChatPos] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragOriginRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasDragged) {
+      const x = window.innerWidth - 80;
+      const y = window.innerHeight - 80;
+      setChatPos({ x, y });
+    }
+  }, [hasDragged]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!hasDragged) {
+        const x = window.innerWidth - 80;
+        const y = window.innerHeight - 80;
+        setChatPos({ x, y });
+      } else {
+        // Keep within new window bounds
+        setChatPos((prev) => ({
+          x: Math.max(10, Math.min(window.innerWidth - 56 - 10, prev.x)),
+          y: Math.max(10, Math.min(window.innerHeight - 56 - 10, prev.y))
+        }));
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [hasDragged]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingRef.current) return;
+      
+      let newX = e.clientX - dragOffsetRef.current.x;
+      let newY = e.clientY - dragOffsetRef.current.y;
+      
+      // Circle button is always 56x56
+      const widgetWidth = 56;
+      const widgetHeight = 56;
+      
+      newX = Math.max(10, Math.min(window.innerWidth - widgetWidth - 10, newX));
+      newY = Math.max(10, Math.min(window.innerHeight - widgetHeight - 10, newY));
+      
+      setChatPos({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = (e) => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dragOriginRef.current === 'button' && distance < 5) {
+        setShowFloatingChat((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const handleButtonMouseDown = (e) => {
+    if (e.button !== 0) return;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    dragOriginRef.current = 'button';
+    dragOffsetRef.current = {
+      x: e.clientX - chatPos.x,
+      y: e.clientY - chatPos.y
+    };
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY
+    };
+    setHasDragged(true);
+    e.preventDefault();
+  };
+
+  const handleHeaderMouseDown = (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('button')) return;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    dragOriginRef.current = 'header';
+    dragOffsetRef.current = {
+      x: e.clientX - chatPos.x,
+      y: e.clientY - chatPos.y
+    };
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY
+    };
+    setHasDragged(true);
+    e.preventDefault();
+  };
 
   // Trigger Toast popup
   const triggerToast = (message, type = 'success') => {
@@ -666,26 +802,66 @@ function App() {
     }, 3000);
   };
 
-  const handleSelectRole = (selectedRole) => {
+  const handleSelectRole = (selectedRole, guestMode = false) => {
+    setIsGuest(guestMode);
+    setLandingInitialModal(null);
     if (selectedRole === 'expert') {
       setRole('expert');
       setCurrentView('dashboard');
+      setNavHistory(['dashboard']);
       triggerToast('Đăng nhập thành công với vai trò Chuyên gia y tế', 'info');
     } else if (selectedRole === 'manager') {
       setRole('manager');
       setCurrentView('manager-dashboard');
+      setNavHistory(['manager-dashboard']);
       triggerToast('Đăng nhập thành công với vai trò Quản lý phòng khám', 'info');
     } else if (selectedRole === 'doctor') {
       setRole('doctor');
       setCurrentView('doctor-dashboard');
+      setNavHistory(['doctor-dashboard']);
       triggerToast('Đăng nhập thành công với vai trò Bác sĩ', 'info');
     } else if (selectedRole === 'patient') {
       setRole('patient');
-      setCurrentView('patient-dashboard');
-      triggerToast('Đăng nhập thành công với vai trò Người cần tư vấn / khám bệnh', 'info');
+      if (guestMode) {
+        // Initialize a new guest conversation
+        const newId = `PCONV${Date.now()}`;
+        const newChat = {
+          id: newId,
+          topic: 'Cuộc trò chuyện mới',
+          date: 'Vừa xong',
+          status: 'Đang tư vấn',
+          messages: [
+            { sender: 'bot', text: 'Chào bạn, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe?', time: 'Vừa xong' }
+          ],
+          symptoms: [],
+          diagnosis: [],
+          showActions: false,
+          activeDoctorConsult: false
+        };
+        setPatientConversations([newChat]);
+        setActivePatientConvId(newId);
+        setCurrentView('patient-consultation');
+        setNavHistory(['patient-consultation']);
+      } else {
+        setPatientConversations(INITIAL_PATIENT_CONVS);
+        setActivePatientConvId('PCONV001');
+        setCurrentView('patient-dashboard');
+        setNavHistory(['patient-dashboard']);
+      }
+      triggerToast(guestMode ? 'Trải nghiệm Chatbot AI dưới vai trò Khách' : 'Đăng nhập thành công với vai trò Bệnh nhân', 'info');
     } else {
       setUnderDevRole(selectedRole);
     }
+  };
+
+  const handleOpenLoginModal = () => {
+    setRole(null);
+    setIsGuest(false);
+    setLandingInitialModal('login');
+    setCurrentView('dashboard');
+    setUnderDevRole(null);
+    setShowFloatingChat(false);
+    triggerToast('Vui lòng chọn tài khoản hoặc đăng nhập để tiếp tục', 'info');
   };
 
   const handleSyncPatientConversation = (ratedConv) => {
@@ -740,8 +916,11 @@ function App() {
       keepActiveConv = true;
     }
     
-    if (actualView !== currentView) {
-      setPreviousView(currentView);
+    const viewIndex = navHistory.indexOf(actualView);
+    if (viewIndex !== -1) {
+      setNavHistory(prev => prev.slice(0, viewIndex + 1));
+    } else {
+      setNavHistory(prev => [...prev, actualView]);
     }
     
     setCurrentView(actualView);
@@ -804,7 +983,10 @@ function App() {
 
   const handleLogout = () => {
     setRole(null);
+    setIsGuest(false);
+    setLandingInitialModal(null);
     setCurrentView('dashboard');
+    setNavHistory(['dashboard']);
     setUnderDevRole(null);
     setShowFloatingChat(false);
     triggerToast('Đã đăng xuất khỏi hệ thống', 'info');
@@ -841,17 +1023,22 @@ function App() {
   }
 
   if (!role) {
-    return <LandingPage onSelectRole={handleSelectRole} />;
+    return <LandingPage onSelectRole={handleSelectRole} initialModal={landingInitialModal} />;
   }
 
   // Choose layouts based on role
   return (
-    <div className="app-wrapper">
+    <div className={`app-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar
         role={role}
         currentView={currentView}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
+        isGuest={isGuest}
+        onOpenLoginModal={handleOpenLoginModal}
+        showConfirm={showConfirm}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       <div className="main-content">
         <Navbar
@@ -871,17 +1058,41 @@ function App() {
           conversations={conversations}
           doctorThreads={doctorThreads}
           patientConversations={patientConversations}
+          isGuest={isGuest}
+          onOpenLoginModal={handleOpenLoginModal}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
         <main className="content-body">
           
           {/* PATIENT PAGES */}
           {role === 'patient' && currentView === 'patient-dashboard' && (
-            <PatientDashboard
-              onNavigate={handleNavigate}
-              appointments={appointments}
-              diseases={diseases}
-              triggerToast={triggerToast}
-            />
+            isGuest ? (
+              <div className="guest-lock-overlay animate-fade-in">
+                <div className="guest-lock-icon">
+                  <ShieldAlert size={32} />
+                </div>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Tính năng yêu cầu đăng nhập</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5, fontSize: '0.88rem' }}>
+                  Vui lòng đăng nhập tài khoản Bệnh nhân để truy cập bảng điều khiển sức khỏe cá nhân, xem thống kê chỉ số sức khỏe của bạn.
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button className="btn btn-primary" onClick={handleOpenLoginModal}>
+                    Đăng nhập ngay
+                  </button>
+                  <button className="btn btn-outline" onClick={() => handleNavigate('patient-consultation-keep')} style={{ backgroundColor: '#fff' }}>
+                    Quay lại chatbot
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <PatientDashboard
+                onNavigate={handleNavigate}
+                appointments={appointments}
+                diseases={diseases}
+                triggerToast={triggerToast}
+              />
+            )
           )}
 
           {role === 'patient' && currentView === 'patient-consultation' && (
@@ -894,41 +1105,63 @@ function App() {
               activeConvId={activePatientConvId}
               setActiveConvId={setActivePatientConvId}
               syncPatientConversation={handleSyncPatientConversation}
+              isGuest={isGuest}
+              onOpenLoginModal={handleOpenLoginModal}
             />
           )}
 
           {role === 'patient' && (currentView === 'patient-schedule' || currentView === 'patient-schedule-create') && (
-            <PatientSchedule
-              appointments={appointments}
-              setAppointments={setAppointments}
-              triggerToast={triggerToast}
-              onNavigate={handleNavigate}
-              showConfirm={showConfirm}
-              defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
-              patientConversations={patientConversations}
-              activePatientConvId={activePatientConvId}
-              onBookSuccess={(aptDetails) => {
-                setPatientConversations(prev => prev.map(c => {
-                  if (c.id === activePatientConvId) {
-                    return {
-                      ...c,
-                      status: 'Hoàn thành',
-                      showActions: true,
-                      messages: [
-                        ...c.messages,
-                        {
-                          sender: 'bot',
-                          text: `**XÁC NHẬN ĐẶT LỊCH THÀNH CÔNG**\n👨‍⚕️ Bác sĩ: ${aptDetails.doctorName}\n⏰ Thời gian: ${aptDetails.time} - ${aptDetails.date}\n📍 Địa điểm: ${aptDetails.location}\n💰 Chi phí: ${aptDetails.fee} VND`,
-                          isAptCard: true,
-                          time: 'Vừa xong'
-                        }
-                      ]
-                    };
-                  }
-                  return c;
-                }));
-              }}
-            />
+            isGuest ? (
+              <div className="guest-lock-overlay animate-fade-in">
+                <div className="guest-lock-icon">
+                  <ShieldAlert size={32} />
+                </div>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Tính năng yêu cầu đăng nhập</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5, fontSize: '0.88rem' }}>
+                  Vui lòng đăng nhập tài khoản Bệnh nhân để lên lịch khám chuyên sâu với bác sĩ hoặc quản lý các lịch hẹn khám hiện tại của bạn.
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button className="btn btn-primary" onClick={handleOpenLoginModal}>
+                    Đăng nhập ngay
+                  </button>
+                  <button className="btn btn-outline" onClick={() => handleNavigate('patient-consultation-keep')} style={{ backgroundColor: '#fff' }}>
+                    Quay lại chatbot
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <PatientSchedule
+                appointments={appointments}
+                setAppointments={setAppointments}
+                triggerToast={triggerToast}
+                onNavigate={handleNavigate}
+                showConfirm={showConfirm}
+                defaultTab={currentView === 'patient-schedule-create' ? 'create' : 'booked'}
+                patientConversations={patientConversations}
+                activePatientConvId={activePatientConvId}
+                onBookSuccess={(aptDetails) => {
+                  setPatientConversations(prev => prev.map(c => {
+                    if (c.id === activePatientConvId) {
+                      return {
+                        ...c,
+                        status: 'Hoàn thành',
+                        showActions: true,
+                        messages: [
+                          ...c.messages,
+                          {
+                            sender: 'bot',
+                            text: `**XÁC NHẬN ĐẶT LỊCH THÀNH CÔNG**\n👨‍⚕️ Bác sĩ: ${aptDetails.doctorName}\n⏰ Thời gian: ${aptDetails.time} - ${aptDetails.date}\n📍 Địa điểm: ${aptDetails.location}\n💰 Chi phí: ${aptDetails.fee} VND`,
+                            isAptCard: true,
+                            time: 'Vừa xong'
+                          }
+                        ]
+                      };
+                    }
+                    return c;
+                  }));
+                }}
+              />
+            )
           )}
 
           {role === 'patient' && currentView === 'patient-medical-data' && (
@@ -939,7 +1172,43 @@ function App() {
               diseases={diseases}
               medicines={medicines}
               triggerToast={triggerToast}
+              isGuest={isGuest}
+              onOpenLoginModal={handleOpenLoginModal}
             />
+          )}
+
+          {role === 'patient' && (currentView === 'patient-medical-history' || currentView === 'patient-medical-history-detail') && (
+            isGuest ? (
+              <div className="guest-lock-overlay animate-fade-in">
+                <div className="guest-lock-icon">
+                  <ShieldAlert size={32} />
+                </div>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Tính năng yêu cầu đăng nhập</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5, fontSize: '0.88rem' }}>
+                  Vui lòng đăng nhập tài khoản Bệnh nhân để xem lịch sử khám bệnh và đánh giá chất lượng dịch vụ của phòng khám.
+                </p>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button className="btn btn-primary" onClick={handleOpenLoginModal}>
+                    Đăng nhập ngay
+                  </button>
+                  <button className="btn btn-outline" onClick={() => handleNavigate('patient-consultation-keep')} style={{ backgroundColor: '#fff' }}>
+                    Quay lại chatbot
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <PatientMedicalHistory
+                currentView={currentView}
+                onNavigate={handleNavigate}
+                selectedId={selectedId}
+                onSelectId={setSelectedId}
+                patients={patients}
+                setPatients={setPatients}
+                feedbacks={feedbacks}
+                setFeedbacks={setFeedbacks}
+                triggerToast={triggerToast}
+              />
+            )
           )}
 
           {/* EXPERT PAGES */}
@@ -1078,6 +1347,14 @@ function App() {
             />
           )}
 
+          {role === 'expert' && currentView === 'expert-reports' && (
+            <ExpertReports
+              conversations={conversations}
+              scenarios={scenarios}
+              triggerToast={triggerToast}
+            />
+          )}
+
           {/* DOCTOR PAGES */}
           {role === 'doctor' && currentView === 'doctor-dashboard' && (
             <DoctorDashboard
@@ -1117,6 +1394,8 @@ function App() {
               triggerToast={triggerToast}
               threads={doctorThreads}
               setThreads={setDoctorThreads}
+              activeThreadId={activeDoctorThreadId}
+              setActiveThreadId={setActiveDoctorThreadId}
             />
           )}
 
@@ -1160,167 +1439,205 @@ function App() {
       </div>
 
       {/* FLOATING CHATBOT WIDGET FOR PATIENT */}
-      {role === 'patient' && (
-        <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          {/* Chat window */}
-          {showFloatingChat && (
-            <div className="card animate-fade-in" style={{
-              width: '320px',
-              height: '420px',
-              backgroundColor: '#fff',
-              boxShadow: 'var(--shadow-lg)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: 0,
-              overflow: 'hidden',
-              border: '1.5px solid var(--primary-light)',
-              marginBottom: '12px',
-              margin: '0 0 12px 0'
-            }}>
-              {/* Header */}
-              <div style={{
-                padding: '12px 14px',
-                background: 'var(--primary)',
-                color: '#fff',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Bot size={16} />
-                  <strong style={{ fontSize: '0.85rem' }}>Trợ lý sức khỏe AI</strong>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {/* Zoom to full chat button */}
-                  <button 
-                    onClick={() => {
-                      setShowFloatingChat(false);
-                      handleNavigate('patient-consultation');
-                    }}
-                    title="Mở toàn màn hình"
-                    style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                  >
-                    <Maximize2 size={14} />
-                  </button>
-                  {/* Close button */}
-                  <button 
-                    onClick={() => setShowFloatingChat(false)}
-                    style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
-                  >
-                    &times;
-                  </button>
-                </div>
-              </div>
+      {role === 'patient' && (() => {
+        const isOnRightHalf = chatPos.x + 28 > window.innerWidth / 2;
+        const chatWidth = 320;
+        const chatHeight = 420;
+        const gap = 12;
 
-              {/* Message scroll */}
-              <div style={{ flexGrow: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {floatingMessages.map((m, idx) => (
-                  <div 
-                    key={idx} 
-                    style={{
-                      alignSelf: m.sender === 'bot' ? 'flex-start' : 'flex-end',
-                      backgroundColor: m.sender === 'bot' ? '#f1f5f9' : 'var(--primary)',
-                      color: m.sender === 'bot' ? 'var(--text-dark)' : '#fff',
-                      padding: '8px 12px',
-                      borderRadius: '10px',
-                      fontSize: '0.8rem',
-                      maxWidth: '85%',
-                      boxShadow: 'var(--shadow-sm)',
-                      lineHeight: '1.3'
-                    }}
-                  >
-                    {m.text}
-                  </div>
-                ))}
-              </div>
+        // Horizontal position
+        const rawAbsoluteLeft = isOnRightHalf 
+          ? chatPos.x - chatWidth - gap 
+          : chatPos.x + 56 + gap;
+        const constrainedAbsoluteLeft = Math.max(10, Math.min(window.innerWidth - chatWidth - 10, rawAbsoluteLeft));
+        const chatRelativeLeft = constrainedAbsoluteLeft - chatPos.x;
 
-              {/* Input bar */}
-              <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '6px' }}>
-                <input
-                  type="text"
-                  placeholder="Nhập tin nhắn..."
-                  value={floatingInput}
-                  onChange={(e) => setFloatingInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && floatingInput.trim()) {
-                      const userText = floatingInput.trim();
-                      const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
-                      setFloatingMessages(newMsgs);
-                      setFloatingInput('');
-                      
-                      // AI Response simulation
-                      setTimeout(() => {
-                        let botResponse = 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!';
-                        if (userText.toLowerCase().includes('sốt')) {
-                          botResponse = 'Bạn bị sốt từ khi nào và có cặp nhiệt độ cụ thể chưa? Hãy phóng to khung chat để tôi thu thập đầy đủ triệu chứng và kết nối bác sĩ giúp bạn nhé!';
-                        }
-                        setFloatingMessages([...newMsgs, { sender: 'bot', text: botResponse }]);
-                      }, 1000);
-                    }
-                  }}
-                  style={{
-                    flexGrow: 1,
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '6px',
-                    padding: '6px 10px',
-                    fontSize: '0.78rem',
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    if (floatingInput.trim()) {
-                      const userText = floatingInput.trim();
-                      const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
-                      setFloatingMessages(newMsgs);
-                      setFloatingInput('');
-                      setTimeout(() => {
-                        setFloatingMessages([...newMsgs, { sender: 'bot', text: 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!' }]);
-                      }, 1000);
-                    }
-                  }}
-                  style={{
-                    padding: '6px 8px',
-                    backgroundColor: 'var(--primary)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem'
-                  }}
-                >
-                  Gửi
-                </button>
-              </div>
-            </div>
-          )}
+        // Vertical position
+        const rawAbsoluteTop = chatPos.y + 56 - chatHeight;
+        const constrainedAbsoluteTop = Math.max(10, Math.min(window.innerHeight - chatHeight - 10, rawAbsoluteTop));
+        const chatRelativeTop = constrainedAbsoluteTop - chatPos.y;
 
-          {/* Floating Button */}
-          <button
-            onClick={() => setShowFloatingChat(!showFloatingChat)}
-            style={{
+        return (
+          <div 
+            style={{ 
+              position: 'fixed', 
+              left: `${chatPos.x}px`, 
+              top: `${chatPos.y}px`, 
               width: '56px',
               height: '56px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--primary)',
-              color: '#fff',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              animation: 'pulseGlow 2s infinite',
-              transition: 'transform 0.2s'
+              zIndex: 9999, 
+              userSelect: isDragging ? 'none' : 'auto',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            <MessageCircle size={24} />
-          </button>
-        </div>
-      )}
+            {/* Chat window */}
+            {showFloatingChat && (
+              <div className="card animate-fade-in" style={{
+                position: 'absolute',
+                left: `${chatRelativeLeft}px`,
+                top: `${chatRelativeTop}px`,
+                width: `${chatWidth}px`,
+                height: `${chatHeight}px`,
+                backgroundColor: '#fff',
+                boxShadow: 'var(--shadow-lg)',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: 0,
+                overflow: 'hidden',
+                border: '1.5px solid var(--primary-light)',
+                margin: 0
+              }}>
+                {/* Header */}
+                <div 
+                  onMouseDown={handleHeaderMouseDown}
+                  style={{
+                    padding: '12px 14px',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    userSelect: 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Bot size={16} />
+                    <strong style={{ fontSize: '0.85rem' }}>Trợ lý sức khỏe AI</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {/* Zoom to full chat button */}
+                    <button 
+                      onClick={() => {
+                        setShowFloatingChat(false);
+                        handleNavigate('patient-consultation');
+                      }}
+                      title="Mở toàn màn hình"
+                      style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                    >
+                      <Maximize2 size={14} />
+                    </button>
+                    {/* Close button */}
+                    <button 
+                      onClick={() => setShowFloatingChat(false)}
+                      style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem', fontWeight: 'bold' }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+
+                {/* Message scroll */}
+                <div ref={floatingChatScrollRef} style={{ flexGrow: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {floatingMessages.map((m, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{
+                        alignSelf: m.sender === 'bot' ? 'flex-start' : 'flex-end',
+                        backgroundColor: m.sender === 'bot' ? '#f1f5f9' : 'var(--primary)',
+                        color: m.sender === 'bot' ? 'var(--text-dark)' : '#fff',
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        fontSize: '0.8rem',
+                        maxWidth: '85%',
+                        boxShadow: 'var(--shadow-sm)',
+                        lineHeight: '1.3'
+                      }}
+                    >
+                      {m.text}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input bar */}
+                <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    placeholder="Nhập tin nhắn..."
+                    value={floatingInput}
+                    onChange={(e) => setFloatingInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && floatingInput.trim()) {
+                        const userText = floatingInput.trim();
+                        const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
+                        setFloatingMessages(newMsgs);
+                        setFloatingInput('');
+                        
+                        // AI Response simulation
+                        setTimeout(() => {
+                          let botResponse = 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!';
+                          if (userText.toLowerCase().includes('sốt')) {
+                            botResponse = 'Bạn bị sốt từ khi nào và có cặp nhiệt độ cụ thể chưa? Hãy phóng to khung chat để tôi thu thập đầy đủ triệu chứng và kết nối bác sĩ giúp bạn nhé!';
+                          }
+                          setFloatingMessages([...newMsgs, { sender: 'bot', text: botResponse }]);
+                        }, 1000);
+                      }
+                    }}
+                    style={{
+                      flexGrow: 1,
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '0.78rem',
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (floatingInput.trim()) {
+                        const userText = floatingInput.trim();
+                        const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
+                        setFloatingMessages(newMsgs);
+                        setFloatingInput('');
+                        setTimeout(() => {
+                          setFloatingMessages([...newMsgs, { sender: 'bot', text: 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!' }]);
+                        }, 1000);
+                      }
+                    }}
+                    style={{
+                      padding: '6px 8px',
+                      backgroundColor: 'var(--primary)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    Gửi
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Floating Button */}
+            <button
+              onMouseDown={handleButtonMouseDown}
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--primary)',
+                color: '#fff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: isDragging ? 'grabbing' : 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                animation: 'pulseGlow 2s infinite',
+                transition: 'transform 0.2s',
+                margin: 0,
+                padding: 0
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >
+              <MessageCircle size={24} />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Floating Popup Toast Notifications Overlay */}
       <div className="toast-container">
