@@ -2,9 +2,19 @@ import React from 'react';
 import { Sparkles, Calendar, Heart, ShieldAlert, ArrowRight, Activity, Clock, MapPin, DollarSign } from 'lucide-react';
 
 export default function PatientDashboard({ onNavigate, appointments = [], diseases = [] }) {
-  // Get upcoming appointments for Lương Hương Giang
+  // Get patient name dynamically from localStorage
+  const cachedPatientData = localStorage.getItem('patientData');
+  let patientName = 'Lương Hương Giang';
+  if (cachedPatientData) {
+    try {
+      const parsed = JSON.parse(cachedPatientData);
+      if (parsed.name) patientName = parsed.name;
+    } catch (e) {}
+  }
+
+  // Get upcoming appointments for the patient
   const myAppointments = appointments.filter(
-    (apt) => apt.patientName === 'Lương Hương Giang' || apt.patientId === 'P004'
+    (apt) => apt.patientName === patientName || apt.patientId === 'P004'
   );
 
   // If there's no pre-existing appointments for the mockup, let's show the default one from Image 1
@@ -34,18 +44,14 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
         <div className="dashboard-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {/* Welcome Banner */}
-          <div className="welcome-banner" style={{ height: 'auto', padding: '24px', margin: 0 }}>
+          <div className="welcome-banner" style={{ margin: 0 }}>
             <div className="welcome-text">
-              <h2>Chào Lương Hương Giang,</h2>
-              <p style={{ fontSize: '0.95rem', color: 'var(--primary)', opacity: 0.9, marginBottom: '12px' }}>
-                Hôm nay sức khỏe của bạn thế nào? Hãy cùng MediConsult chăm sóc bản thân nhé!
-              </p>
-              <div className="welcome-quote" style={{ fontSize: '0.85rem' }}>
-                "Sức khỏe là lựa chọn, không phải sự ngẫu nhiên."
-              </div>
+              <h2>Chào {patientName},</h2>
+              <p>Hôm nay sức khỏe của bạn thế nào? Hãy cùng MediConsult chăm sóc bản thân nhé!</p>
+              <div className="welcome-quote">"Sức khỏe là lựa chọn, không phải sự ngẫu nhiên."</div>
             </div>
-            <div className="welcome-illustration" style={{ color: 'var(--primary)', opacity: 0.9 }}>
-              <Heart size={64} fill="currentColor" style={{ color: 'rgba(15, 59, 122, 0.2)' }} />
+            <div className="welcome-illustration">
+              <Heart size={60} strokeWidth={1.5} />
             </div>
           </div>
 
@@ -92,8 +98,8 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
           </div>
 
           {/* Recent Activity Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: '4px 0', fontWeight: '600', color: 'var(--text-dark)' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', margin: 0 }}>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
               Hoạt động gần đây
             </h3>
             
@@ -101,7 +107,26 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
               <div 
                 className="activity-item" 
                 onClick={() => onNavigate('patient-consultation')}
-                style={{ margin: 0, padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}
+                style={{ 
+                  margin: 0, 
+                  padding: '16px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '16px', 
+                  backgroundColor: '#f8fafc', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-light)';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                }}
               >
                 <div style={{
                   width: '40px',
@@ -130,7 +155,26 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
               <div 
                 className="activity-item" 
                 onClick={() => onNavigate('patient-schedule')}
-                style={{ margin: 0, padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}
+                style={{ 
+                  margin: 0, 
+                  padding: '16px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '16px', 
+                  backgroundColor: '#f8fafc', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--primary-light)';
+                  e.currentTarget.style.backgroundColor = '#f1f5f9';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                }}
               >
                 <div style={{
                   width: '40px',
@@ -165,7 +209,7 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
           
           {/* Medical Data - Recent Epidemics */}
           <div className="card" style={{ margin: 0, padding: '20px' }}>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>
               Dữ liệu y tế: Dịch bệnh & Bệnh hay gặp
             </h3>
             
@@ -236,7 +280,7 @@ export default function PatientDashboard({ onNavigate, appointments = [], diseas
 
           {/* Upcoming Appointment */}
           <div className="card" style={{ margin: 0, padding: '20px' }}>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px' }}>
               Lịch hẹn sắp tới
             </h3>
             

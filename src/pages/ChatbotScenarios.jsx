@@ -650,9 +650,6 @@ export default function ChatbotScenarios({
       <div className="animate-fade-in">
         <div className="canvas-toolbar">
           <div className="flex align-center gap-4">
-            <button className="back-btn" onClick={() => onNavigate('chatbot-scenarios')}>
-              <ArrowLeft size={16} />
-            </button>
             <h2 style={{ fontSize: '1.4rem', margin: 0 }}>
               Chi tiết kịch bản: {scItem.name}
             </h2>
@@ -731,9 +728,6 @@ export default function ChatbotScenarios({
         {/* Canvas Toolbar */}
         <div className="canvas-toolbar">
           <div className="flex align-center gap-4">
-            <button className="back-btn" onClick={() => onNavigate('chatbot-scenarios')}>
-              <X size={16} />
-            </button>
             <h2 style={{ fontSize: '1.4rem', margin: 0 }}>
               {currentView === 'chatbot-scenario-add' ? 'Tạo mới kịch bản chatbot' : `Thiết kế kịch bản: ${scenarioName}`}
             </h2>
@@ -970,9 +964,6 @@ export default function ChatbotScenarios({
         {/* Top Header */}
         <div className="canvas-toolbar">
           <div className="flex align-center gap-4">
-            <button className="back-btn" onClick={() => onNavigate('chatbot-scenarios')}>
-              <ArrowLeft size={16} />
-            </button>
             <h2 style={{ fontSize: '1.4rem', margin: 0 }}>Kiểm thử kịch bản giả lập</h2>
           </div>
 

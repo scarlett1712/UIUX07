@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { formatDate } from '../utils/date';
-import { Calendar, User, MapPin, Clock, DollarSign, ChevronRight, CheckCircle, Trash2, ArrowLeft } from 'lucide-react';
+import { Calendar, User, MapPin, Clock, DollarSign, ChevronRight, CheckCircle, Trash2, ArrowLeft, Search, Filter, Stethoscope, Sparkles } from 'lucide-react';
 
 const MOCK_DOCTORS = [
-  { id: 'DOC001', name: 'BS. Nguyễn Văn A', specialty: 'Khoa Nội tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội' },
-  { id: 'DOC002', name: 'BS. Nguyễn Văn B', specialty: 'Khoa Nội tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội' },
-  { id: 'DOC003', name: 'Bs. Huy', specialty: 'Khoa Ngoại tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '300.000', location: 'Tầng 2, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội' },
-  { id: 'DOC004', name: 'Bs. B (Bình)', specialty: 'Khoa Nhi', degree: 'Bác sĩ CK I', fee: '250.000', location: 'Tầng 3, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội' },
-  { id: 'DOC005', name: 'Bs. C (Cúc)', specialty: 'Khoa Tai mũi họng', degree: 'Bác sĩ CK II', fee: '300.000', location: 'Tầng 4, Tòa nhà A, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội' }
+  { id: 'DOC001', name: 'BS. Nguyễn Văn A', specialty: 'Khoa Nội tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội', biography: 'Hơn 15 năm kinh nghiệm điều trị các bệnh nội khoa, từng là Phó trưởng khoa tại BV Bạch Mai.' },
+  { id: 'DOC002', name: 'BS. Nguyễn Văn B', specialty: 'Khoa Nội tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội', biography: 'Hơn 10 năm kinh nghiệm khám chữa bệnh nội tổng quát, chuyên điều trị cúm, sốt và bệnh đường hô hấp.' },
+  { id: 'DOC003', name: 'Bs. Huy', specialty: 'Khoa Ngoại tổng quát', degree: 'Thạc sĩ Bác sĩ', fee: '300.000', location: 'Tầng 2, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Chuyên gia ngoại tiêu hóa, nội soi dạ dày, đại tràng và điều trị viêm dạ dày tá tràng.' },
+  { id: 'DOC004', name: 'Bs. B (Bình)', specialty: 'Khoa Nhi', degree: 'Bác sĩ CK I', fee: '250.000', location: 'Tầng 3, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Bác sĩ Nhi khoa tận tâm, giàu kinh nghiệm khám và tư vấn các bệnh lý trẻ em.' },
+  { id: 'DOC005', name: 'Bs. C (Cúc)', specialty: 'Khoa Tai mũi họng', degree: 'Bác sĩ CK II', fee: '300.000', location: 'Tầng 4, Tòa nhà A, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Hơn 12 năm kinh nghiệm điều trị viêm tai giữa, viêm họng, viêm mũi xoang trẻ em và người lớn.' }
 ];
 
 const TIME_SLOTS = [
@@ -37,7 +37,13 @@ export default function PatientSchedule({
       setActiveTab(defaultTab);
     }
   }, [defaultTab]);
+
   const [selectedAptId, setSelectedAptId] = useState(null);
+
+  // Search & Filter state for Doctor Selection
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [specialtyFilter, setSpecialtyFilter] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
   // Booking Form State
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
@@ -122,6 +128,7 @@ export default function PatientSchedule({
     }
 
     // Reset booking state
+    setSelectedDoctor(null);
     setSelectedDoctorId('');
     setBookingDate('');
     setBookingTime('');
@@ -132,6 +139,16 @@ export default function PatientSchedule({
       onNavigate('patient-consultation-keep');
     }
   };
+
+  // Filter doctors based on search & filter
+  const filteredDoctors = MOCK_DOCTORS.filter(d => {
+    const matchSearch = d.name.toLowerCase().includes(doctorSearch.toLowerCase()) || 
+                        d.specialty.toLowerCase().includes(doctorSearch.toLowerCase());
+    const matchSpecialty = specialtyFilter ? d.specialty === specialtyFilter : true;
+    return matchSearch && matchSpecialty;
+  });
+
+  const uniqueSpecialties = Array.from(new Set(MOCK_DOCTORS.map(d => d.specialty)));
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -156,7 +173,11 @@ export default function PatientSchedule({
         </button>
         
         <button
-          onClick={() => setActiveTab('create')}
+          onClick={() => {
+            setActiveTab('create');
+            setSelectedDoctor(null);
+            setSelectedDoctorId('');
+          }}
           style={{
             padding: '12px 8px',
             background: 'none',
@@ -315,7 +336,7 @@ export default function PatientSchedule({
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                     <button
                       onClick={() => handleCancelAppointment(selectedApt.id)}
-                      className="btn btn-cancel"
+                      className="btn btn-outline-danger"
                       style={{
                         padding: '10px 24px',
                         fontSize: '0.85rem',
@@ -341,144 +362,314 @@ export default function PatientSchedule({
 
       {/* TAB 2: BOOK A NEW APPOINTMENT */}
       {activeTab === 'create' && (
-        <form onSubmit={handleBookAppointment} className="card animate-fade-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', margin: 0 }}>
-          <h3 style={{ fontSize: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
-            Đăng ký Đặt lịch khám bệnh mới
-          </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            
-            {/* Left side inputs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* Doctor select */}
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span className="form-group-label" style={{ fontWeight: '600' }}>1. Chọn bác sĩ khám & Chuyên khoa</span>
-                <select
-                  value={selectedDoctorId}
-                  onChange={(e) => setSelectedDoctorId(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%', height: '42px', padding: '8px 12px' }}
-                >
-                  <option value="">--- Chọn bác sĩ & chuyên khoa ---</option>
-                  {MOCK_DOCTORS.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.specialty}) - Phí: {d.fee}đ
-                    </option>
-                  ))}
-                </select>
+          {selectedDoctor === null ? (
+            /* STEP 1: DOCTOR SEARCH & SELECTION */
+            <div className="card animate-fade-in" style={{ padding: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', margin: 0, fontWeight: '700' }}>Bước 1: Chọn bác sĩ & Chuyên khoa</h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Xem thông tin chi tiết và năng lực bác sĩ trước khi lên lịch đặt</span>
+                </div>
               </div>
 
-              {/* Date select */}
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span className="form-group-label" style={{ fontWeight: '600' }}>2. Chọn ngày hẹn khám</span>
-                <input
-                  type="date"
-                  value={bookingDate}
-                  min="2026-05-25"
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%', height: '42px', padding: '8px 12px' }}
-                />
+              {/* Filters toolbar */}
+              <div className="filters-bar" style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', position: 'relative', flexGrow: 1 }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    placeholder="Tìm bác sĩ theo tên hoặc chuyên khoa..."
+                    value={doctorSearch}
+                    onChange={(e) => setDoctorSearch(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', paddingLeft: '36px', fontSize: '0.85rem', height: '38px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Filter size={16} style={{ color: 'var(--text-muted)' }} />
+                  <select
+                    value={specialtyFilter}
+                    onChange={(e) => setSpecialtyFilter(e.target.value)}
+                    className="filter-select"
+                    style={{ fontSize: '0.85rem', height: '38px', padding: '6px 12px', minWidth: '180px' }}
+                  >
+                    <option value="">Tất cả chuyên khoa</option>
+                    {uniqueSpecialties.map((s, idx) => (
+                      <option key={idx} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Time slot select */}
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span className="form-group-label" style={{ fontWeight: '600' }}>3. Chọn khung giờ khám</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                  {TIME_SLOTS.map(t => (
+              {/* Doctors Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '16px', marginTop: '4px' }}>
+                {filteredDoctors.map(doc => (
+                  <div 
+                    key={doc.id}
+                    className="card hover-card animate-fade-in"
+                    style={{ 
+                      padding: '16px', 
+                      margin: 0, 
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: '#fff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    {/* Header: avatar + name */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#e0e7ff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg viewBox="0 0 100 100" width="100%" height="100%">
+                          <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                          <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                          <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: '700', color: 'var(--primary)' }}>{doc.name}</h4>
+                        <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--primary-light)', marginTop: '2px' }}>{doc.degree}</div>
+                        <span style={{ 
+                          display: 'inline-block', 
+                          marginTop: '4px',
+                          padding: '2px 8px', 
+                          backgroundColor: '#f1f5f9', 
+                          color: '#475569', 
+                          fontSize: '0.7rem', 
+                          borderRadius: '4px',
+                          fontWeight: 500
+                        }}>
+                          {doc.specialty}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <p style={{ 
+                      fontSize: '0.78rem', 
+                      color: 'var(--text-muted)', 
+                      margin: 0, 
+                      lineHeight: '1.45', 
+                      height: '42px', 
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {doc.biography}
+                    </p>
+
+                    {/* Vitals info */}
+                    <div style={{ 
+                      backgroundColor: '#f8fafc', 
+                      borderRadius: '8px', 
+                      padding: '8px 12px', 
+                      fontSize: '0.75rem', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '4px' 
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>📍 Địa điểm:</span>
+                        <span style={{ fontWeight: 500, color: 'var(--text-dark)', maxWidth: '180px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.location}>{doc.location.split(',')[0]}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>💰 Chi phí khám:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{doc.fee} VND</span>
+                      </div>
+                    </div>
+
+                    {/* Action button */}
                     <button
-                      key={t}
-                      type="button"
-                      onClick={() => setBookingTime(t)}
-                      style={{
-                        padding: '10px 4px',
-                        borderRadius: '6px',
-                        border: '1.5px solid',
-                        borderColor: bookingTime === t ? 'var(--primary)' : 'var(--border-color)',
-                        backgroundColor: bookingTime === t ? '#eff6ff' : '#fff',
-                        color: bookingTime === t ? 'var(--primary)' : 'var(--text-dark)',
-                        fontWeight: bookingTime === t ? '700' : '500',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        textAlign: 'center'
+                      onClick={() => {
+                        setSelectedDoctor(doc);
+                        setSelectedDoctorId(doc.id);
+                        setBookingTime('');
+                        setBookingDate('');
+                      }}
+                      className="btn btn-primary"
+                      style={{ 
+                        width: '100%', 
+                        fontSize: '0.8rem', 
+                        padding: '8px', 
+                        fontWeight: '700', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                     >
-                      {t}
+                      <Stethoscope size={14} /> Chọn bác sĩ & Đặt lịch
                     </button>
-                  ))}
-                </div>
+                  </div>
+                ))}
+
+                {filteredDoctors.length === 0 && (
+                  <div style={{ gridColumn: 'span 3', padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                    Không tìm thấy bác sĩ nào phù hợp với bộ lọc tìm kiếm của bạn.
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Right side inputs & review */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          ) : (
+            /* STEP 2: FILL APPOINTMENT DETAILS (DATE, TIME, SYMPTOMS) */
+            <form onSubmit={handleBookAppointment} className="card animate-fade-in" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', margin: 0 }}>
               
-              {/* Symptoms input */}
-              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span className="form-group-label" style={{ fontWeight: '600' }}>4. Mô tả triệu chứng sức khỏe cụ thể</span>
-                <textarea
-                  value={bookingSymptoms}
-                  onChange={(e) => setBookingSymptoms(e.target.value)}
-                  placeholder="Ví dụ: Tôi bị sốt cao kèm đau đầu, rát cổ họng từ ngày hôm qua, người mỏi mệt ăn uống kém..."
-                  className="form-input"
-                  style={{ width: '100%', height: '110px', padding: '10px 12px', resize: 'none', lineHeight: '1.4' }}
-                />
+              {/* Back to Step 1 button */}
+              <button 
+                type="button" 
+                onClick={() => setSelectedDoctor(null)}
+                style={{
+                  alignSelf: 'flex-start',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'color 0.2s'
+                }}
+              >
+                <ArrowLeft size={16} /> Quay lại chọn bác sĩ khác
+              </button>
+
+              <h3 style={{ fontSize: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0 }}>
+                Bước 2: Xác nhận thời gian và triệu chứng lâm sàng
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '20px' }}>
+                
+                {/* Left side inputs */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  {/* Selected Doctor Summary Preview */}
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', backgroundColor: '#eff6ff', padding: '12px', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#dbeafe', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg viewBox="0 0 100 100" width="100%" height="100%">
+                        <circle cx="50" cy="50" r="50" fill="#dbeafe" />
+                        <circle cx="50" cy="40" r="20" fill="#2563eb" />
+                        <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '0.88rem', fontWeight: '700', color: 'var(--primary)' }}>{selectedDoctor.name}</h4>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>{selectedDoctor.degree} | {selectedDoctor.specialty}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: '600', marginTop: '2px' }}>Phí khám: {selectedDoctor.fee} VND</div>
+                    </div>
+                  </div>
+
+                  {/* Date select */}
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span className="form-group-label" style={{ fontWeight: '600', fontSize: '0.82rem' }}>Chọn ngày hẹn khám</span>
+                    <input
+                      type="date"
+                      value={bookingDate}
+                      min="2026-05-25"
+                      onChange={(e) => setBookingDate(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '38px', padding: '6px 12px', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  {/* Time slot select */}
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span className="form-group-label" style={{ fontWeight: '600', fontSize: '0.82rem' }}>Chọn khung giờ khám</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                      {TIME_SLOTS.map(t => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setBookingTime(t)}
+                          style={{
+                            padding: '8px 2px',
+                            borderRadius: '6px',
+                            border: '1.5px solid',
+                            borderColor: bookingTime === t ? 'var(--primary)' : 'var(--border-color)',
+                            backgroundColor: bookingTime === t ? '#eff6ff' : '#fff',
+                            color: bookingTime === t ? 'var(--primary)' : 'var(--text-dark)',
+                            fontWeight: bookingTime === t ? '700' : '500',
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side inputs & review */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  {/* Symptoms input */}
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span className="form-group-label" style={{ fontWeight: '600', fontSize: '0.82rem' }}>Mô tả triệu chứng sức khỏe cụ thể</span>
+                    <textarea
+                      value={bookingSymptoms}
+                      onChange={(e) => setBookingSymptoms(e.target.value)}
+                      placeholder="Ví dụ: Tôi bị sốt cao kèm đau đầu, rát cổ họng từ ngày hôm qua, người mỏi mệt ăn uống kém..."
+                      className="form-input"
+                      style={{ width: '100%', height: '90px', padding: '10px 12px', resize: 'none', lineHeight: '1.4', fontSize: '0.82rem' }}
+                    />
+                  </div>
+
+                  {/* Booking Summary Check sheet */}
+                  {bookingDate && bookingTime ? (
+                    <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#166534', borderBottom: '1px solid #bbf7d0', paddingBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Sparkles size={12} /> Xem lại chi tiết lịch hẹn đặt
+                      </span>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.75rem', color: '#14532d' }}>
+                        <div className="detail-row"><span className="detail-label">Bác sĩ khám:</span> <span className="detail-value">{selectedDoctor.name} ({selectedDoctor.specialty})</span></div>
+                        <div className="detail-row"><span className="detail-label">Thời gian:</span> <span className="detail-value">{bookingTime} | Ngày {formatDate(bookingDate)}</span></div>
+                        <div className="detail-row"><span className="detail-label">Địa điểm:</span> <span className="detail-value" style={{ maxWidth: '240px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={selectedDoctor.location}>{selectedDoctor.location}</span></div>
+                        <div className="detail-row"><span className="detail-label">Chi phí dịch vụ:</span> <span className="detail-value" style={{ color: 'var(--primary)', fontWeight: '700' }}>{selectedDoctor.fee} VND</span></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '90px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Vui lòng chọn ngày hẹn khám và khung giờ để hiển thị thông tin xem trước.
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Booking Summary Check sheet */}
-              {selectedDoctorId && bookingDate && bookingTime ? (
-                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#166534', borderBottom: '1px solid #bbf7d0', paddingBottom: '4px' }}>
-                    Xem lại chi tiết lịch hẹn
-                  </span>
-                  
-                  {(() => {
-                    const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
-                    return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.8rem', color: '#14532d' }}>
-                        <div className="detail-row"><span className="detail-label">Bác sĩ khám:</span> <span className="detail-value">{doctor?.name} ({doctor?.specialty})</span></div>
-                        <div className="detail-row"><span className="detail-label">Thời gian:</span> <span className="detail-value">{bookingTime} | Ngày {formatDate(bookingDate)}</span></div>
-                        <div className="detail-row"><span className="detail-label">Địa điểm:</span> <span className="detail-value">{doctor?.location}</span></div>
-                        <div className="detail-row"><span className="detail-label">Chi phí dịch vụ:</span> <span className="detail-value" style={{ color: 'var(--primary)', fontWeight: '700' }}>{doctor?.fee} VND</span></div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                <div style={{ padding: '14px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', textAlign: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    Vui lòng chọn bác sĩ, ngày hẹn khám và khung giờ để hiển thị thông tin xem trước.
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                if (defaultTab === 'create' && onNavigate) {
-                  onNavigate('patient-consultation-keep');
-                } else {
-                  setActiveTab('booked');
-                }
-              }}
-              className="btn btn-outline"
-              style={{ padding: '10px 32px', margin: 0 }}
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="submit"
-              className="btn btn-save"
-              style={{ padding: '10px 36px', margin: 0 }}
-            >
-              Xác nhận đặt lịch khám
-            </button>
-          </div>
-        </form>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDoctor(null);
+                  }}
+                  className="btn btn-outline"
+                  style={{ padding: '8px 24px', margin: 0, fontSize: '0.8rem' }}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-save"
+                  style={{ padding: '8px 30px', margin: 0, fontSize: '0.8rem', fontWeight: '700' }}
+                >
+                  Xác nhận đặt lịch khám
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
 
     </div>

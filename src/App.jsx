@@ -612,60 +612,163 @@ function App() {
   };
 
   // Database states to make forms functional
-  const [diseases, setDiseases] = useState(INITIAL_DISEASES);
-  const [medicines, setMedicines] = useState(INITIAL_MEDICINES);
-  const [conversations, setConversations] = useState(INITIAL_CONVERSATIONS);
+  const [diseases, setDiseases] = useState(() => {
+    const cached = localStorage.getItem('diseases');
+    return cached ? JSON.parse(cached) : INITIAL_DISEASES;
+  });
+  const [medicines, setMedicines] = useState(() => {
+    const cached = localStorage.getItem('medicines');
+    return cached ? JSON.parse(cached) : INITIAL_MEDICINES;
+  });
+  const [conversations, setConversations] = useState(() => {
+    const cached = localStorage.getItem('conversations');
+    return cached ? JSON.parse(cached) : INITIAL_CONVERSATIONS;
+  });
 
   // Scenarios state at App root level for CRUD functional state
-  const [scenarios, setScenarios] = useState([
-    { 
-      id: 'SC001', 
-      name: 'Tư vấn cảm cúm & đặt lịch khám', 
-      status: 'Hoạt động', 
-      lastUpdated: '05-05-2026 - 15:40', 
-      nodeCount: 12,
-      nodes: SC001_NODES,
-      connections: SC001_CONNECTIONS
-    },
-    { 
-      id: 'SC002', 
-      name: 'Tra cứu thông tin thuốc & liều lượng', 
-      status: 'Nháp', 
-      lastUpdated: '05-05-2026 - 08:20', 
-      nodeCount: 6,
-      nodes: SC002_NODES,
-      connections: SC002_CONNECTIONS
-    },
-    { 
-      id: 'SC003', 
-      name: 'Đăng ký khám bệnh ban đầu', 
-      status: 'Hoạt động', 
-      lastUpdated: '04-05-2026 - 16:17', 
-      nodeCount: 8,
-      nodes: SC003_NODES,
-      connections: SC003_CONNECTIONS
+  const [scenarios, setScenarios] = useState(() => {
+    const cached = localStorage.getItem('scenarios');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
     }
-  ]);
+    return [
+      { 
+        id: 'SC001', 
+        name: 'Tư vấn cảm cúm & đặt lịch khám', 
+        status: 'Hoạt động', 
+        lastUpdated: '05-05-2026 - 15:40', 
+        nodeCount: 12,
+        nodes: SC001_NODES,
+        connections: SC001_CONNECTIONS
+      },
+      { 
+        id: 'SC002', 
+        name: 'Tra cứu thông tin thuốc & liều lượng', 
+        status: 'Nháp', 
+        lastUpdated: '05-05-2026 - 08:20', 
+        nodeCount: 6,
+        nodes: SC002_NODES,
+        connections: SC002_CONNECTIONS
+      },
+      { 
+        id: 'SC003', 
+        name: 'Đăng ký khám bệnh ban đầu', 
+        status: 'Hoạt động', 
+        lastUpdated: '04-05-2026 - 16:17', 
+        nodeCount: 8,
+        nodes: SC003_NODES,
+        connections: SC003_CONNECTIONS
+      }
+    ];
+  });
 
   // Hoisted feedbacks state to synchronize dashboards and reviews
-  const [feedbacks, setFeedbacks] = useState([
-    { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24-05-2026' },
-    { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23-05-2026' },
-    { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22-05-2026' }
-  ]);
+  const [feedbacks, setFeedbacks] = useState(() => {
+    const cached = localStorage.getItem('feedbacks');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    return [
+      { id: 1, name: 'Trần Văn Hùng', rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.', response: 'Cảm ơn bạn đã tin tưởng dịch vụ!', date: '24-05-2026' },
+      { id: 2, name: 'Lê Thị Thảo', rating: 2, comment: 'Đợi khám hơi lâu mặc dù đã đặt lịch trước.', response: '', date: '23-05-2026' },
+      { id: 3, name: 'Phan Anh Tuấn', rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.', response: 'Cảm ơn bạn!', date: '22-05-2026' }
+    ];
+  });
 
   // Manager Specific State databases
-  const [appointments, setAppointments] = useState(INITIAL_APPOINTMENTS);
-  const [patients, setPatients] = useState(INITIAL_PATIENTS);
-  const [doctors, setDoctors] = useState(INITIAL_DOCTORS);
-  const [reminders, setReminders] = useState(INITIAL_REMINDERS);
+  const [appointments, setAppointments] = useState(() => {
+    const cached = localStorage.getItem('appointments');
+    return cached ? JSON.parse(cached) : INITIAL_APPOINTMENTS;
+  });
+  const [patients, setPatients] = useState(() => {
+    const cached = localStorage.getItem('patients');
+    if (cached) {
+      try { return JSON.parse(cached); } catch (e) {}
+    }
+    const cachedPatientData = localStorage.getItem('patientData');
+    if (cachedPatientData) {
+      try {
+        const parsed = JSON.parse(cachedPatientData);
+        return INITIAL_PATIENTS.map(p => {
+          if (p.id === 'P004') {
+            return {
+              ...p,
+              name: parsed.name || p.name,
+              dob: parsed.dob || p.dob,
+              gender: parsed.gender || p.gender,
+              phone: parsed.phone || p.phone,
+              address: parsed.address || p.address,
+              blood: parsed.blood || p.blood,
+              height: parsed.height || p.height,
+              weight: parsed.weight || p.weight,
+              notes: parsed.notes || p.notes
+            };
+          }
+          return p;
+        });
+      } catch (e) {}
+    }
+    return INITIAL_PATIENTS;
+  });
+  const [doctors, setDoctors] = useState(() => {
+    const cached = localStorage.getItem('doctors');
+    return cached ? JSON.parse(cached) : INITIAL_DOCTORS;
+  });
+  const [reminders, setReminders] = useState(() => {
+    const cached = localStorage.getItem('reminders');
+    return cached ? JSON.parse(cached) : INITIAL_REMINDERS;
+  });
 
   // State to handle placeholder views for other roles
   const [underDevRole, setUnderDevRole] = useState(null);
 
   // Patient Conversations Shared States
-  const [patientConversations, setPatientConversations] = useState(INITIAL_PATIENT_CONVS);
+  const [patientConversations, setPatientConversations] = useState(() => {
+    const cached = localStorage.getItem('patientConversations');
+    return cached ? JSON.parse(cached) : INITIAL_PATIENT_CONVS;
+  });
   const [activePatientConvId, setActivePatientConvId] = useState('PCONV001');
+
+  // Synchronize state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('diseases', JSON.stringify(diseases));
+  }, [diseases]);
+
+  useEffect(() => {
+    localStorage.setItem('medicines', JSON.stringify(medicines));
+  }, [medicines]);
+
+  useEffect(() => {
+    localStorage.setItem('conversations', JSON.stringify(conversations));
+  }, [conversations]);
+
+  useEffect(() => {
+    localStorage.setItem('scenarios', JSON.stringify(scenarios));
+  }, [scenarios]);
+
+  useEffect(() => {
+    localStorage.setItem('feedbacks', JSON.stringify(feedbacks));
+  }, [feedbacks]);
+
+  useEffect(() => {
+    localStorage.setItem('appointments', JSON.stringify(appointments));
+  }, [appointments]);
+
+  useEffect(() => {
+    localStorage.setItem('patients', JSON.stringify(patients));
+  }, [patients]);
+
+  useEffect(() => {
+    localStorage.setItem('doctors', JSON.stringify(doctors));
+  }, [doctors]);
+
+  useEffect(() => {
+    localStorage.setItem('reminders', JSON.stringify(reminders));
+  }, [reminders]);
+
+  useEffect(() => {
+    localStorage.setItem('patientConversations', JSON.stringify(patientConversations));
+  }, [patientConversations]);
 
   // Floating Chatbot Widget states (Patient specific)
   const [showFloatingChat, setShowFloatingChat] = useState(false);
@@ -874,9 +977,18 @@ function App() {
         errorType: ''
       }));
 
+      const cachedPatient = localStorage.getItem('patientData');
+      let patientName = 'Lương Hương Giang';
+      if (cachedPatient) {
+        try {
+          const parsed = JSON.parse(cachedPatient);
+          if (parsed.name) patientName = parsed.name;
+        } catch (e) {}
+      }
+
       const newOrUpdatedConv = {
         id: ratedConv.id,
-        name: 'Lương Hương Giang',
+        name: patientName,
         time: (() => {
           if (ratedConv.date && ratedConv.date !== 'Vừa xong' && ratedConv.date.includes('-') && ratedConv.date.includes(':')) {
             return ratedConv.date;
@@ -1433,7 +1545,12 @@ function App() {
 
           {/* GLOBAL PAGES */}
           {currentView === 'profile' && (
-            <AccountProfile role={role} triggerToast={triggerToast} />
+            <AccountProfile 
+              role={role} 
+              triggerToast={triggerToast} 
+              patients={patients} 
+              setPatients={setPatients} 
+            />
           )}
         </main>
       </div>

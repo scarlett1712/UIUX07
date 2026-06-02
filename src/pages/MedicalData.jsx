@@ -31,31 +31,44 @@ export default function MedicalData({
 
   // Initialize or reset form data when editing or adding
   const initForm = (type, id = null) => {
+    const draftKey = `draft_${currentView}_${id || 'new'}`;
+    const savedDraft = localStorage.getItem(draftKey);
+
     if (id) {
       // Edit mode - clone original data and form data separately
       if (type === 'disease') {
         const item = diseases.find((d) => d.id === id);
-        setFormData(JSON.parse(JSON.stringify(item)));
+        if (savedDraft) {
+          setFormData(JSON.parse(savedDraft));
+          triggerToast('Đã khôi phục bản nháp chưa lưu', 'info');
+        } else {
+          setFormData(JSON.parse(JSON.stringify(item)));
+        }
         setOriginalData(JSON.parse(JSON.stringify(item)));
       } else {
         const item = medicines.find((m) => m.id === id);
-        setFormData(JSON.parse(JSON.stringify(item)));
+        if (savedDraft) {
+          setFormData(JSON.parse(savedDraft));
+          triggerToast('Đã khôi phục bản nháp chưa lưu', 'info');
+        } else {
+          setFormData(JSON.parse(JSON.stringify(item)));
+        }
         setOriginalData(JSON.parse(JSON.stringify(item)));
       }
     } else {
       // Add mode - originalData is null, all typed text is treated as new
-      setOriginalData(null);
+      let defaultData = null;
       if (type === 'disease') {
-        setFormData({
+        defaultData = {
           id: `D${Date.now()}`,
           name: '',
           desc: '',
           danger: 'Thấp',
           department: 'Tai Mũi Họng',
           symptoms: [],
-        });
+        };
       } else {
-        setFormData({
+        defaultData = {
           id: `M${Date.now()}`,
           name: '',
           desc: '',
@@ -64,8 +77,16 @@ export default function MedicalData({
           contraindication: '',
           dosage: '',
           sideEffects: '',
-        });
+        };
       }
+
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft));
+        triggerToast('Đã khôi phục bản nháp chưa lưu', 'info');
+      } else {
+        setFormData(defaultData);
+      }
+      setOriginalData(null);
     }
   };
 
@@ -76,6 +97,24 @@ export default function MedicalData({
     if (currentView === 'medicine-add') initForm('medicine');
     if (currentView === 'medicine-edit') initForm('medicine', selectedId);
   }, [currentView, selectedId]);
+
+  // Save draft state
+  React.useEffect(() => {
+    if (formData && (currentView.includes('add') || currentView.includes('edit'))) {
+      const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+      localStorage.setItem(draftKey, JSON.stringify(formData));
+    }
+  }, [formData, currentView, selectedId]);
+
+  // Handle Cancel Draft
+  const handleCancelDraft = (type) => {
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    localStorage.removeItem(draftKey);
+    triggerToast('Đã hủy và xóa bản nháp', 'info');
+    onNavigate(type === 'disease' ? 'disease-list' : (currentView === 'medicine-edit' ? 'medicine-details' : 'medicine-list'));
+    setFormData(null);
+    setOriginalData(null);
+  };
 
   // UI status helpers: Check if field is modified from original
   const isFieldModified = (fieldName) => {
@@ -97,6 +136,9 @@ export default function MedicalData({
       triggerToast('Vui lòng nhập tên đầy đủ', 'error');
       return;
     }
+
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    localStorage.removeItem(draftKey);
 
     if (type === 'disease') {
       if (currentView === 'disease-add') {
@@ -413,9 +455,6 @@ export default function MedicalData({
       <div className="card animate-fade-in">
         {/* Header */}
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('disease-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Chi tiết bệnh</h2>
         </div>
 
@@ -529,9 +568,6 @@ export default function MedicalData({
       <div className="card animate-fade-in">
         {/* Header */}
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('disease-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'disease-add' ? 'Thêm thông tin bệnh mới' : 'Chỉnh sửa thông tin bệnh'}
           </h2>
@@ -697,11 +733,16 @@ export default function MedicalData({
         {/* Save & Cancel buttons */}
         <div className="form-action-buttons">
           <button className="btn btn-cancel" onClick={() => {
-            triggerToast('Đã hủy thao tác nhập thông tin bệnh', 'info');
+            triggerToast('Đã thoát form (giữ bản nháp)', 'info');
             onNavigate('disease-list');
           }}>
-            Hủy
+            Thoát
           </button>
+          {localStorage.getItem(`draft_${currentView}_${selectedId || 'new'}`) && (
+            <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={() => handleCancelDraft('disease')}>
+              Hủy nháp
+            </button>
+          )}
           <button className="btn btn-save" onClick={() => handleSave('disease')}>
             Lưu
           </button>
@@ -896,9 +937,6 @@ export default function MedicalData({
     return (
       <div className="card animate-fade-in">
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('medicine-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Chi tiết thông tin thuốc</h2>
         </div>
 
@@ -963,9 +1001,6 @@ export default function MedicalData({
     return (
       <div className="card animate-fade-in">
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('medicine-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'medicine-add' ? 'Thêm thông tin thuốc mới' : 'Chỉnh sửa thông tin thuốc'}
           </h2>
@@ -1046,11 +1081,16 @@ export default function MedicalData({
 
         <div className="form-action-buttons">
           <button className="btn btn-cancel" onClick={() => {
-            triggerToast('Đã hủy nhập thông tin thuốc', 'info');
+            triggerToast('Đã thoát form (giữ bản nháp)', 'info');
             onNavigate(currentView === 'medicine-edit' ? 'medicine-details' : 'medicine-list');
           }}>
-            Hủy
+            Thoát
           </button>
+          {localStorage.getItem(`draft_${currentView}_${selectedId || 'new'}`) && (
+            <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={() => handleCancelDraft('medicine')}>
+              Hủy nháp
+            </button>
+          )}
           <button className="btn btn-save" onClick={() => handleSave('medicine')}>
             Lưu
           </button>

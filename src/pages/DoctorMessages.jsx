@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bot, User, Send, BellRing, Sparkles, FolderArchive, MessageCircle, FileText, Clock } from 'lucide-react';
+import { Search, Bot, User, Send, BellRing, Sparkles, FolderArchive, MessageCircle, FileText, Clock, PhoneCall, Video, Check } from 'lucide-react';
 
-export default function DoctorMessages({ onNavigate, selectedId, patients = [], setPatients, onSelectId, triggerToast, threads = [], setThreads }) {
-  const [activeThreadId, setActiveThreadId] = useState('MSG101');
-
+export default function DoctorMessages({ 
+  onNavigate, 
+  selectedId, 
+  patients = [], 
+  setPatients, 
+  onSelectId, 
+  triggerToast, 
+  threads = [], 
+  setThreads,
+  activeThreadId = 'MSG101',
+  setActiveThreadId
+}) {
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'archived'
@@ -14,7 +23,40 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
   const [sessionTimeLeft, setSessionTimeLeft] = useState(120);
   const [escalatedThreadId, setEscalatedThreadId] = useState(null);
 
+  // Call simulation states
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [callType, setCallType] = useState('video');
+  const [callState, setCallState] = useState('connecting');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCamOff, setIsCamOff] = useState(false);
+  const [callDuration, setCallDuration] = useState('00:00');
+
   const messagesEndRef = React.useRef(null);
+
+  useEffect(() => {
+    let timer;
+    if (showCallModal && callState === 'connected') {
+      let secs = 0;
+      timer = setInterval(() => {
+        secs++;
+        const m = Math.floor(secs / 60).toString().padStart(2, '0');
+        const s = (secs % 60).toString().padStart(2, '0');
+        setCallDuration(`${m}:${s}`);
+      }, 1000);
+    } else {
+      setCallDuration('00:00');
+    }
+    return () => clearInterval(timer);
+  }, [showCallModal, callState]);
+
+  const handleStartCall = (type) => {
+    setCallType(type);
+    setCallState('connecting');
+    setShowCallModal(true);
+    setTimeout(() => {
+      setCallState('connected');
+    }, 2500);
+  };
 
   useEffect(() => {
     if (selectedId) {
@@ -79,15 +121,27 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
 
     setThreads(threads.map(t => {
       if (t.id === 'MSG101') {
+        const hasHandoff = t.messages.some(m => m.sender === 'system');
+        const nextMessages = hasHandoff ? t.messages : [...t.messages, ...handoffMessages];
         return {
           ...t,
           unread: false,
-          messages: [...t.messages, ...handoffMessages]
+          accepted: true,
+          messages: nextMessages
         };
       }
       return t;
     }));
     setActiveThreadId('MSG101');
+  };
+
+  const handleAcceptThread = (threadId) => {
+    if (threadId === 'MSG101') {
+      handleAcceptHandoff();
+    } else {
+      setThreads(threads.map(t => t.id === threadId ? { ...t, accepted: true } : t));
+      triggerToast('Đã chấp nhận yêu cầu tư vấn cho bệnh nhân!', 'success');
+    }
   };
 
   // Chat reply simulation
@@ -145,10 +199,45 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
     const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         t.lastMsg.toLowerCase().includes(searchQuery.toLowerCase());
     
-    if (activeTab === 'unread') return matchSearch && t.unread;
-    if (activeTab === 'archived') return matchSearch && t.id === 'MSG106'; // mock archive
-    return matchSearch;
+    if (activeTab === 'unread') return matchSearch && t.unread && !t.archived;
+    if (activeTab === 'archived') return matchSearch && t.archived;
+    return matchSearch && !t.archived;
   });
+
+  const getChatbotSummary = (threadId) => {
+    switch (threadId) {
+      case 'MSG101':
+        return {
+          symptoms: 'Sốt cao (~39°C), mệt mỏi, đau đầu, đau họng, ho nhẹ',
+          diagnosis: 'Nghi nhiễm cúm A/B hoặc virus đường hô hấp'
+        };
+      case 'MSG103':
+        return {
+          symptoms: 'Mắt trái đỏ và sưng húp lên sau khi ngủ dậy, có dử mắt màu xanh',
+          diagnosis: 'Nghi viêm kết mạc cấp (đau mắt đỏ)'
+        };
+      case 'MSG104':
+        return {
+          symptoms: 'Nghẹt mũi, rát họng kéo dài, uống thuốc cảm thường không đỡ',
+          diagnosis: 'Nghi viêm mũi dị ứng hoặc viêm họng hạt'
+        };
+      case 'MSG105':
+        return {
+          symptoms: 'Đau khớp gối khi vận động hoặc đi lại nhiều',
+          diagnosis: 'Nghi thoái hóa khớp gối hoặc chấn thương sụn khớp'
+        };
+      case 'MSG106':
+        return {
+          symptoms: 'Hoa mắt, chóng mặt lúc thức dậy buổi sáng',
+          diagnosis: 'Nghi rối loạn tiền đình hoặc thiếu máu não'
+        };
+      default:
+        return {
+          symptoms: 'Đau bụng thượng vị, đầy hơi, buồn nôn',
+          diagnosis: 'Theo dõi viêm dạ dày cấp'
+        };
+    }
+  };
 
   return (
     <div className="animate-fade-in">
@@ -208,12 +297,12 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
         display: 'grid', 
         gridTemplateColumns: '320px 1fr', 
         gap: '20px', 
-        height: hasEscalatedSession ? 'calc(100vh - var(--header-height) - 210px)' : 'calc(100vh - var(--header-height) - 130px)', 
+        height: hasEscalatedSession ? 'calc(100vh - var(--header-height) - 140px)' : 'calc(100vh - var(--header-height) - 60px)', 
         alignItems: 'stretch' 
       }}>
         
         {/* LEFT COLUMN: Queue threads */}
-        <div className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
+        <div className="card" style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden', margin: 0, height: '100%' }}>
           
           {/* Tabs */}
           <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '3px', borderRadius: '6px', gap: '2px' }}>
@@ -268,15 +357,18 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
           </div>
 
           {/* Search bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 10px', backgroundColor: '#f8fafc' }}>
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Tìm hội thoại..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.8rem', width: '100%' }}
-            />
+          <div className="filters-bar" style={{ padding: '6px 12px', marginBottom: '8px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+            <div className="filter-group" style={{ width: '100%' }}>
+              <Search size={16} style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Tìm hội thoại..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="form-input"
+                style={{ width: '100%', padding: '6px 10px', border: 'none' }}
+              />
+            </div>
           </div>
 
           {/* List items queue */}
@@ -349,37 +441,81 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
               </div>
             </div>
 
-            <button 
-              onClick={() => {
-                const nameToFind = activeThread.name;
-                const existing = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase());
-                let targetId;
-                if (existing) {
-                  targetId = existing.id;
-                } else {
-                  targetId = `P${Date.now()}`;
-                  const newPatient = {
-                    id: targetId,
-                    name: nameToFind,
-                    dob: '2000-08-25',
-                    gender: 'Nữ',
-                    phone: '0912345678',
-                    email: `${nameToFind.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
-                    address: 'Hải Châu, Đà Nẵng',
-                    insurance: 'DN4012030192',
-                    medicalHistory: []
-                  };
-                  setPatients([...patients, newPatient]);
-                }
-                onSelectId(targetId);
-                onNavigate('doctor-patient-details');
-                triggerToast(`Đang điều hướng tới hồ sơ bệnh án của ${nameToFind}...`, 'info');
-              }}
-              className="btn btn-outline"
-              style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--border-color)', color: 'var(--primary)' }}
-            >
-              <FileText size={12} /> Bệnh án chi tiết
-            </button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button 
+                onClick={() => {
+                  setThreads(threads.map(t => t.id === activeThread.id ? { ...t, archived: !t.archived } : t));
+                  triggerToast(activeThread.archived ? 'Đã bỏ lưu trữ hội thoại' : 'Đã lưu trữ hội thoại thành công!', 'success');
+                }}
+                style={{ padding: '6px', borderRadius: '50%', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title={activeThread.archived ? "Bỏ lưu trữ" : "Lưu trữ hội thoại"}
+              >
+                <FolderArchive size={14} style={{ color: activeThread.archived ? 'var(--primary)' : 'var(--text-muted)' }} />
+              </button>
+
+              <button 
+                onClick={() => {
+                  if (!activeThread.accepted) {
+                    triggerToast('Vui lòng chấp nhận tư vấn trước khi thực hiện cuộc gọi!', 'warning');
+                    return;
+                  }
+                  handleStartCall('voice');
+                  triggerToast('Đang kết nối cuộc gọi thoại tới bệnh nhân...', 'info');
+                }}
+                style={{ padding: '6px', borderRadius: '50%', border: '1px solid var(--border-color)', background: '#fff', cursor: !activeThread.accepted ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !activeThread.accepted ? 0.5 : 1 }}
+                title="Gọi thoại"
+                disabled={!activeThread.accepted}
+              >
+                <PhoneCall size={14} style={{ color: 'var(--primary)' }} />
+              </button>
+              <button 
+                onClick={() => {
+                  if (!activeThread.accepted) {
+                    triggerToast('Vui lòng chấp nhận tư vấn trước khi thực hiện cuộc gọi!', 'warning');
+                    return;
+                  }
+                  handleStartCall('video');
+                  triggerToast('Đang kết nối cuộc gọi Video tới bệnh nhân...', 'info');
+                }}
+                style={{ padding: '6px', borderRadius: '50%', border: '1px solid var(--border-color)', background: '#fff', cursor: !activeThread.accepted ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !activeThread.accepted ? 0.5 : 1 }}
+                title="Gọi Video"
+                disabled={!activeThread.accepted}
+              >
+                <Video size={14} style={{ color: '#10b981' }} />
+              </button>
+              
+              <button 
+                onClick={() => {
+                  const nameToFind = activeThread.name;
+                  const existing = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase());
+                  let targetId;
+                  if (existing) {
+                    targetId = existing.id;
+                  } else {
+                    targetId = `P${Date.now()}`;
+                    const newPatient = {
+                      id: targetId,
+                      name: nameToFind,
+                      dob: '2000-08-25',
+                      gender: 'Nữ',
+                      phone: '0912345678',
+                      email: `${nameToFind.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+                      address: 'Hải Châu, Đà Nẵng',
+                      insurance: 'DN4012030192',
+                      medicalHistory: []
+                    };
+                    setPatients([...patients, newPatient]);
+                  }
+                  onSelectId(targetId);
+                  onNavigate('doctor-patient-details');
+                  triggerToast(`Đang điều hướng tới hồ sơ bệnh án của ${nameToFind}...`, 'info');
+                }}
+                className="btn btn-outline"
+                style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--border-color)', color: 'var(--primary)' }}
+              >
+                <FileText size={12} /> Bệnh án chi tiết
+              </button>
+            </div>
           </div>
 
           {isEscalatedSessionActive && activeThreadId === escalatedThreadId && (
@@ -407,6 +543,7 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
 
           {/* Messages Area */}
           <div className="chatgpt-messages-area" style={{ flexGrow: 1, padding: '16px', overflowY: 'auto' }}>
+
             {activeThread.messages.map((msg, index) => {
               const isDoc = msg.sender === 'doctor';
               const isBot = msg.sender === 'bot';
@@ -491,35 +628,378 @@ export default function DoctorMessages({ onNavigate, selectedId, patients = [], 
                 </div>
               );
             })}
+
+            {/* Chatbot Synthesis Summary Box (Moved below messages list) */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginTop: '16px',
+              marginBottom: '10px',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                <Bot size={18} style={{ color: 'var(--primary)' }} />
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-dark)' }}>Tổng hợp từ Chatbot AI</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
+                <div>
+                  <strong style={{ color: 'var(--text-dark)' }}>Triệu chứng lâm sàng:</strong>{' '}
+                  <span style={{ color: 'var(--text-muted)' }}>{getChatbotSummary(activeThread.id).symptoms}</span>
+                </div>
+                <div>
+                  <strong style={{ color: 'var(--text-dark)' }}>Chẩn đoán AI sơ bộ:</strong>{' '}
+                  <span style={{ color: 'var(--text-muted)' }}>{getChatbotSummary(activeThread.id).diagnosis}</span>
+                </div>
+              </div>
+            </div>
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Message input */}
-          <div className="chatgpt-input-bar-container" style={{ padding: '12px', borderTop: '1px solid var(--border-color)', backgroundColor: '#fff' }}>
-            <div className="chatgpt-input-bar">
-              <input
-                type="text"
-                placeholder="Nhập nội dung tư vấn..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSendMsg();
-                }}
-                style={{ fontSize: '0.82rem' }}
-              />
+          {/* Message input / Accept Consultation Button */}
+          {activeThread.accepted ? (
+            <div className="chatgpt-input-bar-container" style={{ padding: '12px', borderTop: '1px solid var(--border-color)', backgroundColor: '#fff' }}>
+              <div className="chatgpt-input-bar">
+                <input
+                  type="text"
+                  placeholder="Nhập nội dung tư vấn..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSendMsg();
+                  }}
+                  style={{ fontSize: '0.82rem' }}
+                />
+                <button
+                  className="chatgpt-send-btn"
+                  onClick={handleSendMsg}
+                  style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                >
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '16px', borderTop: '1px solid var(--border-color)', backgroundColor: '#fff', display: 'flex', justifyContent: 'center' }}>
               <button
-                className="chatgpt-send-btn"
-                onClick={handleSendMsg}
-                style={{ backgroundColor: 'var(--primary)', color: '#fff' }}
+                onClick={() => handleAcceptThread(activeThread.id)}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  padding: '10px 24px',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
               >
-                <Send size={14} />
+                <Check size={16} /> Chấp nhận tư vấn
               </button>
             </div>
-          </div>
+          )}
 
         </div>
 
       </div>
+
+      {/* SIMULATED VIDEO/VOICE CALL MODAL FOR DOCTOR */}
+      {showCallModal && (
+        <div 
+          onClick={() => setShowCallModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            color: '#fff',
+            padding: '20px'
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            width: '100%',
+            maxWidth: '640px',
+            backgroundColor: '#1e293b',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '480px',
+            position: 'relative'
+          }}>
+            {/* Header */}
+            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                Cuộc gọi {callType === 'video' ? 'Video' : 'Thoại'} tư vấn bệnh nhân
+              </span>
+              <span style={{ fontSize: '0.85rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#10b981', 
+                  display: 'inline-block',
+                  animation: 'pulseGlow 1.5s infinite'
+                }} />
+                Thời gian: {callDuration}
+              </span>
+            </div>
+
+            {/* Call Body */}
+            <div style={{ flexGrow: 1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' }}>
+              {callState === 'connecting' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', animation: 'pulseGlow 2s infinite' }}>
+                  <div style={{
+                    width: '90px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    backgroundColor: callType === 'video' ? '#059669' : '#0284c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 30px rgba(56, 189, 248, 0.6)',
+                    position: 'relative'
+                  }}>
+                    {callType === 'video' ? (
+                      <Video size={40} color="#fff" />
+                    ) : (
+                      <PhoneCall size={40} color="#fff" />
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <h4 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700' }}>{activeThread.name}</h4>
+                    <span style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginTop: '6px' }}>
+                      Đang kết nối cuộc gọi {callType === 'video' ? 'Video' : 'Thoại'}...
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Connected State
+                callType === 'video' ? (
+                  <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                    {/* Muted overlay badge */}
+                    {isMuted && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        left: '16px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '600',
+                        zIndex: 10,
+                        boxShadow: 'var(--shadow-md)'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path></svg>
+                        Đã tắt tiếng mic của bạn
+                      </div>
+                    )}
+
+                    {/* Patient feed */}
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg viewBox="0 0 100 100" width="100" height="100">
+                        <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                        <circle cx="50" cy="40" r="20" fill="#db2777" />
+                        <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+                      </svg>
+                      <span style={{ marginTop: '12px', fontSize: '1rem', fontWeight: '700' }}>{activeThread.name}</span>
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Đang chia sẻ video tư vấn...</span>
+                    </div>
+
+                    {/* Doctor Preview */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '16px',
+                      right: '16px',
+                      width: '120px',
+                      height: '90px',
+                      backgroundColor: '#334155',
+                      borderRadius: '8px',
+                      border: '2px solid rgba(255,255,255,0.2)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'var(--shadow-lg)'
+                    }}>
+                      {isCamOff ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10l-2.33-1.75-2.33-1.75"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                          <span style={{ fontSize: '0.6rem', color: '#94a3b8' }}>Cam tắt</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg viewBox="0 0 100 100" width="32" height="32">
+                            <circle cx="50" cy="50" r="50" fill="#38bdf8" />
+                            <circle cx="50" cy="40" r="20" fill="#0369a1" />
+                            <path d="M20,80 C20,60 80,60 80,80" fill="#0369a1" />
+                          </svg>
+                          <span style={{ fontSize: '0.65rem', color: '#fff', marginTop: '2px' }}>Bạn (Bs. Huy)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', position: 'relative', width: '100%', height: '100%', justifyContent: 'center' }}>
+                    {/* Muted overlay badge */}
+                    {isMuted && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '16px',
+                        left: '16px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        color: '#fff',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.75rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontWeight: '600',
+                        zIndex: 10,
+                        boxShadow: 'var(--shadow-md)'
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path></svg>
+                        Đã tắt tiếng mic của bạn
+                      </div>
+                    )}
+                    
+                    <div style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      backgroundColor: '#334155',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '3px solid #475569',
+                      boxShadow: '0 0 16px rgba(56, 189, 248, 0.4)'
+                    }}>
+                      <svg viewBox="0 0 100 100" width="70" height="70">
+                        <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                        <circle cx="50" cy="40" r="20" fill="#db2777" />
+                        <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+                      </svg>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <h4 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>{activeThread.name}</h4>
+                      <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Đang kết nối thoại...</span>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+
+            {/* Controls */}
+            <div style={{
+              padding: '20px',
+              backgroundColor: '#0f172a',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '24px',
+              borderTop: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              {/* Mic toggle */}
+              <button
+                onClick={() => {
+                  setIsMuted(!isMuted);
+                  triggerToast(isMuted ? 'Đã bật Micro' : 'Đã tắt Micro', 'info');
+                }}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: isMuted ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isMuted ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                )}
+              </button>
+
+              {/* Cam toggle */}
+              {callType === 'video' && (
+                <button
+                  onClick={() => {
+                    setIsCamOff(!isCamOff);
+                    triggerToast(isCamOff ? 'Đã bật Camera' : 'Đã tắt Camera', 'info');
+                  }}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: isCamOff ? '#ef4444' : 'rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {isCamOff ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10l-2.33-1.75-2.33-1.75"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                  )}
+                </button>
+              )}
+
+              {/* End Call */}
+              <button
+                onClick={() => {
+                  setShowCallModal(false);
+                  triggerToast('Cuộc gọi đã kết thúc', 'info');
+                }}
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  backgroundColor: '#ef4444',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

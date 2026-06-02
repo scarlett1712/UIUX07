@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, ArrowLeft, Pill, BookOpen } from 'lucide-react';
+import { Search, Filter, ArrowLeft, Pill, BookOpen, Undo2 } from 'lucide-react';
 
 export default function DoctorMedicines({
   currentView,
@@ -10,14 +10,17 @@ export default function DoctorMedicines({
   triggerToast
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sideEffectFilter, setSideEffectFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
   // Filter medicines
   const filteredMedicines = medicines.filter(m => {
-    return m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           m.activeIngredient.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           m.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           m.activeIngredient.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           m.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSideEffect = sideEffectFilter === '' || (m.sideEffects && m.sideEffects.toLowerCase().includes(sideEffectFilter.toLowerCase()));
+    return matchesSearch && matchesSideEffect;
   });
 
   const totalItems = filteredMedicines.length;
@@ -36,9 +39,6 @@ export default function DoctorMedicines({
         
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <button className="back-btn" onClick={() => onNavigate('doctor-medicines')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Chi tiết thông tin thuốc</h2>
         </div>
 
@@ -109,23 +109,55 @@ export default function DoctorMedicines({
     <div className="animate-fade-in">
       
       {/* Header filter toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Cơ sở dữ liệu Tra cứu thuốc</h2>
-        
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div className="filter-group" style={{ backgroundColor: '#fff', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Tìm tên thuốc, hoạt chất..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{ border: 'none', outline: 'none', fontSize: '0.8rem', width: '200px' }}
-            />
-          </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>
+          Cơ sở dữ liệu Tra cứu thuốc
+        </h2>
+      </div>
+
+      <div className="filters-bar" style={{ marginBottom: '16px' }}>
+        <div className="filter-group">
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Tìm tên thuốc, hoạt chất..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="form-input"
+            style={{ width: '220px', padding: '6px 10px' }}
+          />
+        </div>
+
+        <div className="filter-group">
+          <Filter size={14} />
+          <select
+            value={sideEffectFilter}
+            onChange={(e) => {
+              setSideEffectFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="filter-select"
+          >
+            <option value="">Tác dụng phụ</option>
+            <option value="ngứa">Mẩn ngứa / Dị ứng</option>
+            <option value="tiêu">Tiêu hóa / Tiêu chảy</option>
+            <option value="đầu">Đau đầu / Nhức đầu</option>
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSideEffectFilter('');
+              triggerToast('Đã xóa bộ lọc tra cứu thuốc', 'info');
+            }}
+            className="btn btn-outline"
+            style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '3px', color: '#ff6b6b' }}
+          >
+            <Undo2 size={12} /> Hủy lọc
+          </button>
         </div>
       </div>
 

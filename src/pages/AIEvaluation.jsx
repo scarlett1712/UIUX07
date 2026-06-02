@@ -435,9 +435,6 @@ export default function AIEvaluation({
         {/* Toolbar Header */}
         <div className="canvas-toolbar" style={{ marginBottom: '12px' }}>
           <div className="flex align-center gap-4">
-            <button className="back-btn" onClick={() => onNavigate('ai-evaluation')}>
-              <ArrowLeft size={16} />
-            </button>
             <h2 style={{ fontSize: '1.2rem', margin: 0 }}>
               Phân tích hội thoại lỗi AI: {activeConv.name}
             </h2>

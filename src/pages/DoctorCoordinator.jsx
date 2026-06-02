@@ -48,26 +48,56 @@ export default function DoctorCoordinator({
   const [originalData, setOriginalData] = useState(null);
 
   useEffect(() => {
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    const savedDraft = localStorage.getItem(draftKey);
+
     if (currentView === 'doctor-add') {
       setOriginalData(null);
-      setFormData({
-        id: `DOC${Date.now().toString().slice(-3)}`,
-        name: '',
-        specialty: 'Ngoại tổng quát',
-        phone: '',
-        email: '',
-        status: 'Đang làm việc',
-        degree: 'Thạc sĩ Bác sĩ',
-        biography: ''
-      });
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft));
+        triggerToast('Đã khôi phục bản nháp hồ sơ bác sĩ', 'info');
+      } else {
+        setFormData({
+          id: `DOC${Date.now().toString().slice(-3)}`,
+          name: '',
+          specialty: 'Ngoại tổng quát',
+          phone: '',
+          email: '',
+          status: 'Đang làm việc',
+          degree: 'Thạc sĩ Bác sĩ',
+          biography: ''
+        });
+      }
     } else if (currentView === 'doctor-edit') {
       const item = doctors.find(d => d.id === selectedId);
       if (item) {
-        setFormData(JSON.parse(JSON.stringify(item)));
+        if (savedDraft) {
+          setFormData(JSON.parse(savedDraft));
+          triggerToast('Đã khôi phục bản nháp hồ sơ bác sĩ', 'info');
+        } else {
+          setFormData(JSON.parse(JSON.stringify(item)));
+        }
         setOriginalData(JSON.parse(JSON.stringify(item)));
       }
     }
   }, [currentView, selectedId, doctors]);
+
+  // Save doctor form draft
+  useEffect(() => {
+    if (formData && (currentView.includes('add') || currentView.includes('edit'))) {
+      const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+      localStorage.setItem(draftKey, JSON.stringify(formData));
+    }
+  }, [formData, currentView, selectedId]);
+
+  const handleCancelDraft = () => {
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    localStorage.removeItem(draftKey);
+    triggerToast('Đã hủy và xóa bản nháp', 'info');
+    onNavigate('doctor-list');
+    setFormData(null);
+    setOriginalData(null);
+  };
 
   useEffect(() => {
     if (currentView === 'doctor-shifts') {
@@ -88,6 +118,7 @@ export default function DoctorCoordinator({
       triggerToast('Tên bác sĩ không được để trống', 'error');
       return;
     }
+    localStorage.removeItem(`draft_${currentView}_${selectedId || 'new'}`);
     if (currentView === 'doctor-add') {
       setDoctors([formData, ...doctors]);
       triggerToast('Đã thêm hồ sơ bác sĩ mới thành công!', 'success');
@@ -112,7 +143,7 @@ export default function DoctorCoordinator({
   const currentMonth = today.getMonth(); // 0-indexed
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Sunday=0, Monday=1
-  const startDayOffset = (firstDay + 6) % 7; // Monday is index 0
+  const startDayOffset = firstDay; // Sunday is index 0
   const calendarCells = [];
   for (let i = 0; i < startDayOffset; i++) {
     calendarCells.push(null);
@@ -121,12 +152,55 @@ export default function DoctorCoordinator({
     calendarCells.push(i);
   }
 
-  const [shifts, setShifts] = useState([
-    { id: 1, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-09`, title: 'Bs. B', time: '08:00 - 10:00', type: 'duty', color: '#c084fc', bg: '#f3e8ff' },
-    { id: 2, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-11`, title: 'Bs. Huy', time: '08:00 - 10:00', type: 'duty', color: '#4ade80', bg: '#f0fdf4' },
-    { id: 3, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-17`, title: 'Bs. C', time: '17:00 - 19:00', type: 'duty', color: '#facc15', bg: '#fef9c3' },
-    { id: 4, date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-20`, title: 'Nghỉ lễ / Bảo trì phòng khám', time: 'Cả ngày', type: 'maintenance', color: '#94a3b8', bg: '#f1f5f9' }
-  ]);
+  const generateInitialShifts = () => {
+    const initialShifts = [];
+    let idCounter = 1;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dayOfWeek = date.getDay(); // 0 is Sunday, 1 is Monday, etc.
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
+        // Mon, Wed, Fri: Bs. Huy is on duty
+        initialShifts.push({
+          id: idCounter++,
+          date: dateStr,
+          title: 'Bs. Huy',
+          time: '08:00 - 12:00',
+          type: 'duty',
+          color: '#4ade80',
+          bg: '#f0fdf4'
+        });
+      }
+      if (dayOfWeek === 2 || dayOfWeek === 4) {
+        // Tue, Thu: Bs. B is on duty
+        initialShifts.push({
+          id: idCounter++,
+          date: dateStr,
+          title: 'Bs. B',
+          time: '08:00 - 12:00',
+          type: 'duty',
+          color: '#c084fc',
+          bg: '#f3e8ff'
+        });
+      }
+      if (dayOfWeek === 6) {
+        // Sat: Bs. C is on duty
+        initialShifts.push({
+          id: idCounter++,
+          date: dateStr,
+          title: 'Bs. C',
+          time: '09:00 - 12:00',
+          type: 'duty',
+          color: '#facc15',
+          bg: '#fef9c3'
+        });
+      }
+    }
+    return initialShifts;
+  };
+
+  const [shifts, setShifts] = useState(generateInitialShifts());
 
   // Clash Alerts matching bottom of Image 3
   const clashAlerts = [
@@ -393,12 +467,12 @@ export default function DoctorCoordinator({
           </div>
         ) : (
           /* Calendar shifts layout matching Image 3 */
-          <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem' }}>Lịch trực bác sĩ</h3>
+          <div className="card" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px', height: 'calc(100vh - var(--header-height) - 100px)', margin: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>Lịch trực bác sĩ</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontWeight: '600' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
-                <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+                <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
+                <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#fff' }}>
                   <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Ngày</button>
                   <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Tuần</button>
                   <button className="btn btn-primary" style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}>Tháng</button>
@@ -407,18 +481,18 @@ export default function DoctorCoordinator({
             </div>
 
             {/* Grid */}
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '600', fontSize: '0.75rem', padding: '6px 0', color: 'var(--text-muted)' }}>
-                <div>MON</div>
-                <div>TUE</div>
-                <div>WED</div>
-                <div>THU</div>
-                <div>FRI</div>
-                <div>SAT</div>
-                <div>SUN</div>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '700', fontSize: '0.72rem', padding: '6px 0', color: 'var(--text-muted)', flexShrink: 0 }}>
+                <div>CN</div>
+                <div>T2</div>
+                <div>T3</div>
+                <div>T4</div>
+                <div>T5</div>
+                <div>T6</div>
+                <div>T7</div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(64px, 1fr)', backgroundColor: '#e2e8f0', gap: '1px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${Math.ceil(calendarCells.length / 7)}, 1fr)`, backgroundColor: '#e2e8f0', gap: '1px', flex: 1 }}>
                 {calendarCells.map((day, idx) => {
                   const dayShifts = getShiftsForDay(day);
                   const dayClashes = getClashesForDay(day);
@@ -426,9 +500,20 @@ export default function DoctorCoordinator({
                     <div
                       key={idx}
                       onClick={() => handleAddShift(day)}
-                      style={{ backgroundColor: '#fff', padding: '4px', position: 'relative', display: 'flex', flexDirection: 'column', gap: '2px', cursor: day ? 'pointer' : 'default' }}
+                      style={{ 
+                        backgroundColor: '#fff', 
+                        padding: '4px', 
+                        position: 'relative', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '2px', 
+                        cursor: day ? 'pointer' : 'default',
+                        minWidth: 0,
+                        minHeight: 0,
+                        overflow: 'hidden'
+                      }}
                     >
-                      {day && <span style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--text-muted)', marginBottom: '2px' }}>{day}</span>}
+                      {day && <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '1px' }}>{day}</span>}
                       {dayShifts.map((s) => (
                         <div
                           key={s.id}
@@ -449,7 +534,7 @@ export default function DoctorCoordinator({
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          <div>{s.title}</div>
+                          <div style={{ fontWeight: 700 }}>{s.title}</div>
                           <div style={{ fontSize: '0.55rem', opacity: 0.8 }}>{s.time}</div>
                         </div>
                       ))}
@@ -465,7 +550,7 @@ export default function DoctorCoordinator({
                             fontSize: '0.62rem',
                             fontWeight: '700',
                             border: '1px solid #fca5a5',
-                            marginTop: '2px',
+                            marginTop: '1px',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '2px',
@@ -476,7 +561,7 @@ export default function DoctorCoordinator({
                           title={`${c.doctor} bị trùng ${c.count} ca trực`}
                         >
                           <AlertTriangle size={10} style={{ flexShrink: 0, color: '#dc2626' }} />
-                          <span>Trùng: {c.doctor} ({c.count} ca)</span>
+                          <span>Trùng: {c.doctor}</span>
                         </div>
                       ))}
                     </div>
@@ -486,32 +571,32 @@ export default function DoctorCoordinator({
             </div>
 
             {/* Clash Alerts matching bottom of Image 3 */}
-            <div style={{ marginTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', color: 'red' }}>
-                <ShieldAlert size={18} />
-                <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'red' }}>Cảnh báo trùng lịch ca trực</h4>
+            <div style={{ marginTop: '6px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', color: 'red' }}>
+                <ShieldAlert size={16} />
+                <h4 style={{ margin: 0, fontSize: '0.82rem', color: 'red', fontWeight: 700 }}>Cảnh báo trùng lịch ca trực</h4>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {clashAlerts.map(c => (
                   <div
                     key={c.id}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
+                      gap: '8px',
+                      padding: '6px 10px',
                       border: '1px solid #fee2e2',
                       backgroundColor: '#fff5f5',
-                      borderRadius: 'var(--radius-md)',
-                      fontSize: '0.8rem'
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.78rem'
                     }}
                   >
                     <div style={{ color: 'red' }}>
-                      <AlertTriangle size={18} />
+                      <AlertTriangle size={14} />
                     </div>
                     <div>
                       <div style={{ fontWeight: '700', color: 'var(--text-dark)' }}>{c.doctor} bị trùng lịch</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '1px' }}>
                         {c.date} • <strong style={{ color: 'red' }}>{c.count} ca trùng</strong>
                       </div>
                     </div>
@@ -593,9 +678,6 @@ export default function DoctorCoordinator({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('doctor-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ năng lực bác sĩ</h2>
         </div>
 
@@ -632,9 +714,6 @@ export default function DoctorCoordinator({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('doctor-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
             {currentView === 'doctor-add' ? 'Thêm bác sĩ mới' : 'Chỉnh sửa hồ sơ bác sĩ'}
           </h2>
@@ -725,7 +804,13 @@ export default function DoctorCoordinator({
         </div>
 
         <div className="form-action-buttons" style={{ marginTop: '20px' }}>
-          <button className="btn btn-cancel" onClick={() => onNavigate('doctor-list')}>Hủy</button>
+          <button className="btn btn-cancel" onClick={() => {
+            triggerToast('Đã thoát form (giữ bản nháp)', 'info');
+            onNavigate('doctor-list');
+          }}>Thoát</button>
+          {localStorage.getItem(`draft_${currentView}_${selectedId || 'new'}`) && (
+            <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={handleCancelDraft}>Hủy nháp</button>
+          )}
           <button className="btn btn-save" onClick={handleSaveDoctor}>Lưu hồ sơ</button>
         </div>
       </div>

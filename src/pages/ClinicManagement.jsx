@@ -71,53 +71,107 @@ export default function ClinicManagement({
   const [activeAptPopup, setActiveAptPopup] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
+  // Load clinicInfo draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem('draft_clinicInfo');
+    if (draft) {
+      setClinicInfo(JSON.parse(draft));
+      setIsEditingClinic(true);
+      triggerToast('Đã khôi phục bản nháp thông tin phòng khám', 'info');
+    }
+  }, []);
+
+  // Save clinicInfo draft on change
+  useEffect(() => {
+    if (isEditingClinic) {
+      localStorage.setItem('draft_clinicInfo', JSON.stringify(clinicInfo));
+    }
+  }, [clinicInfo, isEditingClinic]);
+
+  // Save appointment/patient drafts
+  useEffect(() => {
+    if (formData && (currentView.includes('add') || currentView.includes('edit'))) {
+      const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+      localStorage.setItem(draftKey, JSON.stringify(formData));
+    }
+  }, [formData, currentView, selectedId]);
+
   // Initialize forms when view changes
   useEffect(() => {
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    const savedDraft = localStorage.getItem(draftKey);
+
     if (currentView === 'appointment-add') {
       setOriginalData(null);
-      setFormData({
-        id: `APT${Date.now()}`,
-        patientName: '',
-        patientId: '',
-        doctorName: 'Bs. Huy',
-        date: '2026-05-15',
-        time: '08:00 - 09:00',
-        specialty: 'Ngoại tổng quát',
-        status: 'Chờ xác nhận',
-        symptoms: ''
-      });
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft));
+        triggerToast('Đã khôi phục bản nháp lịch hẹn', 'info');
+      } else {
+        setFormData({
+          id: `APT${Date.now()}`,
+          patientName: '',
+          patientId: '',
+          doctorName: 'Bs. Huy',
+          date: '2026-05-15',
+          time: '08:00 - 09:00',
+          specialty: 'Ngoại tổng quát',
+          status: 'Chờ xác nhận',
+          symptoms: ''
+        });
+      }
     } else if (currentView === 'appointment-edit') {
       const item = appointments.find(a => a.id === selectedId);
       if (item) {
-        setFormData(JSON.parse(JSON.stringify(item)));
+        if (savedDraft) {
+          setFormData(JSON.parse(savedDraft));
+          triggerToast('Đã khôi phục bản nháp lịch hẹn', 'info');
+        } else {
+          setFormData(JSON.parse(JSON.stringify(item)));
+        }
         setOriginalData(JSON.parse(JSON.stringify(item)));
       }
     } else if (currentView === 'patient-add') {
       setOriginalData(null);
-      setFormData({
-        id: `P${Date.now().toString().slice(-4)}`,
-        name: '',
-        dob: '1990-01-01',
-        gender: 'Nam',
-        phone: '',
-        email: '',
-        address: '',
-        insurance: '',
-        medicalHistory: []
-      });
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft));
+        triggerToast('Đã khôi phục bản nháp bệnh nhân', 'info');
+      } else {
+        setFormData({
+          id: `P${Date.now().toString().slice(-4)}`,
+          name: '',
+          dob: '1990-01-01',
+          gender: 'Nam',
+          phone: '',
+          email: '',
+          address: '',
+          insurance: '',
+          medicalHistory: []
+        });
+      }
     } else if (currentView === 'patient-edit') {
       const item = patients.find(p => p.id === selectedId);
       if (item) {
-        // Convert dob from DD-MM-YYYY to YYYY-MM-DD for standard html date input
-        const cloned = JSON.parse(JSON.stringify(item));
-        if (cloned.dob && cloned.dob.includes('-')) {
-          const parts = cloned.dob.split('-');
+        if (savedDraft) {
+          setFormData(JSON.parse(savedDraft));
+          triggerToast('Đã khôi phục bản nháp bệnh nhân', 'info');
+        } else {
+          const cloned = JSON.parse(JSON.stringify(item));
+          if (cloned.dob && cloned.dob.includes('-')) {
+            const parts = cloned.dob.split('-');
+            if (parts.length === 3 && parts[0].length === 2) {
+              cloned.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+          }
+          setFormData(cloned);
+        }
+        const clonedOrig = JSON.parse(JSON.stringify(item));
+        if (clonedOrig.dob && clonedOrig.dob.includes('-')) {
+          const parts = clonedOrig.dob.split('-');
           if (parts.length === 3 && parts[0].length === 2) {
-            cloned.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            clonedOrig.dob = `${parts[2]}-${parts[1]}-${parts[0]}`;
           }
         }
-        setFormData(cloned);
-        setOriginalData(JSON.parse(JSON.stringify(cloned)));
+        setOriginalData(clonedOrig);
       }
     }
   }, [currentView, selectedId, appointments, patients]);
@@ -136,7 +190,24 @@ export default function ClinicManagement({
   const handleSaveClinicInfo = () => {
     setOriginalClinicInfo(JSON.parse(JSON.stringify(clinicInfo)));
     setIsEditingClinic(false);
+    localStorage.removeItem('draft_clinicInfo');
     triggerToast('Cập nhật thông tin phòng khám thành công', 'success');
+  };
+
+  const handleCancelClinicInfoDraft = () => {
+    setClinicInfo(JSON.parse(JSON.stringify(originalClinicInfo)));
+    setIsEditingClinic(false);
+    localStorage.removeItem('draft_clinicInfo');
+    triggerToast('Đã hủy và xóa bản nháp phòng khám', 'info');
+  };
+
+  const handleCancelDraft = (type) => {
+    const draftKey = `draft_${currentView}_${selectedId || 'new'}`;
+    localStorage.removeItem(draftKey);
+    triggerToast('Đã hủy và xóa bản nháp', 'info');
+    onNavigate(type === 'appointment' ? 'appointment-calendar' : 'patient-list');
+    setFormData(null);
+    setOriginalData(null);
   };
 
   const handleSaveFeedbackReply = (id) => {
@@ -155,6 +226,7 @@ export default function ClinicManagement({
       triggerToast('Tên bệnh nhân không được để trống', 'error');
       return;
     }
+    localStorage.removeItem(`draft_${currentView}_${selectedId || 'new'}`);
     if (currentView === 'appointment-add') {
       setAppointments([formData, ...appointments]);
       triggerToast('Thêm lịch hẹn mới thành công', 'success');
@@ -176,6 +248,7 @@ export default function ClinicManagement({
       triggerToast('Tên bệnh nhân không được để trống', 'error');
       return;
     }
+    localStorage.removeItem(`draft_${currentView}_${selectedId || 'new'}`);
     // Convert YYYY-MM-DD back to DD-MM-YYYY before saving to database state
     const savedData = { ...formData };
     if (savedData.dob && savedData.dob.includes('-')) {
@@ -275,10 +348,13 @@ export default function ClinicManagement({
                 <button className="btn btn-outline" onClick={() => setIsEditingClinic(true)}>Chỉnh sửa</button>
               ) : (
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-outline" style={{ color: 'red' }} onClick={() => {
-                    setClinicInfo(originalClinicInfo);
+                  <button className="btn btn-outline" onClick={() => {
                     setIsEditingClinic(false);
-                  }}>Hủy</button>
+                    triggerToast('Đã thoát chế độ sửa (giữ bản nháp)', 'info');
+                  }}>Thoát</button>
+                  {localStorage.getItem('draft_clinicInfo') && (
+                    <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={handleCancelClinicInfoDraft}>Hủy nháp</button>
+                  )}
                   <button className="btn btn-primary" onClick={handleSaveClinicInfo}>Lưu thông tin</button>
                 </div>
               )}
@@ -355,42 +431,60 @@ export default function ClinicManagement({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => (
-              <div key={f.id} style={{ padding: '14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 600 }}>{f.name}</span>
-                    <span style={{ display: 'inline-flex', color: '#eab308' }}>
-                      {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                      {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
-                    </span>
+            {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => {
+              let bg = '#fff';
+              let borderColor = 'var(--border-color)';
+              if (f.rating === 5) {
+                bg = '#f0fdf4';
+                borderColor = '#bbf7d0';
+              } else if (f.rating === 4) {
+                bg = '#f0f9ff';
+                borderColor = '#bae6fd';
+              } else if (f.rating === 3) {
+                bg = '#fffbeb';
+                borderColor = '#fef08a';
+              } else if (f.rating <= 2) {
+                bg = '#fef2f2';
+                borderColor = '#fecaca';
+              }
+
+              return (
+                <div key={f.id} style={{ padding: '14px', backgroundColor: bg, border: `1px solid ${borderColor}`, borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600 }}>{f.name}</span>
+                      <span style={{ display: 'inline-flex', color: '#eab308' }}>
+                        {Array.from({ length: f.rating }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                        {Array.from({ length: 5 - f.rating }).map((_, i) => <Star key={i} size={14} />)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.date}</span>
+                  
+                  <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
+                  
+                  {f.response ? (
+                    <div style={{ padding: '10px', backgroundColor: '#fff', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                      <input
+                        type="text"
+                        placeholder="Nhập nội dung phản hồi đánh giá này..."
+                        value={feedbackReplyText[f.id] || ''}
+                        onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
+                        style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                      />
+                      <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
+                        Gửi phản hồi
+                      </button>
+                    </div>
+                  )}
                 </div>
-                
-                <p style={{ margin: '0 0 12px 0', color: 'var(--text-dark)' }}>{f.comment}</p>
-                
-                {f.response ? (
-                  <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid var(--primary-light)' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.75rem', marginBottom: '4px', color: 'var(--primary)' }}>Phòng khám phản hồi:</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-dark)' }}>{f.response}</div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                    <input
-                      type="text"
-                      placeholder="Nhập nội dung phản hồi đánh giá này..."
-                      value={feedbackReplyText[f.id] || ''}
-                      onChange={(e) => setFeedbackReplyText({ ...feedbackReplyText, [f.id]: e.target.value })}
-                      style={{ flexGrow: 1, padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '0.8rem' }}
-                    />
-                    <button className="btn btn-primary" style={{ padding: '6px 12px' }} onClick={() => handleSaveFeedbackReply(f.id)}>
-                      Gửi phản hồi
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {/* Pagination Bar */}
             <div className="list-pagination-bar">
@@ -562,10 +656,24 @@ export default function ClinicManagement({
             </div>
           </div>
 
-          {/* Interactive detail popup */}
           {activeAptPopup && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-              <div className="card animate-fade-in" style={{ padding: '20px', width: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div 
+              onClick={() => setActiveAptPopup(null)}
+              style={{ 
+                position: 'fixed', 
+                top: 0, 
+                left: 0, 
+                right: 0, 
+                bottom: 0, 
+                backgroundColor: 'rgba(15, 23, 42, 0.5)', 
+                backdropFilter: 'blur(6px)',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                zIndex: 999 
+              }}
+            >
+              <div className="card animate-fade-in" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', width: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>
                   <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--primary)' }}>Chi tiết lịch hẹn</h3>
                   <button style={{ border: 'none', background: 'none', cursor: 'pointer' }} onClick={() => setActiveAptPopup(null)}>
@@ -618,9 +726,6 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('appointment-calendar')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
             {currentView === 'appointment-add' ? 'Thêm lịch hẹn mới' : 'Chỉnh sửa lịch hẹn'}
           </h2>
@@ -769,7 +874,13 @@ export default function ClinicManagement({
         </div>
 
         <div className="form-action-buttons" style={{ marginTop: '20px' }}>
-          <button className="btn btn-cancel" onClick={() => onNavigate('appointment-calendar')}>Hủy</button>
+          <button className="btn btn-cancel" onClick={() => {
+            triggerToast('Đã thoát form (giữ bản nháp)', 'info');
+            onNavigate('appointment-calendar');
+          }}>Thoát</button>
+          {localStorage.getItem(`draft_${currentView}_${selectedId || 'new'}`) && (
+            <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={() => handleCancelDraft('appointment')}>Hủy nháp</button>
+          )}
           <button className="btn btn-save" onClick={handleSaveAppointment}>Lưu lịch hẹn</button>
         </div>
       </div>
@@ -917,9 +1028,6 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('patient-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
         </div>
 
@@ -1013,9 +1121,6 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <button className="back-btn" onClick={() => onNavigate('patient-list')}>
-            <ArrowLeft size={16} />
-          </button>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
             {currentView === 'patient-add' ? 'Thêm hồ sơ bệnh nhân mới' : 'Chỉnh sửa hồ sơ bệnh nhân'}
           </h2>
@@ -1101,7 +1206,13 @@ export default function ClinicManagement({
         </div>
 
         <div className="form-action-buttons" style={{ marginTop: '20px' }}>
-          <button className="btn btn-cancel" onClick={() => onNavigate('patient-list')}>Hủy</button>
+          <button className="btn btn-cancel" onClick={() => {
+            triggerToast('Đã thoát form (giữ bản nháp)', 'info');
+            onNavigate('patient-list');
+          }}>Thoát</button>
+          {localStorage.getItem(`draft_${currentView}_${selectedId || 'new'}`) && (
+            <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={() => handleCancelDraft('patient')}>Hủy nháp</button>
+          )}
           <button className="btn btn-save" onClick={handleSavePatient}>Lưu hồ sơ</button>
         </div>
       </div>

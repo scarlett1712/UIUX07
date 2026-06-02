@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate } from '../utils/date';
-import { Calendar as CalendarIcon, Search, Filter, Clock, Eye, AlertCircle, ChevronLeft, ChevronRight, X, User } from 'lucide-react';
+import { Calendar as CalendarIcon, Search, Filter, Clock, Eye, AlertCircle, ChevronLeft, ChevronRight, X, User, Undo2 } from 'lucide-react';
 
 export default function DoctorSchedule({ onNavigate, appointments = [], selectedId, triggerToast }) {
   const today = new Date();
@@ -183,6 +183,13 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
   for (let i = 0; i < startOffset; i++) calendarCells.push(null);
   for (let i = 1; i <= daysInMonth; i++) calendarCells.push(i);
 
+  const isDutyDay = (day) => {
+    if (!day) return false;
+    const date = new Date(currentYear, currentMonth, day);
+    const dayOfWeek = date.getDay(); // 0 is Sunday, 1 is Monday, 2 is Tuesday, etc.
+    return dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5;
+  };
+
   // Days with active appointments
   const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
   const myConfirmedAppts = appointments.filter(a => a.doctorName === 'Bs. Huy' && a.date.startsWith(yearMonthStr) && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
@@ -212,49 +219,49 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
   return (
     <div className="animate-fade-in">
       
-      {/* Top Header Filter Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Danh sách lịch khám</h2>
-        
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {/* Search */}
-          <div className="filter-group" style={{ backgroundColor: '#fff', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: 'none', outline: 'none', fontSize: '0.8rem', width: '150px' }}
-            />
-          </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>
+          Danh sách lịch khám
+        </h2>
+      </div>
 
-          {/* Shift filters */}
-          <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#fff' }}>
-            <button
-              onClick={() => setActiveShiftFilter('all')}
-              className={`btn ${activeShiftFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ padding: '6px 12px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
-            >
-              Tất cả ca
-            </button>
-            <button
-              onClick={() => setActiveShiftFilter('morning')}
-              className={`btn ${activeShiftFilter === 'morning' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ padding: '6px 12px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
-            >
-              Buổi sáng
-            </button>
-            <button
-              onClick={() => setActiveShiftFilter('afternoon')}
-              className={`btn ${activeShiftFilter === 'afternoon' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ padding: '6px 12px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
-            >
-              Buổi chiều
-            </button>
-          </div>
+      <div className="filters-bar" style={{ marginBottom: '16px' }}>
+        <div className="filter-group">
+          <Search size={16} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Tìm kiếm..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="form-input"
+            style={{ width: '220px', padding: '6px 10px' }}
+          />
         </div>
 
+        <div className="filter-group">
+          <Filter size={14} />
+          <select
+            value={activeShiftFilter}
+            onChange={(e) => setActiveShiftFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">Tất cả ca trực</option>
+            <option value="morning">Ca trực buổi sáng</option>
+            <option value="afternoon">Ca trực buổi chiều</option>
+          </select>
+
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setActiveShiftFilter('all');
+              triggerToast('Đã xóa bộ lọc lịch khám', 'info');
+            }}
+            className="btn btn-outline"
+            style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '3px', color: '#ff6b6b' }}
+          >
+            <Undo2 size={12} /> Hủy lọc
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Left Slots View vs Right Calendar View */}
@@ -473,19 +480,20 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
             {/* Calendar grid */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', fontWeight: '700', fontSize: '0.72rem', color: 'var(--text-muted)', paddingBottom: '6px' }}>
-                <div>Chủ Nhật</div>
-                <div>Thứ 2</div>
-                <div>Thứ 3</div>
-                <div>Thứ 4</div>
-                <div>Thứ 5</div>
-                <div>Thứ 6</div>
-                <div>Thứ 7</div>
+                <div>CN</div>
+                <div>T2</div>
+                <div>T3</div>
+                <div>T4</div>
+                <div>T5</div>
+                <div>T6</div>
+                <div>T7</div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', gridAutoRows: 'minmax(36px, 1fr)' }}>
                 {calendarCells.map((day, idx) => {
                   const hasAppts = appointmentDays.includes(day);
                   const isSelected = selectedDay === day;
+                  const isDuty = isDutyDay(day);
 
                   return (
                     <div
@@ -497,12 +505,12 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
                         justifyContent: 'center',
                         borderRadius: '8px',
                         fontSize: '0.8rem',
-                        fontWeight: isSelected || hasAppts ? '700' : '400',
+                        fontWeight: isSelected || hasAppts || isDuty ? '700' : '400',
                         cursor: day ? 'pointer' : 'default',
                         position: 'relative',
-                        backgroundColor: isSelected ? 'var(--primary)' : 'transparent',
-                        color: isSelected ? '#fff' : (day ? 'var(--text-dark)' : 'transparent'),
-                        border: hasAppts && !isSelected ? '1.5px solid var(--primary)' : 'none',
+                        backgroundColor: isSelected ? 'var(--primary)' : (isDuty ? '#e0f2fe' : 'transparent'),
+                        color: isSelected ? '#fff' : (isDuty ? '#0369a1' : (day ? 'var(--text-dark)' : 'transparent')),
+                        border: isSelected ? 'none' : (isDuty ? (hasAppts ? '1.5px solid #0284c7' : '1.5px dashed #0284c7') : (hasAppts ? '1.5px solid var(--primary)' : 'none')),
                       }}
                     >
                       {day}
@@ -530,11 +538,26 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
             </div>
           </div>
 
-          {/* Quick instructions alert */}
-          <div style={{ display: 'flex', gap: '8px', backgroundColor: '#eff6ff', padding: '12px', borderRadius: '8px', borderLeft: '3px solid var(--primary-light)', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-            <AlertCircle size={14} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '1px' }} />
-            <div>
-              <strong>Chú thích:</strong> Các ngày có ca trực khám bệnh được <strong>khoanh viền xanh đậm</strong> trên lịch lưới.
+          {/* Quick instructions legend */}
+          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-dark)', fontWeight: 700 }}>Chú thích lịch biểu</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: '#e0f2fe', color: '#0369a1', border: '1.5px dashed #0284c7', fontSize: '0.7rem', fontWeight: '700' }}>T2</div>
+                <span>Ngày trực khám (Thứ 2, 4, 6)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: '#e0f2fe', color: '#0369a1', border: '1.5px solid #0284c7', fontSize: '0.7rem', fontWeight: '700' }}>T4</div>
+                <span>Ngày trực khám & có lịch hẹn</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'var(--primary)', color: '#fff', fontSize: '0.7rem', fontWeight: '700' }}>31</div>
+                <span>Ngày đang chọn xem</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', backgroundColor: 'transparent', color: 'var(--text-dark)', border: '1.5px solid var(--primary)', fontSize: '0.7rem', fontWeight: '700' }}>20</div>
+                <span>Ngày thường có lịch hẹn</span>
+              </div>
             </div>
           </div>
 
