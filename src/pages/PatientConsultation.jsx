@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle, Star } from 'lucide-react';
+import { Bot, User, Sparkles, MessageSquare, Send, Paperclip, CreditCard, Calendar, Check, AlertCircle, PhoneCall, Video, Clock, CheckCircle, Star, Mic, MicOff, Volume2 } from 'lucide-react';
 
 export default function PatientConsultation({ 
   onNavigate, 
@@ -9,7 +9,9 @@ export default function PatientConsultation({
   setConversations,
   activeConvId,
   setActiveConvId,
-  syncPatientConversation
+  syncPatientConversation,
+  isGuest,
+  onOpenLoginModal
 }) {
   const [inputText, setInputText] = useState('');
   
@@ -20,6 +22,7 @@ export default function PatientConsultation({
   const [paymentStep, setPaymentStep] = useState(1); // 1: QR screen, 2: Verification, 3: Success
   const [isConsultingDoctor, setIsConsultingDoctor] = useState(false); // Switch to Doctor chat after payment
   const [sessionTimeLeft, setSessionTimeLeft] = useState(120); // 2 minutes (120s) for demo auto-expiry
+  const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
 
   // Simulated call modal state
   const [showCallModal, setShowCallModal] = useState(false);
@@ -32,6 +35,8 @@ export default function PatientConsultation({
   const [selectedStars, setSelectedStars] = useState(0);
   const [selectedProblems, setSelectedProblems] = useState([]);
   const [feedbackText, setFeedbackText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [speakingMsgIndex, setSpeakingMsgIndex] = useState(null);
 
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0];
 
@@ -42,6 +47,58 @@ export default function PatientConsultation({
       setFeedbackText(activeConv.feedbackComment || '');
     }
   }, [activeConvId, activeConv]);
+
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleStartVoiceRecord = () => {
+    if (isRecording) return;
+    setIsRecording(true);
+    triggerToast('Đang lắng nghe... Hãy nói tình trạng sức khỏe của bạn.', 'info');
+    
+    setTimeout(() => {
+      const voicePrompts = [
+        "Tôi bị sốt cao từ tối qua, mệt mỏi toàn thân và có cảm giác đau họng, ho khan.",
+        "Tôi bị đầy bụng khó tiêu kèm đau rát nhẹ vùng thượng vị sau khi ăn đồ cay nóng.",
+        "Gần đây tôi hay bị hoa mắt chóng mặt lúc sáng sớm, đôi khi thấy ù tai trái."
+      ];
+      const randomPrompt = voicePrompts[Math.floor(Math.random() * voicePrompts.length)];
+      triggerToast('Nhận diện giọng nói thành công!', 'success');
+      setIsRecording(false);
+      handleSendMessage(randomPrompt);
+    }, 2000);
+  };
+
+  const handleToggleSpeak = (text, index) => {
+    if (!window.speechSynthesis) {
+      triggerToast('Trình duyệt của bạn không hỗ trợ phát giọng nói.', 'error');
+      return;
+    }
+    
+    if (speakingMsgIndex === index) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgIndex(null);
+    } else {
+      window.speechSynthesis.cancel();
+      const cleanText = text.replace(/\*\*|👨‍⚕️|⏰|📍|💰/g, ''); // strip markdown and emojis
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 1.0;
+      utterance.onend = () => {
+        setSpeakingMsgIndex(null);
+      };
+      utterance.onerror = () => {
+        setSpeakingMsgIndex(null);
+      };
+      window.speechSynthesis.speak(utterance);
+      setSpeakingMsgIndex(index);
+    }
+  };
 
   const handleSubmitRating = () => {
     if (selectedStars === 0) return;
@@ -335,71 +392,73 @@ export default function PatientConsultation({
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '220px 1fr 280px', gap: '16px', height: 'calc(100vh - var(--header-height) - 40px)' }}>
+    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: isGuest ? '1fr 280px' : '220px 1fr 280px', gap: '16px', height: 'calc(100vh - var(--header-height) - 40px)' }}>
       
       {/* LEFT COLUMN: Conversation List */}
-      <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: '700', color: 'var(--primary)' }}>Tư vấn sức khỏe</span>
-          <button 
-            onClick={handleStartNewChat}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: 'var(--primary-light)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.75rem',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            + Mới
-          </button>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flexGrow: 1 }}>
-          {conversations.map(c => (
-            <div
-              key={c.id}
-              onClick={() => {
-                setActiveConvId(c.id);
-                setIsConsultingDoctor(!!c.activeDoctorConsult);
-              }}
+      {!isGuest && (
+        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', margin: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: '700', color: 'var(--primary)' }}>Tư vấn sức khỏe</span>
+            <button 
+              onClick={handleStartNewChat}
               style={{
-                padding: '10px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                border: '1px solid',
-                borderColor: c.id === activeConvId ? 'var(--primary-light)' : 'transparent',
-                backgroundColor: c.id === activeConvId ? '#f0f7ff' : '#f8fafc',
-                transition: 'all 0.2s'
+                padding: '4px 8px',
+                backgroundColor: 'var(--primary-light)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <MessageSquare size={12} style={{ color: 'var(--text-muted)' }} />
-                <span style={{
-                  fontSize: '0.8rem',
-                  fontWeight: c.id === activeConvId ? '700' : '500',
-                  color: 'var(--text-dark)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '150px'
-                }}>
-                  {c.messages[1] ? c.messages[1].text : c.topic}
-                </span>
+              + Mới
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flexGrow: 1 }}>
+            {conversations.map(c => (
+              <div
+                key={c.id}
+                onClick={() => {
+                  setActiveConvId(c.id);
+                  setIsConsultingDoctor(!!c.activeDoctorConsult);
+                }}
+                style={{
+                  padding: '10px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  border: '1px solid',
+                  borderColor: c.id === activeConvId ? 'var(--primary-light)' : 'transparent',
+                  backgroundColor: c.id === activeConvId ? '#f0f7ff' : '#f8fafc',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <MessageSquare size={12} style={{ color: 'var(--text-muted)' }} />
+                  <span style={{
+                    fontSize: '0.8rem',
+                    fontWeight: c.id === activeConvId ? '700' : '500',
+                    color: 'var(--text-dark)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '150px'
+                  }}>
+                    {c.messages[1] ? c.messages[1].text : c.topic}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  <span>{c.date}</span>
+                  <span style={{ color: c.status === 'Đang tư vấn' ? 'var(--primary-light)' : '#10b981' }}>
+                    {c.status}
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                <span>{c.date}</span>
-                <span style={{ color: c.status === 'Đang tư vấn' ? 'var(--primary-light)' : '#10b981' }}>
-                  {c.status}
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* CENTER COLUMN: Chat Interface */}
       <div className="card" style={{ padding: '0px', display: 'flex', flexDirection: 'column', margin: 0, overflow: 'hidden' }}>
@@ -512,6 +571,7 @@ export default function PatientConsultation({
             return (
               <div 
                 key={index} 
+                className={`chatgpt-message-row ${isBot ? 'bot' : isDoc ? 'doctor' : 'patient'}`}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -536,24 +596,45 @@ export default function PatientConsultation({
                   </div>
                 )}
                 
-                <div style={{
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  fontSize: '0.85rem',
-                  lineHeight: '1.4',
-                  backgroundColor: isDoc ? '#fee2e2' : isBot ? '#f1f5f9' : 'var(--primary)',
-                  color: (isBot || isDoc) ? 'var(--text-dark)' : '#fff',
-                  boxShadow: 'var(--shadow-sm)',
-                  whiteSpace: 'pre-line'
-                }}>
+                <div 
+                  className="chatgpt-bubble"
+                  style={{
+                    whiteSpace: 'pre-line',
+                    position: 'relative'
+                  }}
+                >
                   {msg.text}
                   <div style={{
-                    fontSize: '0.68rem',
-                    textAlign: 'right',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     marginTop: '4px',
-                    color: (isBot || isDoc) ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)'
+                    gap: '12px'
                   }}>
-                    {msg.time}
+                    {(isBot || isDoc) ? (
+                      <button
+                        onClick={() => handleToggleSpeak(msg.text, index)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: speakingMsgIndex === index ? 'var(--primary)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0,
+                          opacity: 0.7
+                        }}
+                        title={speakingMsgIndex === index ? "Dừng đọc" : "Đọc tin nhắn"}
+                      >
+                        <Volume2 size={12} className={speakingMsgIndex === index ? "animate-pulse" : ""} />
+                      </button>
+                    ) : <div />}
+                    <span style={{
+                      fontSize: '0.68rem',
+                      color: (isBot || isDoc) ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)'
+                    }}>
+                      {msg.time}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -747,6 +828,26 @@ export default function PatientConsultation({
           </div>
         )}
 
+        {/* Voice recording banner */}
+        {isRecording && (
+          <div style={{
+            padding: '8px 16px',
+            backgroundColor: '#fee2e2',
+            borderTop: '1px solid #fecaca',
+            color: '#dc2626',
+            fontSize: '0.8rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'pulseGlow 1.5s infinite',
+            flexShrink: 0
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#dc2626', display: 'inline-block' }} />
+            Đang lắng nghe giọng nói của bạn... Hãy nói đi (mô phỏng tự động điền)
+          </div>
+        )}
+
         {/* Input Bar */}
         <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -755,7 +856,8 @@ export default function PatientConsultation({
           
           <input
             type="text"
-            placeholder="Nhập tình trạng sức khỏe của bạn tại đây..."
+            placeholder={isRecording ? "Đang thu âm..." : "Nhập tình trạng sức khỏe của bạn tại đây..."}
+            disabled={isRecording}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -765,17 +867,39 @@ export default function PatientConsultation({
               borderRadius: 'var(--radius-md)',
               padding: '8px 12px',
               fontSize: '0.85rem',
-              outline: 'none'
+              outline: 'none',
+              backgroundColor: isRecording ? '#f8fafc' : '#fff'
             }}
           />
 
-          <button 
-            onClick={() => handleSendMessage()}
-            disabled={!inputText.trim()}
+          {/* Micro button */}
+          <button
+            onClick={handleStartVoiceRecord}
+            disabled={isRecording}
             style={{
               padding: '8px',
               borderRadius: '8px',
-              backgroundColor: !inputText.trim() ? 'var(--border-color)' : 'var(--primary)',
+              backgroundColor: isRecording ? '#ef4444' : '#f1f5f9',
+              color: isRecording ? '#fff' : 'var(--text-muted)',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            title="Nhắn tin bằng giọng nói"
+          >
+            <Mic size={16} />
+          </button>
+
+          <button 
+            onClick={() => handleSendMessage()}
+            disabled={!inputText.trim() || isRecording}
+            style={{
+              padding: '8px',
+              borderRadius: '8px',
+              backgroundColor: !inputText.trim() || isRecording ? 'var(--border-color)' : 'var(--primary)',
               color: '#fff',
               border: 'none',
               cursor: 'pointer',
@@ -791,7 +915,7 @@ export default function PatientConsultation({
       </div>
 
       {/* RIGHT COLUMN: Information Summary */}
-      <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0 }}>
+      <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, height: '100%', overflowY: 'auto' }}>
         <h3 style={{ fontSize: '1.05rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
           Tóm tắt thông tin
         </h3>
@@ -859,24 +983,29 @@ export default function PatientConsultation({
 
         {/* Action Panel */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeConv.showActions && (activeConv.status === 'Đang tư vấn' || activeConv.status === 'Hoàn thành') && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              padding: '10px',
-              borderRadius: '8px',
-              backgroundColor: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              margin: 0
-            }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--primary)', textAlign: 'center', display: 'block' }}>
-                Hỗ trợ tiếp theo
-              </span>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            padding: '10px',
+            borderRadius: '8px',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            margin: 0
+          }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--primary)', textAlign: 'center', display: 'block' }}>
+              Hỗ trợ tiếp theo
+            </span>
               
               <button
-                onClick={() => onNavigate('patient-schedule-create')}
-                className="btn btn-outline animate-fade-in"
+                onClick={() => {
+                  if (isGuest) {
+                    setShowGuestLoginModal(true);
+                  } else {
+                    onNavigate('patient-schedule-create');
+                  }
+                }}
+                className="btn btn-outline-primary animate-fade-in"
                 style={{
                   padding: '8px',
                   fontSize: '0.8rem',
@@ -884,25 +1013,26 @@ export default function PatientConsultation({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '6px',
-                  fontWeight: '600',
-                  color: 'var(--primary)'
+                  fontWeight: '600'
                 }}
               >
-                <Calendar size={14} /> Đặt lịch khám phòng khám
+                <Calendar size={14} /> Đặt lịch khám
               </button>
 
               {!isConsultingDoctor && (
                 <button
                   onClick={() => {
-                    setShowPaymentModal(true);
-                    setPaymentStep(1);
+                    if (isGuest) {
+                      setShowGuestLoginModal(true);
+                    } else {
+                      setShowPaymentModal(true);
+                      setPaymentStep(1);
+                    }
                   }}
-                  className="btn animate-pulse"
+                  className="btn btn-primary animate-pulse"
                   style={{
                     padding: '8px',
                     fontSize: '0.8rem',
-                    backgroundColor: '#10b981',
-                    color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -914,27 +1044,30 @@ export default function PatientConsultation({
                 </button>
               )}
             </div>
-          )}
-        </div>
+          </div>
 
       </div>
 
       {/* BANK TRANSFER MODAL */}
       {showPaymentModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '20px'
-        }}>
-          <div className="card animate-fade-in" style={{
+        <div 
+          onClick={() => setShowPaymentModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+        >
+          <div className="card animate-fade-in" onClick={(e) => e.stopPropagation()} style={{
             width: '100%',
             maxWidth: '460px',
             backgroundColor: '#fff',
@@ -1119,22 +1252,26 @@ export default function PatientConsultation({
 
       {/* SIMULATED VIDEO/VOICE CALL MODAL */}
       {showCallModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 99999,
-          color: '#fff',
-          padding: '20px'
-        }}>
-          <div style={{
+        <div 
+          onClick={() => setShowCallModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            color: '#fff',
+            padding: '20px'
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
             width: '100%',
             maxWidth: '640px',
             backgroundColor: '#1e293b',
@@ -1401,6 +1538,67 @@ export default function PatientConsultation({
                 }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GUEST MODE LOCK DIALOG / MODAL */}
+      {showGuestLoginModal && (
+        <div 
+          onClick={() => setShowGuestLoginModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+            padding: '20px'
+          }}
+        >
+          <div className="card animate-fade-in" onClick={(e) => e.stopPropagation()} style={{
+            width: '100%',
+            maxWidth: '400px',
+            backgroundColor: '#fff',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px',
+            boxShadow: 'var(--shadow-lg)',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            <div style={{ color: 'var(--primary)', marginBottom: '14px' }}>
+              <AlertCircle size={48} style={{ margin: '0 auto' }} />
+            </div>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: 'var(--primary)', fontWeight: '700' }}>
+              Yêu cầu đăng nhập
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+              Tính năng này yêu cầu tài khoản Bệnh nhân chính thức. Bạn có muốn đăng nhập để tiếp tục không?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setShowGuestLoginModal(false);
+                  onOpenLoginModal();
+                }}
+                style={{ padding: '10px 20px', flex: 1, fontWeight: '600' }}
+              >
+                Đăng nhập ngay
+              </button>
+              <button 
+                className="btn btn-outline" 
+                onClick={() => setShowGuestLoginModal(false)}
+                style={{ padding: '10px 20px', flex: 1, fontWeight: '600' }}
+              >
+                Quay lại chatbot
               </button>
             </div>
           </div>

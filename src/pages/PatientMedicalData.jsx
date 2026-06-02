@@ -7,11 +7,14 @@ export default function PatientMedicalData({
   medicines = [],
   selectedId = null,
   onSelectId,
-  triggerToast 
+  triggerToast,
+  isGuest,
+  onOpenLoginModal
 }) {
   const [activeTab, setActiveTab] = useState('diseases'); // 'diseases' or 'medicines'
   const [selectedDiseaseId, setSelectedDiseaseId] = useState(diseases[0]?.id || 'D001');
   const [selectedMedicineId, setSelectedMedicineId] = useState(medicines[0]?.id || 'M001');
+  const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
 
   useEffect(() => {
     if (selectedId) {
@@ -224,7 +227,9 @@ export default function PatientMedicalData({
                             <td style={{ fontSize: '0.82rem', lineHeight: '1.4' }}>{s.desc}</td>
                             <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{s.duration}</td>
                             <td style={{ fontSize: '0.82rem' }}>
-                              <span className="badge badge-low" style={{ padding: '2px 6px', fontSize: '0.75rem' }}>
+                              <span className={`badge ${
+                                s.frequency === 'Thường xuyên' ? 'badge-high' : s.frequency === 'Trung bình' ? 'badge-medium' : 'badge-low'
+                              }`} style={{ padding: '2px 6px', fontSize: '0.75rem' }}>
                                 {s.frequency}
                               </span>
                             </td>
@@ -239,13 +244,19 @@ export default function PatientMedicalData({
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                   <button
                     onClick={() => onNavigate('patient-consultation')}
-                    className="btn btn-outline"
+                    className="btn btn-outline-primary"
                     style={{ padding: '10px 20px', margin: 0, fontSize: '0.85rem' }}
                   >
-                    Tư vấn AI triệu chứng này
+                    Tư vấn AI bệnh này
                   </button>
                   <button
-                    onClick={() => onNavigate('patient-schedule')}
+                    onClick={() => {
+                      if (isGuest) {
+                        setShowGuestLoginModal(true);
+                      } else {
+                        onNavigate('patient-schedule');
+                      }
+                    }}
                     className="btn btn-primary"
                     style={{ padding: '10px 24px', margin: 0, fontSize: '0.85rem' }}
                   >
@@ -336,6 +347,71 @@ export default function PatientMedicalData({
         </div>
 
       </div>
+
+      {/* GUEST MODE LOCK DIALOG / MODAL */}
+      {showGuestLoginModal && (
+        <div 
+          onClick={() => setShowGuestLoginModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.5)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100000,
+            padding: '20px'
+          }}
+        >
+          <div className="card animate-fade-in" onClick={(e) => e.stopPropagation()} style={{
+            width: '100%',
+            maxWidth: '400px',
+            backgroundColor: '#fff',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px',
+            boxShadow: 'var(--shadow-lg)',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            <div style={{ color: 'var(--primary)', marginBottom: '14px' }}>
+              <ShieldAlert size={48} style={{ margin: '0 auto' }} />
+            </div>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', color: 'var(--primary)', fontWeight: '700' }}>
+              Yêu cầu đăng nhập
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+              Tính năng đặt lịch khám chuyên khoa yêu cầu tài khoản Bệnh nhân chính thức. Bạn có muốn đăng nhập không?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setShowGuestLoginModal(false);
+                  onOpenLoginModal();
+                }}
+                style={{ padding: '10px 20px', flex: 1, fontWeight: '600' }}
+              >
+                Đăng nhập ngay
+              </button>
+              <button 
+                className="btn btn-outline" 
+                onClick={() => {
+                  setShowGuestLoginModal(false);
+                  onNavigate('patient-consultation-keep');
+                }}
+                style={{ padding: '10px 20px', flex: 1, fontWeight: '600' }}
+              >
+                Quay lại chatbot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
