@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Activity, Pill, Bot, User, Stethoscope, Clock, BellRing, ShieldAlert, MessageCircle } from 'lucide-react';
+import { Search, Bell, Activity, Pill, Bot, User, Stethoscope, Clock, BellRing, ShieldAlert, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Navbar({
   role,
@@ -17,7 +17,11 @@ export default function Navbar({
   scenarios = [],
   conversations = [],
   doctorThreads = [],
-  patientConversations = []
+  patientConversations = [],
+  isGuest,
+  onOpenLoginModal,
+  isSidebarCollapsed,
+  onToggleSidebar
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -116,6 +120,8 @@ export default function Navbar({
         crumbs.push({ text: 'Đánh giá & kiểm duyệt AI', view: 'ai-evaluation' });
         if (currentView === 'ai-evaluation') crumbs.push({ text: 'Danh sách hội thoại', view: 'ai-evaluation' });
         if (currentView === 'ai-evaluation-analysis') crumbs.push({ text: 'Phân tích hội thoại', view: 'ai-evaluation-analysis' });
+      } else if (currentView === 'expert-reports') {
+        crumbs.push({ text: 'Báo cáo phân tích', view: 'expert-reports' });
       }
     } else if (role === 'manager') {
       // MANAGER crumbs
@@ -165,6 +171,11 @@ export default function Navbar({
         crumbs.push({ text: 'Đặt lịch khám', view: 'patient-schedule-create' });
       } else if (currentView === 'patient-medical-data') {
         crumbs.push({ text: 'Dữ liệu y tế', view: 'patient-medical-data' });
+      } else if (currentView === 'patient-medical-history') {
+        crumbs.push({ text: 'Lịch sử khám bệnh', view: 'patient-medical-history' });
+      } else if (currentView === 'patient-medical-history-detail') {
+        crumbs.push({ text: 'Lịch sử khám bệnh', view: 'patient-medical-history' });
+        crumbs.push({ text: 'Xem chi tiết', view: 'patient-medical-history-detail' });
       }
     } else {
       // DOCTOR crumbs
@@ -213,6 +224,21 @@ export default function Navbar({
     const matchedMedicines = medicines.filter(m => 
       m.name.toLowerCase().includes(query) || m.activeIngredient.toLowerCase().includes(query)
     );
+
+    if (isGuest) {
+      return {
+        diseases: matchedDiseases,
+        medicines: matchedMedicines,
+        patients: [],
+        doctors: [],
+        reminders: [],
+        appointments: [],
+        scenarios: [],
+        evaluations: [],
+        doctorThreads: [],
+        patientConvs: []
+      };
+    }
     const matchedScenarios = (scenarios || []).filter(s =>
       s.name.toLowerCase().includes(query)
     );
@@ -326,35 +352,102 @@ export default function Navbar({
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const activeResults = getSearchResults();
+      if (role === 'expert') {
+        if (activeResults.diseases.length > 0) {
+          handleSearchResultClick('disease', activeResults.diseases[0].id);
+        } else if (activeResults.medicines.length > 0) {
+          handleSearchResultClick('medicine', activeResults.medicines[0].id);
+        } else if (activeResults.scenarios.length > 0) {
+          handleSearchResultClick('scenario', activeResults.scenarios[0].id);
+        } else if (activeResults.evaluations.length > 0) {
+          handleSearchResultClick('evaluation', activeResults.evaluations[0].id);
+        }
+      } else if (role === 'patient') {
+        if (activeResults.diseases.length > 0) {
+          handleSearchResultClick('disease', activeResults.diseases[0].id);
+        } else if (activeResults.medicines.length > 0) {
+          handleSearchResultClick('medicine', activeResults.medicines[0].id);
+        } else if (activeResults.doctors.length > 0) {
+          handleSearchResultClick('doctor', activeResults.doctors[0].id);
+        } else if (activeResults.appointments.length > 0) {
+          handleSearchResultClick('appointment', activeResults.appointments[0].id);
+        } else if (activeResults.patientConvs.length > 0) {
+          handleSearchResultClick('patient-conv', activeResults.patientConvs[0].id);
+        }
+      } else if (role === 'doctor') {
+        if (activeResults.patients.length > 0) {
+          handleSearchResultClick('patient', activeResults.patients[0].id);
+        } else if (activeResults.medicines.length > 0) {
+          handleSearchResultClick('medicine', activeResults.medicines[0].id);
+        } else if (activeResults.appointments.length > 0) {
+          handleSearchResultClick('appointment', activeResults.appointments[0].id);
+        } else if (activeResults.doctorThreads.length > 0) {
+          handleSearchResultClick('doctor-thread', activeResults.doctorThreads[0].id);
+        }
+      } else if (role === 'manager') {
+        if (activeResults.patients.length > 0) {
+          handleSearchResultClick('patient', activeResults.patients[0].id);
+        } else if (activeResults.doctors.length > 0) {
+          handleSearchResultClick('doctor', activeResults.doctors[0].id);
+        } else if (activeResults.appointments.length > 0) {
+          handleSearchResultClick('appointment', activeResults.appointments[0].id);
+        } else if (activeResults.reminders.length > 0) {
+          handleSearchResultClick('reminder', activeResults.reminders[0].id);
+        }
+      }
+    }
+  };
+
   return (
-    <header className="navbar">
-      {/* Clickable Breadcrumbs */}
-      <div className="navbar-breadcrumbs">
-        {crumbs.map((crumb, idx) => {
-          const isLast = idx === crumbs.length - 1;
-          return (
-            <React.Fragment key={idx}>
-              {idx > 0 && <span style={{ margin: '0 6px' }}>/</span>}
-              {isLast ? (
-                <span className="active-crumb">{crumb.text}</span>
-              ) : (
-                <a
-                  className="breadcrumb-link"
-                  onClick={() => onNavigate(crumb.view)}
-                >
-                  {crumb.text}
-                </a>
-              )}
-            </React.Fragment>
-          );
-        })}
+    <header className="navbar" role="banner">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {previousView && (
+          <button 
+            onClick={() => {
+              if (previousView === 'patient-consultation') {
+                onNavigate('patient-consultation-keep');
+              } else {
+                onNavigate(previousView);
+              }
+            }}
+            className="btn btn-outline"
+            style={{ marginRight: '8px', fontSize: '0.8rem', padding: '6px 12px', backgroundColor: '#f1f5f9' }}
+            aria-label="Quay lại trang trước"
+          >
+            &larr; Quay lại
+          </button>
+        )}
+        {/* Clickable Breadcrumbs */}
+        <div className="navbar-breadcrumbs" style={{ margin: 0 }}>
+          {crumbs.map((crumb, idx) => {
+            const isLast = idx === crumbs.length - 1;
+            return (
+              <React.Fragment key={idx}>
+                {idx > 0 && <span style={{ margin: '0 6px' }}>/</span>}
+                {isLast ? (
+                  <span className="active-crumb">{crumb.text}</span>
+                ) : (
+                  <a
+                    className="breadcrumb-link"
+                    onClick={() => onNavigate(crumb.view)}
+                  >
+                    {crumb.text}
+                  </a>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
 
       {/* Right Navbar elements */}
       <div className="navbar-right">
         {/* Global Search */}
         <div className="navbar-search" ref={dropdownRef}>
-          <Search size={16} className="navbar-search-icon" />
+          <Search size={16} className="navbar-search-icon" aria-hidden="true" />
           <input
             type="text"
             placeholder={
@@ -372,6 +465,8 @@ export default function Navbar({
               setShowDropdown(true);
             }}
             onFocus={() => setShowDropdown(true)}
+            onKeyDown={handleKeyDown}
+            aria-label="Tìm kiếm trên toàn hệ thống"
           />
 
           {/* Search Dropdown Panel */}
@@ -692,298 +787,148 @@ export default function Navbar({
         </div>
 
         {/* Bell */}
-        <div ref={notificationRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-          <button 
-            className="navbar-bell"
-            onClick={() => setShowNotifications(!showNotifications)}
-            style={{ border: 'none', cursor: 'pointer', outline: 'none', padding: 0 }}
-          >
-            <Bell size={18} />
-            {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '2px',
-                right: '2px',
-                width: '8px',
-                height: '8px',
-                backgroundColor: '#ef4444',
-                borderRadius: '50%',
-                border: '1.5px solid #fff'
-              }} />
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="card animate-fade-in" style={{
-              position: 'absolute',
-              top: '40px',
-              right: '-10px',
-              width: '320px',
-              maxHeight: '400px',
-              overflowY: 'auto',
-              backgroundColor: '#fff',
-              boxShadow: 'var(--shadow-lg)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-color)',
-              padding: '12px 0',
-              zIndex: 999999,
-              margin: 0
-            }}>
-              <style>{`
-                .notification-item {
-                  padding: 12px 16px;
-                  border-bottom: 1px solid #f1f5f9;
-                  cursor: pointer;
-                  transition: background-color 0.2s;
-                  display: flex;
-                  flex-direction: column;
-                  gap: 4px;
-                }
-                .notification-item.unread {
-                  background-color: #f0f7ff;
-                }
-                .notification-item.unread:hover {
-                  background-color: #e0f2fe;
-                }
-                .notification-item.read {
-                  background-color: transparent;
-                }
-                .notification-item.read:hover {
-                  background-color: #f8fafc;
-                }
-              `}</style>
-              
-              <div style={{ padding: '0 16px 8px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong style={{ fontSize: '0.88rem', color: 'var(--text-dark)' }}>Thông báo</strong>
-                {unreadCount > 0 && (
-                  <button 
-                    onClick={() => {
-                      setNotificationsList(prev => ({
-                        ...prev,
-                        [role]: prev[role].map(item => ({ ...item, read: true }))
-                      }));
-                    }}
-                    style={{ background: 'none', border: 'none', color: 'var(--primary-light)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '500' }}
-                  >
-                    Đánh dấu tất cả đã đọc
-                  </button>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {currentNotifications.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => handleNotificationClick(n)}
-                    className={`notification-item ${n.read ? 'read' : 'unread'}`}
-                  >
-                    <span style={{
-                      fontSize: '0.8rem',
-                      fontWeight: n.read ? '400' : '600',
-                      color: 'var(--text-dark)',
-                      lineHeight: '1.4',
-                      textAlign: 'left'
-                    }}>
-                      {n.text}
-                    </span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'left' }}>
-                      {n.time}
-                    </span>
-                  </div>
-                ))}
-
-                {currentNotifications.length === 0 && (
-                  <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                    Không có thông báo nào mới
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Profile Pill & Dropdown Wrapper */}
-        <div ref={profileDropdownRef} style={{ position: 'relative' }}>
-          <div
-            className="navbar-profile-pill"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-          >
-            <div className="profile-pill-text">
-              <div className="profile-pill-name">
-                {role === 'expert' 
-                  ? 'Mai Thùy Linh' 
-                  : role === 'manager' 
-                  ? 'Nguyễn Nhật Linh' 
-                  : role === 'patient'
-                  ? 'Lương Hương Giang'
-                  : 'Dương Gia Huy'}
-              </div>
-              <div className="profile-pill-role">
-                {role === 'expert' 
-                  ? 'Chuyên gia' 
-                  : role === 'manager' 
-                  ? 'Quản lý' 
-                  : role === 'patient'
-                  ? 'Người dùng'
-                  : 'Bác sĩ'}
-              </div>
-            </div>
-            <div className="profile-pill-avatar">
-              {role === 'expert' ? (
-                <svg viewBox="0 0 100 100" width="100%" height="100%">
-                  <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
-                  <circle cx="50" cy="40" r="20" fill="#db2777" />
-                  <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
-                </svg>
-              ) : role === 'manager' ? (
-                <svg viewBox="0 0 100 100" width="100%" height="100%">
-                  <circle cx="50" cy="50" r="50" fill="#fef3c7" />
-                  <circle cx="50" cy="40" r="20" fill="#d97706" />
-                  <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
-                </svg>
-              ) : role === 'patient' ? (
-                <svg viewBox="0 0 100 100" width="100%" height="100%">
-                  <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
-                  <circle cx="50" cy="40" r="20" fill="#4f46e5" />
-                  <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 100 100" width="100%" height="100%">
-                  <circle cx="50" cy="50" r="50" fill="#dbeafe" />
-                  <circle cx="50" cy="40" r="20" fill="#2563eb" />
-                  <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
-                </svg>
+        {!isGuest && (
+          <div ref={notificationRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button 
+              className="navbar-bell"
+              onClick={() => setShowNotifications(!showNotifications)}
+              style={{ border: 'none', cursor: 'pointer', outline: 'none', padding: 0 }}
+              aria-label={`Thông báo, có ${unreadCount} thông báo chưa đọc`}
+            >
+              <Bell size={18} aria-hidden="true" />
+              {unreadCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '2px',
+                  right: '2px',
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: '#ef4444',
+                  borderRadius: '50%',
+                  border: '1.5px solid #fff'
+                }} />
               )}
-            </div>
-          </div>
+            </button>
 
-          {/* Profile Dropdown Popover */}
-          {showProfileDropdown && (
-            <div className="profile-dropdown-card animate-fade-in" style={{
-              position: 'absolute',
-              top: '50px',
-              right: '0',
-              width: '240px',
-              backgroundColor: '#fff',
-              border: '1px solid var(--border-color)',
-              borderRadius: '20px',
-              boxShadow: 'var(--shadow-lg)',
-              padding: '0',
-              overflow: 'hidden',
-              zIndex: 999999,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              {/* Header profile info */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 20px',
-                backgroundColor: '#f8fafc',
-                borderBottom: '1px solid #f1f5f9'
+            {showNotifications && (
+              <div className="card animate-fade-in" style={{
+                position: 'absolute',
+                top: '40px',
+                right: '-10px',
+                width: '320px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                backgroundColor: '#fff',
+                boxShadow: 'var(--shadow-lg)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color)',
+                padding: '12px 0',
+                zIndex: 999999,
+                margin: 0
               }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '0.92rem', fontWeight: '700', color: 'var(--text-dark)' }}>
-                    {role === 'expert' 
-                      ? 'Mai Thùy Linh' 
-                      : role === 'manager' 
-                      ? 'Nguyễn Nhật Linh' 
-                      : role === 'patient'
-                      ? 'Lương Hương Giang'
-                      : 'Dương Gia Huy'}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--primary)' }}>
-                    {role === 'expert' 
-                      ? 'Chuyên gia' 
-                      : role === 'manager' 
-                      ? 'Quản lý' 
-                      : role === 'patient'
-                      ? 'Người dùng'
-                      : 'Bác sĩ'}
-                  </span>
+                <style>{`
+                  .notification-item {
+                    padding: 12px 16px;
+                    border-bottom: 1px solid #f1f5f9;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                  }
+                  .notification-item.unread {
+                    background-color: #f0f7ff;
+                  }
+                  .notification-item.unread:hover {
+                    background-color: #e0f2fe;
+                  }
+                  .notification-item.read {
+                    background-color: transparent;
+                  }
+                  .notification-item.read:hover {
+                    background-color: #f8fafc;
+                  }
+                `}</style>
+                
+                <div style={{ padding: '0 16px 8px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-dark)' }}>Thông báo</strong>
+                  {unreadCount > 0 && (
+                    <button 
+                      onClick={() => {
+                        setNotificationsList(prev => ({
+                          ...prev,
+                          [role]: prev[role].map(item => ({ ...item, read: true }))
+                        }));
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'var(--primary-light)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: '500' }}
+                    >
+                      Đánh dấu tất cả đã đọc
+                    </button>
+                  )}
                 </div>
-                <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-                  {role === 'expert' ? (
-                    <svg viewBox="0 0 100 100" width="100%" height="100%">
-                      <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
-                      <circle cx="50" cy="40" r="20" fill="#db2777" />
-                      <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
-                    </svg>
-                  ) : role === 'manager' ? (
-                    <svg viewBox="0 0 100 100" width="100%" height="100%">
-                      <circle cx="50" cy="50" r="50" fill="#fef3c7" />
-                      <circle cx="50" cy="40" r="20" fill="#d97706" />
-                      <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
-                    </svg>
-                  ) : role === 'patient' ? (
-                    <svg viewBox="0 0 100 100" width="100%" height="100%">
-                      <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
-                      <circle cx="50" cy="40" r="20" fill="#4f46e5" />
-                      <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 100 100" width="100%" height="100%">
-                      <circle cx="50" cy="50" r="50" fill="#dbeafe" />
-                      <circle cx="50" cy="40" r="20" fill="#2563eb" />
-                      <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
-                    </svg>
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {currentNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => handleNotificationClick(n)}
+                      className={`notification-item ${n.read ? 'read' : 'unread'}`}
+                    >
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: n.read ? '400' : '600',
+                        color: 'var(--text-dark)',
+                        lineHeight: '1.4',
+                        textAlign: 'left'
+                      }}>
+                        {n.text}
+                      </span>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'left' }}>
+                        {n.time}
+                      </span>
+                    </div>
+                  ))}
+
+                  {currentNotifications.length === 0 && (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                      Không có thông báo nào mới
+                    </div>
                   )}
                 </div>
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Menu items */}
-              <button
-                onClick={() => {
-                  setShowProfileDropdown(false);
-                  onNavigate('profile');
-                }}
-                className="profile-dropdown-btn"
-                style={{
-                  padding: '12px 16px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  borderBottom: '1px solid #f1f5f9',
-                  fontSize: '0.85rem',
-                  fontWeight: '600',
-                  color: 'var(--text-dark)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'background-color 0.2s',
-                  outline: 'none'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Tài khoản
-              </button>
-
-              <button
-                onClick={() => {
-                  setShowProfileDropdown(false);
-                  if (onLogout) onLogout();
-                }}
-                className="profile-dropdown-btn"
-                style={{
-                  padding: '12px 16px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: '600',
-                  color: 'var(--text-dark)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'background-color 0.2s',
-                  outline: 'none'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Đăng xuất
-              </button>
-            </div>
-          )}
+        {/* Profile Pill & Dropdown Wrapper - Only Avatar */}
+        <div ref={profileDropdownRef} style={{ display: 'flex', alignItems: 'center' }}>
+          <div className="profile-pill-avatar" style={{ width: '36px', height: '36px', cursor: 'default' }} role="img" aria-label="Ảnh đại diện người dùng">
+            {role === 'expert' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#fbcfe8" />
+                <circle cx="50" cy="40" r="20" fill="#db2777" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#db2777" />
+              </svg>
+            ) : role === 'manager' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#fef3c7" />
+                <circle cx="50" cy="40" r="20" fill="#d97706" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#d97706" />
+              </svg>
+            ) : role === 'patient' ? (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#e0e7ff" />
+                <circle cx="50" cy="40" r="20" fill="#4f46e5" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#4f46e5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="50" fill="#dbeafe" />
+                <circle cx="50" cy="40" r="20" fill="#2563eb" />
+                <path d="M20,80 C20,60 80,60 80,80" fill="#2563eb" />
+              </svg>
+            )}
+          </div>
         </div>
       </div>
     </header>

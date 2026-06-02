@@ -68,87 +68,67 @@ export default function Dashboard({
   };
 
   return (
-    <div className="dashboard-grid animate-fade-in">
-      {/* Left Column */}
-      <div className="dashboard-left-col">
-        {/* Welcome Banner */}
-        <div className="welcome-banner">
-          <div className="welcome-text">
-            <h2>Chào Chuyên gia A,</h2>
-            <p>Chúc bạn một ngày tốt lành và đừng quên chăm sóc cho bản thân nhé!</p>
-            <div className="welcome-quote">"Good things take time."</div>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      
+      {/* Row 1: Welcome Banner & Stats vs Doughnut Chart */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+        
+        {/* Left Column: Welcome Banner & Stats */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', justifyContent: 'space-between' }}>
+          {/* Welcome Banner */}
+          <div className="welcome-banner" style={{ margin: 0 }}>
+            <div className="welcome-text">
+              <h2>Chào Chuyên gia A,</h2>
+              <p>Chúc bạn một ngày tốt lành và đừng quên chăm sóc cho bản thân nhé!</p>
+              <div className="welcome-quote">"Good things take time."</div>
+            </div>
+            <div className="welcome-illustration">
+              <HeartHandshake size={60} strokeWidth={1.5} />
+            </div>
           </div>
-          <div className="welcome-illustration">
-            <HeartHandshake size={60} strokeWidth={1.5} />
-          </div>
-        </div>
 
-        {/* Stats cards */}
-        <div className="stats-grid">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div 
-                key={idx} 
-                className="stat-card animate-fade-in" 
-                style={{ animationDelay: `${idx * 0.1}s` }}
-                onClick={() => {
-                  onNavigate(stat.view);
-                  triggerToast(`Đang chuyển tới màn hình ${stat.title.toLowerCase()}`, 'info');
-                }}
-              >
-                <div className="flex justify-between align-center">
-                  <span className="stat-title">{stat.title}</span>
-                  <div className="activity-icon-wrapper" style={{ margin: 0, width: '24px', height: '24px' }}>
-                    <Icon size={12} />
-                  </div>
-                </div>
-                <div className="stat-value">{stat.value}</div>
-                <div className={`stat-trend ${stat.isUp ? 'trend-up' : 'trend-down'}`}>
-                  {stat.isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  <span>{stat.trend}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Recent activity (Clickable mapping) */}
-        <div className="card" style={{ margin: 0 }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '4px' }}>Hoạt động gần đây</h3>
-          <div className="recent-activity-list">
-            {activities.map((act) => {
-              const Icon = act.icon;
+          {/* Stats cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', flex: 1, width: '100%' }}>
+            {stats.map((stat, idx) => {
+              const Icon = stat.icon;
               return (
-                <div key={act.id} className="activity-item" onClick={() => handleActivityClick(act)}>
-                  <div className="activity-icon-wrapper">
-                    <Icon size={16} />
+                <div 
+                  key={idx} 
+                  className="stat-card animate-fade-in" 
+                  style={{ animationDelay: `${idx * 0.1}s`, margin: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                  onClick={() => {
+                    onNavigate(stat.view);
+                    triggerToast(`Đang chuyển tới màn hình ${stat.title.toLowerCase()}`, 'info');
+                  }}
+                >
+                  <div className="flex justify-between align-center">
+                    <span className="stat-title">{stat.title}</span>
+                    <div className="activity-icon-wrapper" style={{ margin: 0, width: '24px', height: '24px' }}>
+                      <Icon size={12} />
+                    </div>
                   </div>
-                  <div className="activity-details">
-                    <div className="activity-title">{act.action}</div>
-                    <div className="activity-time">{act.time}</div>
+                  <div className="stat-value">{stat.value}</div>
+                  <div className={`stat-trend ${stat.isUp ? 'trend-up' : 'trend-down'}`}>
+                    {stat.isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    <span>{stat.trend}</span>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
-      </div>
 
-      {/* Right Column */}
-      <div className="dashboard-right-col">
-        {/* Doughnut Chart */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', margin: 0 }}>
-          <h3 className="text-center" style={{ fontSize: '1.15rem', marginBottom: '8px' }}>
+        {/* Right Column: Doughnut Chart */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', margin: 0, height: '100%', justifyContent: 'center' }}>
+          <h3 className="text-center" style={{ fontSize: '1.15rem', marginBottom: '8px', marginTop: 0 }}>
             Tỷ lệ đánh giá phản hồi chatbot
           </h3>
-          <div className="chart-container">
+          <div className="chart-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div className="chart-svg-wrapper">
               <svg width="150" height="150" viewBox="0 0 160 160">
                 <circle cx="80" cy="80" r={radius} fill="transparent" stroke="#f1f5f9" strokeWidth="16" />
                 {ratingsData.map((data, index) => {
-                  const dasharray = `${(data.value / 100) * circumference} ${circumference}`;
-                  const offset = circumference - (accumulatedPercent / 100) * circumference;
+                  const offset = 100 - accumulatedPercent;
                   accumulatedPercent += data.value;
 
                   const isHovered = activeSegment === index;
@@ -162,7 +142,8 @@ export default function Dashboard({
                       fill="transparent"
                       stroke={data.color}
                       strokeWidth={isHovered ? 22 : 16}
-                      strokeDasharray={dasharray}
+                      pathLength="100"
+                      strokeDasharray={`${data.value} ${100 - data.value}`}
                       strokeDashoffset={offset}
                       transform="rotate(-90 80 80)"
                       style={{ cursor: 'pointer', transition: 'stroke-width 0.2s ease' }}
@@ -181,7 +162,7 @@ export default function Dashboard({
                 </div>
               </div>
             </div>
-            <div className="chart-legend">
+            <div className="chart-legend" style={{ marginTop: '12px' }}>
               {ratingsData.map((data, index) => (
                 <div
                   key={index}
@@ -196,9 +177,35 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Low reviews list (Synchronized colors) */}
-        <div className="card" style={{ flexGrow: 1, margin: 0 }}>
-          <div className="flex justify-between align-center" style={{ marginBottom: '4px' }}>
+      </div>
+
+      {/* Row 2: Recent Activity vs Low Reviews */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'stretch' }}>
+        
+        {/* Left Column: Recent Activity */}
+        <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '8px', marginTop: 0 }}>Hoạt động gần đây</h3>
+          <div className="recent-activity-list" style={{ flex: 1 }}>
+            {activities.map((act) => {
+              const Icon = act.icon;
+              return (
+                <div key={act.id} className="activity-item" onClick={() => handleActivityClick(act)}>
+                  <div className="activity-icon-wrapper">
+                    <Icon size={16} />
+                  </div>
+                  <div className="activity-details">
+                    <div className="activity-title">{act.action}</div>
+                    <div className="activity-time">{act.time}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Low reviews list */}
+        <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div className="flex justify-between align-center" style={{ marginBottom: '8px' }}>
             <h3 style={{ fontSize: '1rem', margin: 0 }}>Danh sách hội thoại bị đánh giá thấp</h3>
             <a
               onClick={() => onNavigate('ai-evaluation')}
@@ -208,11 +215,11 @@ export default function Dashboard({
             </a>
           </div>
           
-          <div className="review-list">
+          <div className="review-list" style={{ flex: 1 }}>
             {lowRatingConversations.map((conv) => (
               <div
                 key={conv.id}
-                className="review-item animate-fade-in"
+                className={`review-item rating-bg-${conv.ratingNum} animate-fade-in`}
                 onClick={() => handleConversationClick(conv)}
               >
                 <div className="review-user-avatar">
@@ -235,7 +242,9 @@ export default function Dashboard({
             ))}
           </div>
         </div>
+
       </div>
+
     </div>
   );
 }
