@@ -394,9 +394,9 @@ export default function ExpertReports({ conversations = [], scenarios = [], trig
             <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)' }}>Cơ cấu phân loại lỗi AI phát hiện</h4>
           </div>
  
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: '110px', position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: '160px', position: 'relative' }}>
             {/* SVG Doughnut Chart */}
-            <svg viewBox="0 0 100 100" width="105" height="105">
+            <svg viewBox="0 0 100 100" width="155" height="155">
               <circle cx="50" cy="50" r={radius} fill="transparent" stroke="#f1f5f9" strokeWidth="12" />
               {errorsData.map((data, index) => {
                 const offset = 100 - accumulatedPercent;
@@ -404,29 +404,29 @@ export default function ExpertReports({ conversations = [], scenarios = [], trig
                 const isHovered = activeSegment === index;
                 return (
                   <circle
-                    key={index}
-                    cx="50"
-                    cy="50"
-                    r={radius}
-                    fill="transparent"
-                    stroke={data.color}
-                    strokeWidth={isHovered ? 17 : 12}
-                    pathLength="100"
-                    strokeDasharray={`${data.value} ${100 - data.value}`}
-                    strokeDashoffset={offset}
-                    transform="rotate(-90 50 50)"
-                    style={{ cursor: 'pointer', transition: 'stroke-width 0.2s ease, stroke 0.2s' }}
-                    onMouseEnter={() => setActiveSegment(index)}
-                    onMouseLeave={() => setActiveSegment(null)}
+                     key={index}
+                     cx="50"
+                     cy="50"
+                     r={radius}
+                     fill="transparent"
+                     stroke={data.color}
+                     strokeWidth={isHovered ? 17 : 12}
+                     pathLength="100"
+                     strokeDasharray={`${data.value} ${100 - data.value}`}
+                     strokeDashoffset={offset}
+                     transform="rotate(-90 50 50)"
+                     style={{ cursor: 'pointer', transition: 'stroke-width 0.2s ease, stroke 0.2s' }}
+                     onMouseEnter={() => setActiveSegment(index)}
+                     onMouseLeave={() => setActiveSegment(null)}
                   />
                 );
               })}
             </svg>
             <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
-              <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--primary)', lineHeight: 1 }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--primary)', lineHeight: 1 }}>
                 {activeSegment !== null ? `${errorsData[activeSegment].value}%` : `${totalErrors}`}
               </span>
-              <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '2px', textAlign: 'center', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center', maxWidth: '95px', overflow: 'hidden', lineHeight: '1.2' }}>
                 {activeSegment !== null ? errorsData[activeSegment].label : 'Tổng lỗi'}
               </span>
             </div>
