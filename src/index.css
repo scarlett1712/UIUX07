@@ -1431,19 +1431,11 @@ button, input, select, textarea {
   transform: translateX(2px);
 }
 
-.review-item.rating-bg-1 {
-  background-color: #fef2f2;
-  border-color: #fecaca;
-}
-
-.review-item.rating-bg-2 {
-  background-color: #fffbeb;
-  border-color: #fef3c7;
-}
-
+.review-item.rating-bg-1,
+.review-item.rating-bg-2,
 .review-item.rating-bg-3 {
-  background-color: #f0f9ff;
-  border-color: #bae6fd;
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
 }
 
 .review-user-avatar {
