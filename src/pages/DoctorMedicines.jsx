@@ -39,7 +39,7 @@ export default function DoctorMedicines({
         
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Chi tiết thông tin thuốc</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Chi tiết thông tin thuốc</h2>
         </div>
 
         {/* Details Grid Card */}
@@ -110,7 +110,7 @@ export default function DoctorMedicines({
       
       {/* Header filter toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
           Cơ sở dữ liệu Tra cứu thuốc
         </h2>
       </div>

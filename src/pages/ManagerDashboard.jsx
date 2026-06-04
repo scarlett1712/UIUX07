@@ -11,19 +11,49 @@ export default function ManagerDashboard({
 }) {
   // Calendar state dynamic
   const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-indexed
+  const [calendarYear, setCalendarYear] = useState(2026);
+  const [calendarMonth, setCalendarMonth] = useState(5); // June (0-indexed 5)
   const [selectedDate, setSelectedDate] = useState(today.getDate());
 
-  const yearMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const handlePrevMonth = () => {
+    let newMonth = calendarMonth - 1;
+    let newYear = calendarYear;
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear -= 1;
+    }
+    setCalendarYear(newYear);
+    setCalendarMonth(newMonth);
+    const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+    if (selectedDate > maxDays) {
+      setSelectedDate(maxDays);
+    }
+  };
+
+  const handleNextMonth = () => {
+    let newMonth = calendarMonth + 1;
+    let newYear = calendarYear;
+    if (newMonth > 11) {
+      newMonth = 0;
+      newYear += 1;
+    }
+    setCalendarYear(newYear);
+    setCalendarMonth(newMonth);
+    const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+    if (selectedDate > maxDays) {
+      setSelectedDate(maxDays);
+    }
+  };
+
+  const yearMonthStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
   const confirmedAppts = appointments.filter(a => a.date.startsWith(yearMonthStr) && (a.status === 'Đã xác nhận' || a.status === 'Đã đồng ý'));
   const appointmentDays = confirmedAppts.map(a => {
     const parts = a.date.split('-');
     return parseInt(parts[2], 10);
   });
 
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const startDayOffset = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const startDayOffset = new Date(calendarYear, calendarMonth, 1).getDay();
 
   // Generate calendar days (Sunday start week)
   const calendarDays = [];
@@ -50,8 +80,8 @@ export default function ManagerDashboard({
 
   const handleSelectDay = (day) => {
     if (!day) return;
-    const monthStr = String(currentMonth + 1).padStart(2, '0');
-    triggerToast(`Hiển thị lịch hẹn ngày ${day}/${monthStr}/${currentYear}`, 'info');
+    const monthStr = String(calendarMonth + 1).padStart(2, '0');
+    triggerToast(`Hiển thị lịch hẹn ngày ${day}/${monthStr}/${calendarYear}`, 'info');
     onNavigate('appointment-calendar');
   };
 
@@ -65,7 +95,7 @@ export default function ManagerDashboard({
 
   const getShiftInfo = (day) => {
     if (!day) return null;
-    const date = new Date(currentYear, currentMonth, day);
+    const date = new Date(calendarYear, calendarMonth, day);
     const dayOfWeek = date.getDay(); // 0 is Sunday, 1 is Monday, etc.
     if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
       return { doctor: 'Bs. Huy', bg: '#f0fdf4', color: '#16a34a', border: '#4ade80' };
@@ -212,16 +242,30 @@ export default function ManagerDashboard({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>Lịch</span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              {selectedDate}/{String(currentMonth + 1).padStart(2, '0')}/{currentYear}
+              {selectedDate}/{String(calendarMonth + 1).padStart(2, '0')}/{calendarYear}
             </span>
           </div>
 
-          {/* Month Navigator Mockup */}
+          {/* Month Navigator */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.8rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Tháng {currentMonth + 1}, {currentYear}</span>
+            <span style={{ color: 'var(--text-muted)' }}>Tháng {calendarMonth + 1}, {calendarYear}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronLeft size={14} /></button>
-              <button className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}><ChevronRight size={14} /></button>
+              <button 
+                type="button"
+                onClick={handlePrevMonth}
+                className="btn btn-outline" 
+                style={{ padding: '2px 6px', fontSize: '0.75rem' }}
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button 
+                type="button"
+                onClick={handleNextMonth}
+                className="btn btn-outline" 
+                style={{ padding: '2px 6px', fontSize: '0.75rem' }}
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
           </div>
 

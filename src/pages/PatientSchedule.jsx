@@ -20,6 +20,7 @@ const TIME_SLOTS = [
 ];
 
 export default function PatientSchedule({ 
+  doctors = [],
   appointments = [], 
   setAppointments, 
   triggerToast, 
@@ -30,6 +31,7 @@ export default function PatientSchedule({
   activePatientConvId,
   showConfirm
 }) {
+  const activeDoctors = doctors && doctors.length > 0 ? doctors : MOCK_DOCTORS;
   const [activeTab, setActiveTab] = useState(defaultTab || 'booked'); // 'booked' or 'create'
   
   React.useEffect(() => {
@@ -100,7 +102,7 @@ export default function PatientSchedule({
       return;
     }
 
-    const doctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
+    const doctor = activeDoctors.find(d => d.id === selectedDoctorId);
     
     // Create new appointment object
     const newApt = {
@@ -141,14 +143,14 @@ export default function PatientSchedule({
   };
 
   // Filter doctors based on search & filter
-  const filteredDoctors = MOCK_DOCTORS.filter(d => {
+  const filteredDoctors = activeDoctors.filter(d => {
     const matchSearch = d.name.toLowerCase().includes(doctorSearch.toLowerCase()) || 
                         d.specialty.toLowerCase().includes(doctorSearch.toLowerCase());
     const matchSpecialty = specialtyFilter ? d.specialty === specialtyFilter : true;
     return matchSearch && matchSpecialty;
   });
 
-  const uniqueSpecialties = Array.from(new Set(MOCK_DOCTORS.map(d => d.specialty)));
+  const uniqueSpecialties = Array.from(new Set(activeDoctors.map(d => d.specialty)));
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

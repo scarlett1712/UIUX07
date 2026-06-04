@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, BookOpen, UserCheck, Stethoscope, Clock, HelpCircle, Activity, Pill } from 'lucide-react';
+import { ShieldAlert, BookOpen, UserCheck, Stethoscope, Clock, HelpCircle, Activity, Pill, Search } from 'lucide-react';
 
 export default function PatientMedicalData({ 
   onNavigate, 
@@ -15,18 +15,52 @@ export default function PatientMedicalData({
   const [selectedDiseaseId, setSelectedDiseaseId] = useState(diseases[0]?.id || 'D001');
   const [selectedMedicineId, setSelectedMedicineId] = useState(medicines[0]?.id || 'M001');
   const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page and query when tab switches
+  useEffect(() => {
+    setSearchQuery('');
+    setCurrentPage(1);
+  }, [activeTab]);
 
   useEffect(() => {
     if (selectedId) {
+      const itemsPerPage = 5;
       if (selectedId.startsWith('M')) {
         setActiveTab('medicines');
         setSelectedMedicineId(selectedId);
+        const idx = medicines.findIndex(m => m.id === selectedId);
+        if (idx !== -1) {
+          setCurrentPage(Math.floor(idx / itemsPerPage) + 1);
+        }
       } else if (selectedId.startsWith('D')) {
         setActiveTab('diseases');
         setSelectedDiseaseId(selectedId);
+        const idx = diseases.findIndex(d => d.id === selectedId);
+        if (idx !== -1) {
+          setCurrentPage(Math.floor(idx / itemsPerPage) + 1);
+        }
       }
     }
-  }, [selectedId]);
+  }, [selectedId, diseases, medicines]);
+
+  const filteredDiseases = diseases.filter(d => 
+    d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    d.department.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredMedicines = medicines.filter(m => 
+    m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    m.activeIngredient.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const itemsPerPage = 5;
+  const currentDiseases = filteredDiseases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentMedicines = filteredMedicines.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = activeTab === 'diseases' 
+    ? Math.ceil(filteredDiseases.length / itemsPerPage) || 1
+    : Math.ceil(filteredMedicines.length / itemsPerPage) || 1;
 
   const selectedDisease = diseases.find(d => d.id === selectedDiseaseId) || diseases[0];
   const selectedMedicine = medicines.find(m => m.id === selectedMedicineId) || medicines[0];
@@ -87,17 +121,31 @@ export default function PatientMedicalData({
         }
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px', alignItems: 'stretch', height: 'calc(100vh - var(--header-height) - 130px)', minHeight: '400px' }}>
         
         {/* LEFT COLUMN: List of Diseases or Medicines */}
-        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', margin: 0 }}>
-          <h3 style={{ fontSize: '0.95rem', margin: '4px 0', color: 'var(--text-dark)', fontWeight: '600' }}>
+        <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', margin: 0, height: '100%', overflow: 'hidden' }}>
+          <h3 style={{ fontSize: '0.95rem', margin: '4px 0', color: 'var(--text-dark)', fontWeight: '600', flexShrink: 0 }}>
             {activeTab === 'diseases' ? "Danh sách bệnh lý & dịch bệnh" : "Danh mục dược phẩm"}
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Search bar */}
+          <div style={{ position: 'relative', margin: '4px 0 10px 0', flexShrink: 0 }}>
+            <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder={activeTab === 'diseases' ? "Tìm kiếm bệnh, chuyên khoa..." : "Tìm kiếm thuốc, hoạt chất..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input"
+              style={{ paddingLeft: '32px', fontSize: '0.82rem', width: '100%', height: '32px' }}
+            />
+          </div>
+
+          {/* Scrollable list content */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexGrow: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {activeTab === 'diseases' ? (
-              diseases.map(d => (
+              currentDiseases.map(d => (
                 <div
                   key={d.id}
                   onClick={() => {
@@ -115,7 +163,8 @@ export default function PatientMedicalData({
                     transition: 'all 0.2s',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    flexShrink: 0
                   }}
                 >
                   <div>
@@ -130,7 +179,7 @@ export default function PatientMedicalData({
                 </div>
               ))
             ) : (
-              medicines.map(m => (
+              currentMedicines.map(m => (
                 <div
                   key={m.id}
                   onClick={() => {
@@ -148,7 +197,8 @@ export default function PatientMedicalData({
                     transition: 'all 0.2s',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    flexShrink: 0
                   }}
                 >
                   <div>
@@ -161,189 +211,223 @@ export default function PatientMedicalData({
                 </div>
               ))
             )}
+
+            {((activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length) === 0) && (
+              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Không tìm thấy kết quả phù hợp
+              </div>
+            )}
+          </div>
+
+          {/* Standardized bottom pagination bar */}
+          <div className="list-pagination-bar" style={{ flexShrink: 0, marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+            <span>
+              Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)}-
+              {Math.min(currentPage * itemsPerPage, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)} trong tổng số {activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length}
+            </span>
+            <div className="pagination-nav-group">
+              <button
+                type="button"
+                className="pagination-nav-btn"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                &lt;
+              </button>
+              <button
+                type="button"
+                className="pagination-nav-btn"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                &gt;
+              </button>
+            </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: Details Pane */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0 }}>
-          {activeTab === 'diseases' ? (
-            selectedDisease ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Header block */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary)' }}>{selectedDisease.name}</h3>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mã bệnh lý: {selectedDisease.id}</span>
+        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', margin: 0, height: '100%', overflow: 'hidden' }}>
+          <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '4px' }}>
+            {activeTab === 'diseases' ? (
+              selectedDisease ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Header block */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--primary)' }}>{selectedDisease.name}</h3>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mã bệnh lý: {selectedDisease.id}</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: '500', color: 'var(--text-muted)' }}>Mức độ nguy hiểm:</span>
+                      <span className={`badge ${
+                        selectedDisease.danger === 'Cao' ? 'badge-high' : selectedDisease.danger === 'Trung bình' ? 'badge-medium' : 'badge-low'
+                      }`} style={{ padding: '6px 14px', fontSize: '0.85rem', fontWeight: '600' }}>
+                        {selectedDisease.danger}
+                      </span>
+                    </div>
                   </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '500', color: 'var(--text-muted)' }}>Mức độ nguy hiểm:</span>
-                    <span className={`badge ${
-                      selectedDisease.danger === 'Cao' ? 'badge-high' : selectedDisease.danger === 'Trung bình' ? 'badge-medium' : 'badge-low'
-                    }`} style={{ padding: '6px 14px', fontSize: '0.85rem', fontWeight: '600' }}>
-                      {selectedDisease.danger}
+
+                  {/* Description */}
+                  <div>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)', display: 'block', marginBottom: '6px' }}>Mô tả tổng quan:</strong>
+                    <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-dark)', lineHeight: '1.5' }}>
+                      {selectedDisease.desc}
+                    </p>
+                  </div>
+
+                  {/* Department recommendation */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#eff6ff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                    <Stethoscope size={18} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>
+                      Khuyên khám tại chuyên khoa: <strong>{selectedDisease.department}</strong>
                     </span>
                   </div>
-                </div>
 
-                {/* Description */}
-                <div>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)', display: 'block', marginBottom: '6px' }}>Mô tả tổng quan:</strong>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-dark)', lineHeight: '1.5' }}>
-                    {selectedDisease.desc}
-                  </p>
-                </div>
-
-                {/* Department recommendation */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#eff6ff', padding: '12px 16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                  <Stethoscope size={18} style={{ color: 'var(--primary)' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>
-                    Khuyên khám tại chuyên khoa: <strong>{selectedDisease.department}</strong>
-                  </span>
-                </div>
-
-                {/* Symptoms breakdown table */}
-                <div style={{ marginTop: '8px' }}>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)', display: 'block', marginBottom: '8px' }}>
-                    Bảng phân tích triệu chứng lâm sàng:
-                  </strong>
-                  
-                  <div className="custom-table-container">
-                    <table className="custom-table" style={{ margin: 0 }}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: '60px' }}>STT</th>
-                          <th>Triệu chứng</th>
-                          <th>Mô tả chi tiết</th>
-                          <th>Thời điểm</th>
-                          <th>Tần suất</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedDisease.symptoms.map((s, idx) => (
-                          <tr key={idx}>
-                            <td style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{s.stt || idx + 1}</td>
-                            <td style={{ fontWeight: '700', color: 'var(--primary)' }}>{s.name}</td>
-                            <td style={{ fontSize: '0.82rem', lineHeight: '1.4' }}>{s.desc}</td>
-                            <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{s.duration}</td>
-                            <td style={{ fontSize: '0.82rem' }}>
-                              <span className={`badge ${
-                                s.frequency === 'Thường xuyên' ? 'badge-high' : s.frequency === 'Trung bình' ? 'badge-medium' : 'badge-low'
-                              }`} style={{ padding: '2px 6px', fontSize: '0.75rem' }}>
-                                {s.frequency}
-                              </span>
-                            </td>
+                  {/* Symptoms breakdown table */}
+                  <div style={{ marginTop: '8px' }}>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)', display: 'block', marginBottom: '8px' }}>
+                      Bảng phân tích triệu chứng lâm sàng:
+                    </strong>
+                    
+                    <div className="custom-table-container">
+                      <table className="custom-table" style={{ margin: 0 }}>
+                        <thead>
+                          <tr>
+                            <th style={{ width: '60px' }}>STT</th>
+                            <th>Triệu chứng</th>
+                            <th>Mô tả chi tiết</th>
+                            <th>Thời điểm</th>
+                            <th>Tần suất</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {selectedDisease.symptoms.map((s, idx) => (
+                            <tr key={idx}>
+                              <td style={{ fontWeight: '600', color: 'var(--text-muted)' }}>{s.stt || idx + 1}</td>
+                              <td style={{ fontWeight: '700', color: 'var(--primary)' }}>{s.name}</td>
+                              <td style={{ fontSize: '0.82rem', lineHeight: '1.4' }}>{s.desc}</td>
+                              <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{s.duration}</td>
+                              <td style={{ fontSize: '0.82rem' }}>
+                                <span className={`badge ${
+                                  s.frequency === 'Thường xuyên' ? 'badge-high' : s.frequency === 'Trung bình' ? 'badge-medium' : 'badge-low'
+                                }`} style={{ padding: '2px 6px', fontSize: '0.75rem' }}>
+                                  {s.frequency}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Related actions */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    <button
+                      onClick={() => onNavigate('patient-consultation')}
+                      className="btn btn-outline-primary"
+                      style={{ padding: '10px 20px', margin: 0, fontSize: '0.85rem' }}
+                    >
+                      Tư vấn AI bệnh này
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (isGuest) {
+                          setShowGuestLoginModal(true);
+                        } else {
+                          onNavigate('patient-schedule');
+                        }
+                      }}
+                      className="btn btn-primary"
+                      style={{ padding: '10px 24px', margin: 0, fontSize: '0.85rem' }}
+                    >
+                      Đặt lịch khám chuyên khoa
+                    </button>
                   </div>
                 </div>
-
-                {/* Related actions */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                  <button
-                    onClick={() => onNavigate('patient-consultation')}
-                    className="btn btn-outline-primary"
-                    style={{ padding: '10px 20px', margin: 0, fontSize: '0.85rem' }}
-                  >
-                    Tư vấn AI bệnh này
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (isGuest) {
-                        setShowGuestLoginModal(true);
-                      } else {
-                        onNavigate('patient-schedule');
-                      }
-                    }}
-                    className="btn btn-primary"
-                    style={{ padding: '10px 24px', margin: 0, fontSize: '0.85rem' }}
-                  >
-                    Đặt lịch khám chuyên khoa
-                  </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                  <span>Vui lòng chọn một bệnh từ danh sách để xem dữ liệu y tế học thuật</span>
                 </div>
-              </div>
+              )
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-                <span>Vui lòng chọn một bệnh từ danh sách để xem dữ liệu y tế học thuật</span>
-              </div>
-            )
-          ) : (
-            selectedMedicine ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Header block */}
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#e2fbe8', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Pill size={20} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-dark)' }}>{selectedMedicine.name}</h3>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Hoạt chất chính: <strong>{selectedMedicine.activeIngredient}</strong> &bull; Mã: {selectedMedicine.id}</span>
-                  </div>
-                </div>
-
-                {/* Medicine info rows grid */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Row 1 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Mô tả tổng quan</span>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{selectedMedicine.desc}</p>
+              selectedMedicine ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Header block */}
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#e2fbe8', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Pill size={20} />
                     </div>
                     <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Liều lượng & Cách dùng</span>
-                      <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid var(--primary-light)', marginTop: '4px', lineHeight: 1.45 }}>
-                        {selectedMedicine.dosage}
+                      <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-dark)' }}>{selectedMedicine.name}</h3>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Hoạt chất chính: <strong>{selectedMedicine.activeIngredient}</strong> &bull; Mã: {selectedMedicine.id}</span>
+                    </div>
+                  </div>
+
+                  {/* Medicine info rows grid */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Row 1 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Mô tả tổng quan</span>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{selectedMedicine.desc}</p>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Liều lượng & Cách dùng</span>
+                        <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid var(--primary-light)', marginTop: '4px', lineHeight: 1.45 }}>
+                          {selectedMedicine.dosage}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chỉ định điều trị</span>
+                        <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid #10b981', marginTop: '4px', lineHeight: 1.45 }}>
+                          {selectedMedicine.indication}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tác dụng phụ có thể gặp</span>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{selectedMedicine.sideEffects || 'Chưa ghi nhận tác dụng phụ đáng kể.'}</p>
+                      </div>
+                    </div>
+
+                    {/* Row 3 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chống chỉ định</span>
+                        <div style={{ padding: '10px', backgroundColor: '#fff5f5', borderRadius: '6px', fontSize: '0.82rem', color: '#dc2626', borderLeft: '3px solid #ef4444', marginTop: '4px', lineHeight: 1.45 }}>
+                          {selectedMedicine.contraindication}
+                        </div>
+                      </div>
+                      <div>
+                        {/* Empty cell */}
                       </div>
                     </div>
                   </div>
 
-                  {/* Row 2 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chỉ định điều trị</span>
-                      <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '0.82rem', color: 'var(--text-dark)', borderLeft: '3px solid #10b981', marginTop: '4px', lineHeight: 1.45 }}>
-                        {selectedMedicine.indication}
-                      </div>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Tác dụng phụ có thể gặp</span>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-dark)', lineHeight: 1.45 }}>{selectedMedicine.sideEffects || 'Chưa ghi nhận tác dụng phụ đáng kể.'}</p>
-                    </div>
-                  </div>
-
-                  {/* Row 3 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Chống chỉ định</span>
-                      <div style={{ padding: '10px', backgroundColor: '#fff5f5', borderRadius: '6px', fontSize: '0.82rem', color: '#dc2626', borderLeft: '3px solid #ef4444', marginTop: '4px', lineHeight: 1.45 }}>
-                        {selectedMedicine.contraindication}
-                      </div>
-                    </div>
-                    <div>
-                      {/* Empty cell */}
-                    </div>
+                  {/* Related actions */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                    <button
+                      onClick={() => onNavigate('patient-consultation')}
+                      className="btn btn-primary"
+                      style={{ padding: '10px 24px', margin: 0, fontSize: '0.85rem' }}
+                    >
+                      Hỏi AI về thuốc này
+                    </button>
                   </div>
                 </div>
-
-                {/* Related actions */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '14px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                  <button
-                    onClick={() => onNavigate('patient-consultation')}
-                    className="btn btn-primary"
-                    style={{ padding: '10px 24px', margin: 0, fontSize: '0.85rem' }}
-                  >
-                    Hỏi AI về thuốc này
-                  </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                  <span>Vui lòng chọn một loại thuốc để xem thông tin dược học</span>
                 </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
-                <span>Vui lòng chọn một loại thuốc để xem thông tin dược học</span>
-              </div>
-            )
-          )}
+              )
+            )}
+          </div>
         </div>
 
       </div>

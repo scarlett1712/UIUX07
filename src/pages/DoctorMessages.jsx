@@ -11,7 +11,13 @@ export default function DoctorMessages({
   threads = [], 
   setThreads,
   activeThreadId = 'MSG101',
-  setActiveThreadId
+  setActiveThreadId,
+  isEscalatedSessionActive,
+  setIsEscalatedSessionActive,
+  sessionTimeLeft,
+  setSessionTimeLeft,
+  setPatientConversations,
+  activePatientConvId
 }) {
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,8 +25,6 @@ export default function DoctorMessages({
   
   // Simulation handoff state
   const [hasEscalatedSession, setHasEscalatedSession] = useState(true);
-  const [isEscalatedSessionActive, setIsEscalatedSessionActive] = useState(false);
-  const [sessionTimeLeft, setSessionTimeLeft] = useState(120);
   const [escalatedThreadId, setEscalatedThreadId] = useState(null);
 
   // Call simulation states
@@ -83,33 +87,21 @@ export default function DoctorMessages({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeThread?.messages]);
 
-  // Session timer ticker
+  // Hoisted timer controls: sync hasEscalatedSession or escalatedThreadId when session is active
   useEffect(() => {
-    let timer;
     if (isEscalatedSessionActive) {
-      timer = setInterval(() => {
-        setSessionTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsEscalatedSessionActive(false);
-            setHasEscalatedSession(true);
-            setEscalatedThreadId(null);
-            triggerToast('Phiên tư vấn chuyên sâu đã hết hạn (giới hạn demo 2 phút).', 'info');
-            return 120;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      setHasEscalatedSession(false);
+      setEscalatedThreadId('MSG101');
     } else {
       setEscalatedThreadId(null);
-      setSessionTimeLeft(120);
     }
-    return () => clearInterval(timer);
   }, [isEscalatedSessionActive]);
 
   // Handoff Live Session trigger
   const handleAcceptHandoff = () => {
     setHasEscalatedSession(false);
     setIsEscalatedSessionActive(true);
+    setSessionTimeLeft(120);
     setEscalatedThreadId(activeThreadId);
     triggerToast('Đã kết nối phiên live chat tư vấn chuyên sâu!', 'success');
     
@@ -127,12 +119,31 @@ export default function DoctorMessages({
           ...t,
           unread: false,
           accepted: true,
+          isLocked: false,
           messages: nextMessages
         };
       }
       return t;
     }));
     setActiveThreadId('MSG101');
+
+    // Sync to patient side
+    if (setPatientConversations) {
+      setPatientConversations(prevConvs => prevConvs.map(c => {
+        if (c.id === 'PCONV001') {
+          return {
+            ...c,
+            activeDoctorConsult: true,
+            isLocked: false,
+            messages: [
+              ...c.messages,
+              { sender: 'doctor', text: 'Xin chào bạn Giang, tôi là Bác sĩ Dương Gia Huy - chuyên khoa Nội tổng quát. Tôi đã đọc qua bảng tóm tắt triệu chứng của bạn từ Trợ lý AI. Chúng ta có thể nhắn tin hoặc thực hiện Cuộc gọi Video ngay bây giờ để tôi tư vấn cụ thể.', time: 'Vừa xong' }
+            ]
+          };
+        }
+        return c;
+      }));
+    }
   };
 
   const handleAcceptThread = (threadId) => {
@@ -166,6 +177,19 @@ export default function DoctorMessages({
     setThreads(updatedThreads);
     setMessageText('');
 
+    // Sync to patient's conversations in real-time!
+    if (setPatientConversations) {
+      setPatientConversations(prevConvs => prevConvs.map(c => {
+        if (c.id === 'PCONV001') {
+          return {
+            ...c,
+            messages: [...c.messages, doctorMsg]
+          };
+        }
+        return c;
+      }));
+    }
+
     // Trigger simulated patient reply after 1.5s
     setTimeout(() => {
       const patientReplies = {
@@ -191,6 +215,19 @@ export default function DoctorMessages({
         return t;
       }));
       triggerToast('Tin nhắn mới từ bệnh nhân', 'info');
+
+      // Sync simulated patient reply to patient side as well!
+      if (setPatientConversations) {
+        setPatientConversations(prevConvs => prevConvs.map(c => {
+          if (c.id === 'PCONV001') {
+            return {
+              ...c,
+              messages: [...c.messages, patientMsg]
+            };
+          }
+          return c;
+        }));
+      }
     }, 1500);
   };
 
@@ -244,7 +281,7 @@ export default function DoctorMessages({
       
       {/* Top Header */}
       <div style={{ marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Danh sách tin nhắn</h2>
+        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Danh sách tin nhắn</h2>
       </div>
 
       {/* Live escalation request notification bar */}
@@ -295,7 +332,7 @@ export default function DoctorMessages({
       {/* Layout Grid columns: Chat Lists vs Chat Room */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: '320px 1fr', 
+        gridTemplateColumns: '320px 1fr 300px', 
         gap: '20px', 
         height: hasEscalatedSession ? 'calc(100vh - var(--header-height) - 140px)' : 'calc(100vh - var(--header-height) - 60px)', 
         alignItems: 'stretch' 
@@ -483,38 +520,6 @@ export default function DoctorMessages({
               >
                 <Video size={14} style={{ color: '#10b981' }} />
               </button>
-              
-              <button 
-                onClick={() => {
-                  const nameToFind = activeThread.name;
-                  const existing = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase());
-                  let targetId;
-                  if (existing) {
-                    targetId = existing.id;
-                  } else {
-                    targetId = `P${Date.now()}`;
-                    const newPatient = {
-                      id: targetId,
-                      name: nameToFind,
-                      dob: '2000-08-25',
-                      gender: 'Nữ',
-                      phone: '0912345678',
-                      email: `${nameToFind.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
-                      address: 'Hải Châu, Đà Nẵng',
-                      insurance: 'DN4012030192',
-                      medicalHistory: []
-                    };
-                    setPatients([...patients, newPatient]);
-                  }
-                  onSelectId(targetId);
-                  onNavigate('doctor-patient-details');
-                  triggerToast(`Đang điều hướng tới hồ sơ bệnh án của ${nameToFind}...`, 'info');
-                }}
-                className="btn btn-outline"
-                style={{ padding: '4px 10px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid var(--border-color)', color: 'var(--primary)' }}
-              >
-                <FileText size={12} /> Bệnh án chi tiết
-              </button>
             </div>
           </div>
 
@@ -599,6 +604,11 @@ export default function DoctorMessages({
                     alignSelf: isDoc ? 'flex-end' : 'flex-start'
                   }}
                 >
+                  {isDoc && (
+                    <div className="chatgpt-avatar-circle" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
+                      <User size={14} />
+                    </div>
+                  )}
                   {!isDoc && (
                     <div className="chatgpt-avatar-circle" style={{ backgroundColor: isBot ? '#e0f2fe' : '#e2e8f0', color: isBot ? '#0369a1' : 'var(--text-muted)' }}>
                       {isBot ? <Bot size={14} /> : <User size={14} />}
@@ -620,46 +630,27 @@ export default function DoctorMessages({
                       {msg.time}
                     </div>
                   </div>
-                  {isDoc && (
-                    <div className="chatgpt-avatar-circle" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-                      <User size={14} />
-                    </div>
-                  )}
                 </div>
               );
             })}
-
-            {/* Chatbot Synthesis Summary Box (Moved below messages list) */}
-            <div style={{
-              backgroundColor: '#f8fafc',
-              border: '1px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginTop: '16px',
-              marginBottom: '10px',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                <Bot size={18} style={{ color: 'var(--primary)' }} />
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-dark)' }}>Tổng hợp từ Chatbot AI</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8rem' }}>
-                <div>
-                  <strong style={{ color: 'var(--text-dark)' }}>Triệu chứng lâm sàng:</strong>{' '}
-                  <span style={{ color: 'var(--text-muted)' }}>{getChatbotSummary(activeThread.id).symptoms}</span>
-                </div>
-                <div>
-                  <strong style={{ color: 'var(--text-dark)' }}>Chẩn đoán AI sơ bộ:</strong>{' '}
-                  <span style={{ color: 'var(--text-muted)' }}>{getChatbotSummary(activeThread.id).diagnosis}</span>
-                </div>
-              </div>
-            </div>
 
             <div ref={messagesEndRef} />
           </div>
 
           {/* Message input / Accept Consultation Button */}
-          {activeThread.accepted ? (
+          {activeThread.isLocked ? (
+            <div style={{ 
+              padding: '16px', 
+              borderTop: '1px solid var(--border-color)', 
+              backgroundColor: '#f1f5f9', 
+              textAlign: 'center', 
+              color: 'var(--text-muted)', 
+              fontWeight: '600',
+              fontSize: '0.82rem'
+            }}>
+              🔒 Phiên tư vấn chuyên sâu đã kết thúc (Demo 2 phút). Cuộc trò chuyện đã bị khóa.
+            </div>
+          ) : activeThread.accepted ? (
             <div className="chatgpt-input-bar-container" style={{ padding: '12px', borderTop: '1px solid var(--border-color)', backgroundColor: '#fff' }}>
               <div className="chatgpt-input-bar">
                 <input
@@ -703,6 +694,123 @@ export default function DoctorMessages({
             </div>
           )}
 
+        </div>
+
+        {/* RIGHT COLUMN: Patient Basic Info & Chatbot Summary */}
+        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', margin: 0, height: '100%', overflowY: 'auto' }}>
+          <h3 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
+            Thông tin cơ bản
+          </h3>
+
+          {(() => {
+            const nameToFind = activeThread.name;
+            const patient = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase()) || {
+              dob: '25-08-2000',
+              gender: 'Nữ',
+              phone: '0912345678',
+              email: `${nameToFind.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
+              address: 'Hải Châu, Đà Nẵng',
+              notes: 'Không có tiền sử dị ứng thuốc hay bệnh nền nghiêm trọng.'
+            };
+
+            return (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.78rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', fontWeight: 500 }}>Họ và tên</span>
+                    <strong style={{ color: 'var(--text-dark)' }}>{nameToFind}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', fontWeight: 500 }}>Ngày sinh</span>
+                    <strong style={{ color: 'var(--text-dark)' }}>{patient.dob}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', fontWeight: 500 }}>Giới tính</span>
+                    <strong style={{ color: 'var(--text-dark)' }}>{patient.gender}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', fontWeight: 500 }}>Số điện thoại</span>
+                    <strong style={{ color: 'var(--text-dark)' }}>{patient.phone}</strong>
+                  </div>
+                  {patient.notes && (
+                    <div>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', fontWeight: 500 }}>Ghi chú lâm sàng</span>
+                      <span style={{ color: 'var(--text-dark)', fontSize: '0.75rem', lineHeight: '1.3', display: 'block' }}>{patient.notes}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chatbot Synthesis Summary Box */}
+                <div style={{
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  boxShadow: 'var(--shadow-sm)',
+                  marginTop: '4px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <Bot size={16} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--text-dark)' }}>Tổng hợp từ Chatbot AI</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.75rem' }}>
+                    <div>
+                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Triệu chứng lâm sàng:</strong>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', display: 'block', lineHeight: '1.3' }}>{getChatbotSummary(activeThread.id).symptoms}</span>
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong style={{ color: 'var(--text-dark)', display: 'block' }}>Chẩn đoán AI sơ bộ:</strong>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', display: 'block', lineHeight: '1.3' }}>{getChatbotSummary(activeThread.id).diagnosis}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detailed Record Button */}
+                <button 
+                  onClick={() => {
+                    let targetId = patient.id;
+                    if (!targetId) {
+                      const existing = patients.find(p => p.name.toLowerCase() === nameToFind.toLowerCase());
+                      if (existing) {
+                        targetId = existing.id;
+                      } else {
+                        targetId = `P${Date.now()}`;
+                        const newPatient = {
+                          id: targetId,
+                          name: nameToFind,
+                          dob: patient.dob,
+                          gender: patient.gender,
+                          phone: patient.phone,
+                          email: patient.email,
+                          address: patient.address,
+                          insurance: 'DN4012030192',
+                          medicalHistory: []
+                        };
+                        setPatients([...patients, newPatient]);
+                      }
+                    }
+                    onSelectId(targetId);
+                    onNavigate('doctor-patient-details');
+                    triggerToast(`Đang điều hướng tới hồ sơ bệnh án của ${nameToFind}...`, 'info');
+                  }}
+                  className="btn btn-primary"
+                  style={{ 
+                    marginTop: 'auto', 
+                    padding: '10px 12px', 
+                    fontSize: '0.8rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '6px',
+                    fontWeight: '700',
+                    width: '100%' 
+                  }}
+                >
+                  <FileText size={14} /> Hồ sơ chi tiết
+                </button>
+              </>
+            );
+          })()}
         </div>
 
       </div>

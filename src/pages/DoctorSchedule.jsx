@@ -220,7 +220,7 @@ export default function DoctorSchedule({ onNavigate, appointments = [], selected
     <div className="animate-fade-in">
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
           Danh sách lịch khám
         </h2>
       </div>

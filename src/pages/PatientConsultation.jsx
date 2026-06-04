@@ -11,7 +11,12 @@ export default function PatientConsultation({
   setActiveConvId,
   syncPatientConversation,
   isGuest,
-  onOpenLoginModal
+  onOpenLoginModal,
+  setDoctorThreads,
+  isConsultingDoctor,
+  setIsConsultingDoctor,
+  sessionTimeLeft,
+  setSessionTimeLeft
 }) {
   const [inputText, setInputText] = useState('');
   
@@ -20,8 +25,6 @@ export default function PatientConsultation({
   // Payment Flow states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStep, setPaymentStep] = useState(1); // 1: QR screen, 2: Verification, 3: Success
-  const [isConsultingDoctor, setIsConsultingDoctor] = useState(false); // Switch to Doctor chat after payment
-  const [sessionTimeLeft, setSessionTimeLeft] = useState(120); // 2 minutes (120s) for demo auto-expiry
   const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
 
   // Simulated call modal state
@@ -171,39 +174,14 @@ export default function PatientConsultation({
     return () => clearInterval(timer);
   }, [showCallModal, callState]);
 
-  // Auto-expiry simulation for doctor consult session
+  // Hoisted timer sync effect
   useEffect(() => {
-    let timer;
-    if (isConsultingDoctor) {
-      timer = setInterval(() => {
-        setSessionTimeLeft(prev => {
-          if (prev <= 1) {
-            setIsConsultingDoctor(false);
-            triggerToast('Phiên tư vấn với bác sĩ đã hết hạn. Bạn đã quay lại kênh hội thoại với AI.', 'info');
-            
-            // Append AI back message and update conversation status
-            setConversations(prevConvs => prevConvs.map(c => {
-              if (c.id === activeConvId) {
-                return {
-                  ...c,
-                  activeDoctorConsult: false,
-                  messages: [
-                    ...c.messages,
-                    { sender: 'bot', text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc (giới hạn demo 2 phút). Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', time: 'Vừa xong' }
-                  ]
-                };
-              }
-              return c;
-            }));
-            return 120;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      setSessionTimeLeft(120);
+    if (isConsultingDoctor && activeConv) {
+      // Keep local view aligned with activeDoctorConsult
+      if (!activeConv.activeDoctorConsult) {
+        setConversations(prev => prev.map(c => c.id === activeConvId ? { ...c, activeDoctorConsult: true } : c));
+      }
     }
-    return () => clearInterval(timer);
   }, [isConsultingDoctor, activeConvId]);
 
   const handleStartCall = (type) => {
@@ -237,6 +215,21 @@ export default function PatientConsultation({
       setConversations(updatedConvs);
       setInputText('');
 
+      // Sync user message to doctor threads in real time
+      if (setDoctorThreads) {
+        setDoctorThreads(prevThreads => prevThreads.map(t => {
+          if (t.id === 'MSG101') {
+            return {
+              ...t,
+              lastMsg: text,
+              time: 'Vừa xong',
+              messages: [...t.messages, { sender: 'patient', text, time: 'Vừa xong' }]
+            };
+          }
+          return t;
+        }));
+      }
+
       // Simulate doctor replying after 1.5 seconds
       setTimeout(() => {
         const doctorReplies = [
@@ -256,6 +249,21 @@ export default function PatientConsultation({
           }
           return c;
         }));
+
+        // Also sync doctor reply to doctor threads
+        if (setDoctorThreads) {
+          setDoctorThreads(prevThreads => prevThreads.map(t => {
+            if (t.id === 'MSG101') {
+              return {
+                ...t,
+                lastMsg: randomReply,
+                time: 'Vừa xong',
+                messages: [...t.messages, { sender: 'doctor', text: randomReply, time: 'Vừa xong' }]
+              };
+            }
+            return t;
+          }));
+        }
       }, 1500);
 
       return;
@@ -331,23 +339,58 @@ export default function PatientConsultation({
       setTimeout(() => {
         setShowPaymentModal(false);
         setIsConsultingDoctor(true); // Switch chat console to Doctor
+        setSessionTimeLeft(120); // Reset timer
         triggerToast('Thanh toán thành công! Bạn đang được kết nối với Bác sĩ Dương Gia Huy.', 'success');
         
+        const isReconsult = activeConv.messages.some(m => m.sender === 'doctor');
+        const continuationMessage = { 
+          sender: 'doctor', 
+          text: isReconsult 
+            ? 'Xin chào bạn Giang, tôi tiếp tục phiên tư vấn chuyên sâu của chúng ta. Bạn hãy cập nhật tình hình sức khỏe hiện tại nhé.'
+            : 'Xin chào bạn Giang, tôi là Bác sĩ Dương Gia Huy - chuyên khoa Nội tổng quát. Tôi đã đọc qua bảng tóm tắt triệu chứng của bạn từ Trợ lý AI. Chúng ta có thể nhắn tin hoặc thực hiện Cuộc gọi Video ngay bây giờ để tôi tư vấn cụ thể.', 
+          time: 'Vừa xong' 
+        };
+
         // Add doctor connection message to chat and mark activeDoctorConsult as true
         const updatedConvs = conversations.map(c => {
           if (c.id === activeConvId) {
             return {
               ...c,
               activeDoctorConsult: true,
+              isLocked: false, // Unlock!
               messages: [
                 ...c.messages,
-                { sender: 'doctor', text: 'Xin chào bạn Giang, tôi là Bác sĩ Dương Gia Huy - chuyên khoa Nội tổng quát. Tôi đã đọc qua bảng tóm tắt triệu chứng của bạn từ Trợ lý AI. Chúng ta có thể nhắn tin hoặc thực hiện Cuộc gọi Video ngay bây giờ để tôi tư vấn cụ thể.', time: 'Vừa xong' }
+                continuationMessage
               ]
             };
           }
           return c;
         });
         setConversations(updatedConvs);
+
+        // Sync the entire conversation (including intermediate patient-chatbot messages) to doctor's threads
+        if (setDoctorThreads) {
+          setDoctorThreads(prevThreads => prevThreads.map(t => {
+            if (t.id === 'MSG101') {
+              const currentConv = updatedConvs.find(c => c.id === activeConvId);
+              const allConvsMessages = currentConv ? currentConv.messages : [];
+              const updatedMessagesForDoc = [
+                ...allConvsMessages,
+                { sender: 'system', text: 'Bệnh nhân đã thanh toán gia hạn tư vấn chuyên sâu.', time: 'Vừa xong' }
+              ];
+
+              return {
+                ...t,
+                accepted: true,   // Set to true so doctor can chat immediately
+                isLocked: false,  // Unlock the thread
+                messages: updatedMessagesForDoc,
+                lastMsg: continuationMessage.text,
+                time: 'Vừa xong'
+              };
+            }
+            return t;
+          }));
+        }
       }, 1500);
     }, 1800);
   };
@@ -1040,7 +1083,7 @@ export default function PatientConsultation({
                     fontWeight: '600'
                   }}
                 >
-                  <CreditCard size={14} /> Tư vấn chuyên sâu bác sĩ
+                  <CreditCard size={14} /> {activeConv.messages.some(m => m.sender === 'doctor') ? "Tư vấn tiếp với Bác sĩ" : "Tư vấn chuyên sâu bác sĩ"}
                 </button>
               )}
             </div>

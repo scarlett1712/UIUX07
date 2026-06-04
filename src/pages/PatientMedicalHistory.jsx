@@ -244,6 +244,15 @@ export default function PatientMedicalHistory({
     return 'Cảm cúm mùa thông thường do nhiễm virus đường hô hấp cấp tính. Đề xuất nghỉ ngơi tại nhà, bổ sung nhiều nước ấm và các loại vitamin. Điều trị triệu chứng hạ sốt bằng Paracetamol khi sốt cao trên 38.5 độ C. Theo dõi sát sao tình trạng sức khỏe.';
   };
 
+  const getFeedbackForVisit = (visit) => {
+    return feedbacks.find(f => {
+      if (f.name !== patientData.name) return false;
+      const hasPrefixMatch = f.comment.includes(`Khám ngày ${visit.date}`);
+      const hasDateMatch = f.date === visit.date;
+      return hasPrefixMatch || hasDateMatch;
+    });
+  };
+
   // --- RENDER MAIN LAYOUT ---
   return (
     <>
@@ -253,7 +262,7 @@ export default function PatientMedicalHistory({
         /* 1. LIST VIEW OF VISIT HISTORY */
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
               Lịch sử khám bệnh
             </h2>
           </div>
@@ -408,28 +417,48 @@ export default function PatientMedicalHistory({
                     >
                       Đánh giá ca khám
                     </button>
-                  ) : (
-                    <div style={{ 
-                      fontSize: '0.75rem', 
-                      backgroundColor: '#f8fafc', 
-                      padding: '8px 10px', 
-                      borderRadius: '6px', 
-                      border: '1px solid var(--border-color)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}>
-                      <div style={{ display: 'flex', gap: '2px', color: '#eab308' }}>
-                        {Array.from({ length: visit.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
-                        {Array.from({ length: 5 - (visit.rating || 5) }).map((_, i) => <Star key={i} size={12} />)}
-                      </div>
-                      {visit.comment && (
-                        <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontStyle: 'italic', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.3' }}>
-                          "{visit.comment}"
+                  ) : (() => {
+                    const fbk = getFeedbackForVisit(visit);
+                    return (
+                      <div style={{ 
+                        fontSize: '0.75rem', 
+                        backgroundColor: '#f8fafc', 
+                        padding: '8px 10px', 
+                        borderRadius: '6px', 
+                        border: '1px solid var(--border-color)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}>
+                        <div style={{ display: 'flex', gap: '2px', color: '#eab308' }}>
+                          {Array.from({ length: visit.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
+                          {Array.from({ length: 5 - (visit.rating || 5) }).map((_, i) => <Star key={i} size={12} />)}
                         </div>
-                      )}
-                    </div>
-                  )}
+                        {visit.comment && (
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', fontStyle: 'italic', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: '1.3' }}>
+                            "{visit.comment}"
+                          </div>
+                        )}
+                        {fbk && fbk.response && (
+                          <div style={{ 
+                            marginTop: '6px', 
+                            padding: '8px 10px', 
+                            backgroundColor: '#fff', 
+                            borderRadius: '6px', 
+                            borderLeft: '3px solid var(--primary)',
+                            border: '1px solid var(--border-color)',
+                            borderLeftWidth: '3px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}>
+                            <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.72rem' }}>Phòng khám phản hồi:</span>
+                            <span style={{ color: 'var(--text-dark)', fontSize: '0.75rem', fontStyle: 'normal' }}>{fbk.response}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             ))}
@@ -447,7 +476,7 @@ export default function PatientMedicalHistory({
           {detailVisit ? (
             <>
               {/* Page Title */}
-              <h2 style={{ fontSize: '1.4rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
+              <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
                 Chi tiết lịch sử khám bệnh
               </h2>
 
@@ -469,29 +498,49 @@ export default function PatientMedicalHistory({
                     <div style={{ lineHeight: '1.4' }}>
                       <strong>📍 Địa điểm:</strong> {detailIndex === 0 ? 'Tầng 2, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội' : 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội'}
                     </div>
-                    {detailVisit.rated && (
-                      <div style={{ 
-                        marginTop: '8px', 
-                        paddingTop: '8px', 
-                        borderTop: '1px dashed var(--border-color)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <strong>⭐️ Đánh giá của bạn:</strong>
-                          <span style={{ display: 'flex', color: '#eab308' }}>
-                            {Array.from({ length: detailVisit.rating || 5 }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
-                            {Array.from({ length: 5 - (detailVisit.rating || 5) }).map((_, i) => <Star key={i} size={14} />)}
-                          </span>
-                        </div>
-                        {detailVisit.comment && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                            "{detailVisit.comment}"
+                    {detailVisit.rated && (() => {
+                      const fbk = getFeedbackForVisit(detailVisit);
+                      return (
+                        <div style={{ 
+                          marginTop: '8px', 
+                          paddingTop: '8px', 
+                          borderTop: '1px dashed var(--border-color)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <strong>⭐️ Đánh giá của bạn:</strong>
+                            <span style={{ display: 'flex', color: '#eab308' }}>
+                              {Array.from({ length: detailVisit.rating || 5 }).map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                              {Array.from({ length: 5 - (detailVisit.rating || 5) }).map((_, i) => <Star key={i} size={14} />)}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          {detailVisit.comment && (
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                              "{detailVisit.comment}"
+                            </div>
+                          )}
+                          {fbk && fbk.response && (
+                            <div style={{ 
+                              marginTop: '8px', 
+                              padding: '8px 10px', 
+                              backgroundColor: '#f8fafc', 
+                              borderRadius: '6px', 
+                              borderLeft: '3px solid var(--primary)',
+                              border: '1px solid var(--border-color)',
+                              borderLeftWidth: '3px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px'
+                            }}>
+                              <span style={{ fontWeight: '700', color: 'var(--primary)', fontSize: '0.75rem' }}>Phòng khám phản hồi:</span>
+                              <span style={{ color: 'var(--text-dark)', fontSize: '0.78rem', fontStyle: 'normal' }}>{fbk.response}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

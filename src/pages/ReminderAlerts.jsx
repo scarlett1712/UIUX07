@@ -142,7 +142,7 @@ export default function ReminderAlerts({
     return (
       <div className="animate-fade-in">
         <div className="flex align-center gap-4" style={{ marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700, color: 'var(--primary)' }}>Danh sách nhắc lịch tự động</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 700, color: 'var(--primary)' }}>Danh sách nhắc lịch tự động</h2>
           <button className="plus-btn-circle" onClick={() => onNavigate('reminder-add')}>
             <Plus size={14} />
           </button>
@@ -315,7 +315,7 @@ export default function ReminderAlerts({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Chi tiết cấu hình nhắc lịch</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Chi tiết cấu hình nhắc lịch</h2>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', fontSize: '0.85rem' }}>
@@ -354,7 +354,7 @@ export default function ReminderAlerts({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'reminder-add' ? 'Tạo quy trình nhắc lịch tự động mới' : 'Chỉnh sửa quy trình nhắc lịch'}
           </h2>
         </div>

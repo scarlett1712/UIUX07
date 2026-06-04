@@ -275,12 +275,15 @@ export default function ClinicManagement({
     });
   };
 
-  // --- APPOINTMENT CALENDAR GRID SETUP (DYNAMIC BASED ON CURRENT MONTH) ---
+  // --- APPOINTMENT CALENDAR GRID SETUP (DYNAMIC BASED ON STATE) ---
   const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-indexed
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Sunday=0, Monday=1
+  const [calendarYear, setCalendarYear] = useState(2026);
+  const [calendarMonth, setCalendarMonth] = useState(5); // June
+  const [calendarView, setCalendarView] = useState('month'); // 'day', 'week', 'month'
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(today.getDate());
+
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay(); // Sunday=0, Monday=1
   const startDayOffset = (firstDay + 6) % 7; // Monday is index 0
   const calendarCells = [];
   for (let i = 0; i < startDayOffset; i++) {
@@ -290,9 +293,94 @@ export default function ClinicManagement({
     calendarCells.push(i);
   }
 
+  const selectedDayIndex = calendarCells.findIndex(d => d === selectedCalendarDay);
+  const weekIndex = selectedDayIndex !== -1 ? Math.floor(selectedDayIndex / 7) : 0;
+  const weekCells = calendarCells.slice(weekIndex * 7, (weekIndex + 1) * 7);
+
+  const handlePrev = () => {
+    if (calendarView === 'day') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() - 1);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else if (calendarView === 'week') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() - 7);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else {
+      // month
+      let newMonth = calendarMonth - 1;
+      let newYear = calendarYear;
+      if (newMonth < 0) {
+        newMonth = 11;
+        newYear -= 1;
+      }
+      setCalendarYear(newYear);
+      setCalendarMonth(newMonth);
+      const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+      if (selectedCalendarDay > maxDays) {
+        setSelectedCalendarDay(maxDays);
+      }
+    }
+  };
+
+  const handleNext = () => {
+    if (calendarView === 'day') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() + 1);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else if (calendarView === 'week') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() + 7);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else {
+      // month
+      let newMonth = calendarMonth + 1;
+      let newYear = calendarYear;
+      if (newMonth > 11) {
+        newMonth = 0;
+        newYear += 1;
+      }
+      setCalendarYear(newYear);
+      setCalendarMonth(newMonth);
+      const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+      if (selectedCalendarDay > maxDays) {
+        setSelectedCalendarDay(maxDays);
+      }
+    }
+  };
+
+  const getCalendarHeaderLabel = () => {
+    if (calendarView === 'day') {
+      return `Ngày ${selectedCalendarDay} Tháng ${calendarMonth + 1}, ${calendarYear}`;
+    } else if (calendarView === 'week') {
+      const currentSelected = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      const dayOfWeek = currentSelected.getDay(); // 0 = Sunday, 1 = Monday
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      
+      const monday = new Date(currentSelected);
+      monday.setDate(currentSelected.getDate() + diffToMonday);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      const formatShortDate = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return `Tuần ${formatShortDate(monday)} - ${formatShortDate(sunday)}, ${sunday.getFullYear()}`;
+    } else {
+      return `Tháng ${calendarMonth + 1}, ${calendarYear}`;
+    }
+  };
+
   const getAppointmentsForDay = (day) => {
     if (!day) return [];
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     return appointments.filter(a => {
       if (a.date !== dateStr) return false;
       // Filter by Specialty
@@ -431,7 +519,7 @@ export default function ClinicManagement({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => {
+              {feedbacks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((f) => {
               let bg = '#fff';
               let borderColor = 'var(--border-color)';
               if (f.rating === 5) {
@@ -556,105 +644,207 @@ export default function ClinicManagement({
         <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Lịch hẹn tổng</h2>
+              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Lịch hẹn tổng</h2>
               <button className="plus-btn-circle" onClick={() => onNavigate('appointment-add')}>
                 <Plus size={14} />
               </button>
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontWeight: '600' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
-              <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-                <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Ngày</button>
-                <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Tuần</button>
-                <button className="btn btn-primary" style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}>Tháng</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button 
+                  type="button" 
+                  onClick={handlePrev} 
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)', padding: '2px 6px' }}
+                >
+                  &lt;
+                </button>
+                <span style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-dark)' }}>{getCalendarHeaderLabel()}</span>
+                <button 
+                  type="button" 
+                  onClick={handleNext} 
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)', padding: '2px 6px' }}
+                >
+                  &gt;
+                </button>
+              </div>
+              <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#fff' }}>
+                <button 
+                  type="button"
+                  onClick={() => setCalendarView('day')} 
+                  className={`btn ${calendarView === 'day' ? 'btn-primary' : 'btn-outline'}`} 
+                  style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                >
+                  Ngày
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setCalendarView('week')} 
+                  className={`btn ${calendarView === 'week' ? 'btn-primary' : 'btn-outline'}`} 
+                  style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                >
+                  Tuần
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setCalendarView('month')} 
+                  className={`btn ${calendarView === 'month' ? 'btn-primary' : 'btn-outline'}`} 
+                  style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                >
+                  Tháng
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Calendar Table Grid */}
-          <div style={{ flexGrow: 1, border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Header days */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '600', fontSize: '0.75rem', padding: '6px 0', color: 'var(--text-muted)' }}>
-              <div>MON</div>
-              <div>TUE</div>
-              <div>WED</div>
-              <div>THU</div>
-              <div>FRI</div>
-              <div>SAT</div>
-              <div>SUN</div>
-            </div>
-
-            {/* Days grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(60px, 1fr)', flexGrow: 1, backgroundColor: '#f1f5f9', gap: '1px' }}>
-              {calendarCells.map((day, idx) => {
-                const dayApts = getAppointmentsForDay(day);
-                const isToday = day === today.getDate() && currentYear === today.getFullYear() && currentMonth === today.getMonth();
-                return (
-                  <div key={idx} style={{ backgroundColor: '#fff', padding: '4px', position: 'relative', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {day && (
-                      <span style={{
-                        fontSize: '0.75rem',
-                        fontWeight: isToday ? '700' : '500',
-                        color: isToday ? 'var(--white)' : 'var(--text-muted)',
-                        backgroundColor: isToday ? 'var(--primary-light)' : 'transparent',
-                        width: isToday ? '18px' : 'auto',
-                        height: isToday ? '18px' : 'auto',
-                        borderRadius: isToday ? '50%' : 'none',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '2px'
-                      }}>
-                        {day}
-                      </span>
-                    )}
-
-                    {dayApts.map((apt) => {
-                      // Color based on specialty or doctor
-                      let color = '#3b82f6';
-                      let bg = '#eff6ff';
-                      if (apt.specialty === 'Nhi khoa') {
-                        color = '#3b82f6';
-                        bg = '#eff6ff';
-                      } else if (apt.specialty === 'Tai mũi họng' || apt.specialty === 'Tai Mũi Họng') {
-                        color = '#10b981';
-                        bg = '#ecfdf5';
-                      }
-                      
-                      if (apt.status === 'Đã hủy') {
-                        color = '#ef4444';
-                        bg = '#fee2e2';
-                      }
-
-                      return (
-                        <div
-                          key={apt.id}
-                          onClick={() => setActiveAptPopup(apt)}
-                          style={{
-                            padding: '3px 6px',
-                            borderRadius: '4px',
-                            backgroundColor: bg,
-                            color: color,
-                            fontSize: '0.7rem',
-                            fontWeight: '600',
-                            borderLeft: `3px solid ${color}`,
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          <div>{apt.patientName}</div>
-                          <div style={{ opacity: 0.8, fontSize: '0.65rem' }}>{apt.time}</div>
+          {/* Calendar Table Grid / Day view list */}
+          {calendarView === 'day' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexGrow: 1, overflowY: 'auto', backgroundColor: '#fff', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0, color: 'var(--primary)', fontWeight: '700', fontSize: '0.88rem' }}>Danh sách lịch hẹn ngày {selectedCalendarDay} Tháng {calendarMonth + 1}, {calendarYear}</h4>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                  onClick={() => onNavigate('appointment-add')}
+                >
+                  + Thêm lịch hẹn
+                </button>
+              </div>
+              {getAppointmentsForDay(selectedCalendarDay).length === 0 ? (
+                <div style={{ padding: '40px', fontStyle: 'italic', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  Không có lịch hẹn nào cho ngày này.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {getAppointmentsForDay(selectedCalendarDay).map((apt) => {
+                    let statusColor = '#3b82f6';
+                    let bgColor = '#eff6ff';
+                    if (apt.status === 'Đã hủy') {
+                      statusColor = '#ef4444';
+                      bgColor = '#fee2e2';
+                    }
+                    return (
+                      <div 
+                        key={apt.id} 
+                        onClick={() => setActiveAptPopup(apt)}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderLeft: `4px solid ${statusColor}`, backgroundColor: bgColor, borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>{apt.patientName}</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Thời gian khám: {apt.time} | Bác sĩ: {apt.doctorName} ({apt.specialty})</div>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                        <span className={`badge ${apt.status === 'Đã xác nhận' ? 'badge-low' : apt.status === 'Chờ xác nhận' ? 'badge-medium' : 'badge-high'}`}>{apt.status}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div style={{ flexGrow: 1, border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Header days */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '600', fontSize: '0.75rem', padding: '6px 0', color: 'var(--text-muted)' }}>
+                <div>MON</div>
+                <div>TUE</div>
+                <div>WED</div>
+                <div>THU</div>
+                <div>FRI</div>
+                <div>SAT</div>
+                <div>SUN</div>
+              </div>
+
+              {/* Days grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: calendarView === 'week' ? '1fr' : `repeat(${Math.ceil(calendarCells.length / 7)}, 1fr)`, gridAutoRows: calendarView === 'week' ? 'auto' : 'minmax(60px, 1fr)', flexGrow: 1, backgroundColor: '#f1f5f9', gap: '1px' }}>
+                {(calendarView === 'week' ? weekCells : calendarCells).map((day, idx) => {
+                  const dayApts = getAppointmentsForDay(day);
+                  const isToday = day === today.getDate() && calendarYear === today.getFullYear() && calendarMonth === today.getMonth();
+                  const isDaySelected = selectedCalendarDay === day;
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => {
+                        if (day) {
+                          setSelectedCalendarDay(day);
+                        }
+                      }}
+                      style={{ 
+                        backgroundColor: '#fff', 
+                        padding: '4px', 
+                        position: 'relative', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '2px',
+                        cursor: day ? 'pointer' : 'default',
+                        boxShadow: isDaySelected ? 'inset 0 0 0 2px var(--primary-light)' : 'none'
+                      }}
+                    >
+                      {day && (
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: isToday ? '700' : '500',
+                          color: isToday ? 'var(--white)' : (isDaySelected ? 'var(--primary)' : 'var(--text-muted)'),
+                          backgroundColor: isToday ? 'var(--primary-light)' : 'transparent',
+                          width: isToday ? '18px' : 'auto',
+                          height: isToday ? '18px' : 'auto',
+                          borderRadius: isToday ? '50%' : 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '2px'
+                        }}>
+                          {day}
+                        </span>
+                      )}
+
+                      {dayApts.map((apt) => {
+                        let color = '#3b82f6';
+                        let bg = '#eff6ff';
+                        if (apt.specialty === 'Nhi khoa') {
+                          color = '#3b82f6';
+                          bg = '#eff6ff';
+                        } else if (apt.specialty === 'Tai mũi họng' || apt.specialty === 'Tai Mũi Họng') {
+                          color = '#10b981';
+                          bg = '#ecfdf5';
+                        }
+                        
+                        if (apt.status === 'Đã hủy') {
+                          color = '#ef4444';
+                          bg = '#fee2e2';
+                        }
+
+                        return (
+                          <div
+                            key={apt.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAptPopup(apt);
+                            }}
+                            style={{
+                              padding: '3px 6px',
+                              borderRadius: '4px',
+                              backgroundColor: bg,
+                              color: color,
+                              fontSize: '0.7rem',
+                              fontWeight: '600',
+                              borderLeft: `3px solid ${color}`,
+                              cursor: 'pointer',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <div>{apt.patientName}</div>
+                            <div style={{ opacity: 0.8, fontSize: '0.65rem' }}>{apt.time}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {activeAptPopup && (
             <div 
@@ -726,7 +916,7 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'appointment-add' ? 'Thêm lịch hẹn mới' : 'Chỉnh sửa lịch hẹn'}
           </h2>
         </div>
@@ -903,7 +1093,7 @@ export default function ClinicManagement({
     return (
       <div className="animate-fade-in">
         <div className="flex align-center gap-4" style={{ marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Danh sách bệnh nhân</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Danh sách bệnh nhân</h2>
           <button className="plus-btn-circle" onClick={() => onNavigate('patient-add')}>
             <Plus size={14} />
           </button>
@@ -1028,7 +1218,7 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr 1fr', gap: '20px', marginTop: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', alignItems: 'center' }}>
@@ -1121,7 +1311,7 @@ export default function ClinicManagement({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'patient-add' ? 'Thêm hồ sơ bệnh nhân mới' : 'Chỉnh sửa hồ sơ bệnh nhân'}
           </h2>
         </div>

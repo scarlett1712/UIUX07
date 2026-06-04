@@ -132,6 +132,50 @@ const INITIAL_DISEASES = [
       { stt: 2, name: 'Phát ban', desc: 'Ban đỏ dạng sẩn từ sau tai lan ra mặt và toàn thân', duration: 'Ngày 4-7', frequency: 'Thường xuyên' },
       { stt: 3, name: 'Đỏ mắt', desc: 'Viêm kết mạc đỏ mắt, sợ ánh sáng, chảy nước mắt', duration: 'Ngày 1-5', frequency: 'Trung bình' }
     ]
+  },
+  {
+    id: 'D009',
+    name: 'Viêm phế quản',
+    desc: 'Tình trạng viêm của lớp niêm mạc các phế quản trong phổi, gây ho nhiều và khó thở.',
+    danger: 'Trung bình',
+    department: 'Hô hấp',
+    symptoms: [
+      { stt: 1, name: 'Ho dai dẳng', desc: 'Ho khan ban đầu sau đó ho có đờm trắng hoặc vàng nhạt', duration: '1-3 tuần', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Tức ngực nhẹ', desc: 'Cảm giác đè nặng hoặc tức ngực khi ho sâu', duration: 'Suốt đợt bệnh', frequency: 'Thỉnh thoảng' }
+    ]
+  },
+  {
+    id: 'D010',
+    name: 'Đau mắt đỏ',
+    desc: 'Viêm kết mạc do virus hoặc vi khuẩn gây ra, mắt đỏ và nhiều dử mắt, dễ lây lan.',
+    danger: 'Thấp',
+    department: 'Mắt',
+    symptoms: [
+      { stt: 1, name: 'Đỏ mắt', desc: 'Mắt đỏ ửng, cộm và ngứa ngáy khó chịu', duration: 'Ngày 1-7', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Chảy nước mắt', desc: 'Tiết dịch rỉ mắt nhiều, nhạy cảm ánh sáng', duration: 'Ngày 2-5', frequency: 'Thường xuyên' }
+    ]
+  },
+  {
+    id: 'D011',
+    name: 'Viêm tai giữa cấp',
+    desc: 'Nhiễm trùng tai giữa, thường gặp ở trẻ em sau đợt cảm cúm, gây đau tai dữ dội.',
+    danger: 'Trung bình',
+    department: 'Tai Mũi Họng',
+    symptoms: [
+      { stt: 1, name: 'Đau tai', desc: 'Đau buốt sâu trong tai, trẻ hay kéo tai hoặc quấy khóc', duration: 'Ngày 1-3', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Sốt cao', desc: 'Sốt đi kèm nghẹt mũi, nghe kém tạm thời', duration: 'Ngày 1-3', frequency: 'Trung bình' }
+    ]
+  },
+  {
+    id: 'D012',
+    name: 'Suy dinh dưỡng',
+    desc: 'Tình trạng thiếu hụt năng lượng và các chất dinh dưỡng thiết yếu làm ảnh hưởng đến sự phát triển của trẻ.',
+    danger: 'Trung bình',
+    department: 'Nhi khoa',
+    symptoms: [
+      { stt: 1, name: 'Chậm tăng cân', desc: 'Đứng cân hoặc sụt cân liên tục trong nhiều tháng', duration: 'Kéo dài', frequency: 'Thường xuyên' },
+      { stt: 2, name: 'Biếng ăn', desc: 'Ăn ít, mệt mỏi, da xanh xao', duration: 'Kéo dài', frequency: 'Thường xuyên' }
+    ]
   }
 ];
 
@@ -186,6 +230,56 @@ const INITIAL_MEDICINES = [
     contraindication: 'Huyết áp quá thấp (suy tim mất bù, sốc tim).',
     dosage: 'Uống 1 viên/ngày vào một giờ cố định (thường là sáng sớm).',
     sideEffects: 'Phù cổ chân, đau đầu nhẹ, đỏ bừng mặt.'
+  },
+  {
+    id: 'M006',
+    name: 'Nexium 20mg',
+    desc: 'Thuốc ức chế bơm proton giảm tiết acid dạ dày.',
+    activeIngredient: 'Esomeprazole',
+    indication: 'Điều trị trào ngược dạ dày thực quản (GERD), loét dạ dày tá tràng, dự phòng loét do dùng NSAID.',
+    contraindication: 'Quá mẫn cảm với esomeprazole hoặc các thuốc ức chế bơm proton khác.',
+    dosage: 'Uống 1 viên/ngày trước bữa ăn sáng 30 phút.',
+    sideEffects: 'Đau đầu, tiêu chảy, đau bụng nhẹ.'
+  },
+  {
+    id: 'M007',
+    name: 'Vitamin C 500mg',
+    desc: 'Thuốc bổ sung vitamin C nâng cao sức đề kháng toàn diện.',
+    activeIngredient: 'Acid ascorbic',
+    indication: 'Phòng ngừa và điều trị thiếu hụt Vitamin C (bệnh Scorbut), tăng sức đề kháng cơ thể khi bị nhiễm trùng.',
+    contraindication: 'Tránh dùng liều cao cho người thiếu men G6PD, sỏi thận calci oxalat.',
+    dosage: 'Uống 1 viên/ngày sau bữa ăn.',
+    sideEffects: 'Kích ứng nhẹ dạ dày nếu uống lúc đói.'
+  },
+  {
+    id: 'M008',
+    name: 'Decolgen Forte',
+    desc: 'Thuốc điều trị triệu chứng cảm cúm, nghẹt mũi và sốt.',
+    activeIngredient: 'Paracetamol + Chlorpheniramine + Phenylephrine',
+    indication: 'Điều trị các triệu chứng cảm cúm như sốt, nhức đầu, sổ mũi, nghẹt mũi, hắt hơi.',
+    contraindication: 'Suy gan thận nặng, glaucoma góc đóng, phì đại tuyến tiền liệt.',
+    dosage: 'Người lớn: 1-2 viên/lần, ngày 3-4 lần.',
+    sideEffects: 'Gây buồn ngủ nhẹ, khô miệng.'
+  },
+  {
+    id: 'M009',
+    name: 'Otrivin 0.05%',
+    desc: 'Thuốc nhỏ mũi co mạch chống nghẹt mũi nhanh chóng.',
+    activeIngredient: 'Xylometazoline hydrochloride',
+    indication: 'Giảm nghẹt mũi do cảm lạnh, viêm mũi dị ứng, viêm xoang. Giúp thải dịch tiết khi tai bị tổn thương.',
+    contraindication: 'Viêm mũi khô, phẫu thuật cắt bỏ tuyến yên qua xương bướm.',
+    dosage: 'Trẻ em: Nhỏ 1-2 giọt vào mỗi bên mũi, ngày 1-2 lần. Không dùng quá 7 ngày liên tục.',
+    sideEffects: 'Kích ứng khô niêm mạc mũi tạm thời.'
+  },
+  {
+    id: 'M010',
+    name: 'Telfast 180mg',
+    desc: 'Thuốc kháng histamin thế hệ mới không gây buồn ngủ.',
+    activeIngredient: 'Fexofenadine hydrochloride',
+    indication: 'Điều trị các triệu chứng viêm mũi dị ứng ở người lớn và trẻ em từ 12 tuổi (hắt hơi, ngứa mũi, chảy nước mũi), nổi mề đay tự phát mạn tính.',
+    contraindication: 'Dị ứng với fexofenadine.',
+    dosage: 'Uống 1 viên (180mg) mỗi ngày một lần với nước.',
+    sideEffects: 'Mệt mỏi nhẹ, buồn nôn hoặc nhức đầu nhẹ.'
   }
 ];
 
@@ -412,6 +506,158 @@ const INITIAL_APPOINTMENTS = [
     gender: 'Nữ',
     dob: '05-11-1988',
     phone: '0905554433'
+  },
+  {
+    id: 'APT013',
+    patientName: 'Lương Hương Giang',
+    patientId: 'P004',
+    patient: 'Lương Hương Giang',
+    name: 'Lương Hương Giang',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(1),
+    time: '14:00 - 15:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Tái khám dạ dày',
+    symptom: 'Tái khám dạ dày',
+    fullSymptom: 'Tái khám theo dõi viêm dạ dày cấp tính',
+    gender: 'Nữ',
+    dob: '05-05-2000',
+    phone: '0123456789'
+  },
+  {
+    id: 'APT014',
+    patientName: 'Vũ Anh Long',
+    patientId: 'P008',
+    patient: 'Vũ Anh Long',
+    name: 'Vũ Anh Long',
+    doctorName: 'BS. Nguyễn Văn B',
+    date: getRelativeDate(3),
+    time: '10:00 - 11:00',
+    specialty: 'Khoa Nội tổng quát',
+    status: 'Đã xác nhận',
+    fee: '300.000',
+    symptoms: 'Sốt nhẹ, mệt mỏi',
+    symptom: 'Sốt nhẹ, mệt mỏi',
+    fullSymptom: 'Sốt kéo dài 2 ngày kèm đau đầu và mệt mỏi',
+    gender: 'Nam',
+    dob: '10-10-1990',
+    phone: '0981112222'
+  },
+  {
+    id: 'APT015',
+    patientName: 'Phan Quốc Bảo',
+    patientId: 'P010',
+    patient: 'Phan Quốc Bảo',
+    name: 'Phan Quốc Bảo',
+    doctorName: 'Bs. C',
+    date: getRelativeDate(4),
+    time: '09:00 - 10:00',
+    specialty: 'Tai mũi họng',
+    status: 'Đã xác nhận',
+    fee: '400.000',
+    symptoms: 'Khó nghe, ù tai',
+    symptom: 'Khó nghe, ù tai',
+    fullSymptom: 'Ù tai và nghe kém tai trái hơn một tuần nay',
+    gender: 'Nam',
+    dob: '12-12-1993',
+    phone: '0979888777'
+  },
+  {
+    id: 'APT016',
+    patientName: 'Hoàng Đức Minh',
+    patientId: 'P011',
+    patient: 'Hoàng Đức Minh',
+    name: 'Hoàng Đức Minh',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(7),
+    time: '08:30 - 09:30',
+    specialty: 'Ngoại tổng quát',
+    status: 'Chờ xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau âm ỉ mạn sườn phải',
+    symptom: 'Đau âm ỉ mạn sườn phải',
+    fullSymptom: 'Đau tức vùng hạ sườn phải, đầy chướng bụng khó tiêu',
+    gender: 'Nam',
+    dob: '22-02-1988',
+    phone: '0903334455'
+  },
+  {
+    id: 'APT017',
+    patientName: 'Lê Thị Mai',
+    patientId: 'P009',
+    patient: 'Lê Thị Mai',
+    name: 'Lê Thị Mai',
+    doctorName: 'BS. Nguyễn Văn B',
+    date: getRelativeDate(10),
+    time: '15:30 - 16:30',
+    specialty: 'Khoa Nội tổng quát',
+    status: 'Đã xác nhận',
+    fee: '300.000',
+    symptoms: 'Đau đầu mất ngủ',
+    symptom: 'Đau đầu mất ngủ',
+    fullSymptom: 'Hoa mắt, chóng mặt và mất ngủ nhiều đêm liên tục',
+    gender: 'Nữ',
+    dob: '18-09-1992',
+    phone: '0971239988'
+  },
+  {
+    id: 'APT018',
+    patientName: 'Đỗ Minh Tú',
+    patientId: 'P001',
+    patient: 'Đỗ Minh Tú',
+    name: 'Đỗ Minh Tú',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(-1),
+    time: '16:00 - 17:00',
+    specialty: 'Ngoại tổng quát',
+    status: 'Đã xác nhận',
+    fee: '350.000',
+    symptoms: 'Kiểm tra vết khâu',
+    symptom: 'Kiểm tra vết khâu',
+    fullSymptom: 'Đến kiểm tra vết khâu tiểu phẫu ở tay trái',
+    gender: 'Nam',
+    dob: '12-04-1995',
+    phone: '0987654321'
+  },
+  {
+    id: 'APT019',
+    patientName: 'Nguyễn Minh Anh',
+    patientId: 'P002',
+    patient: 'Nguyễn Minh Anh',
+    name: 'Nguyễn Minh Anh',
+    doctorName: 'Bs. C',
+    date: getRelativeDate(-3),
+    time: '11:00 - 12:00',
+    specialty: 'Tai mũi họng',
+    status: 'Đã xác nhận',
+    fee: '400.000',
+    symptoms: 'Đau tai nhẹ',
+    symptom: 'Đau tai nhẹ',
+    fullSymptom: 'Đau tức tai phải sau khi đi bơi',
+    gender: 'Nữ',
+    dob: '25-08-2000',
+    phone: '0912345678'
+  },
+  {
+    id: 'APT020',
+    patientName: 'Trần Văn Hùng',
+    patientId: 'P005',
+    patient: 'Trần Văn Hùng',
+    name: 'Trần Văn Hùng',
+    doctorName: 'Bs. Huy',
+    date: getRelativeDate(14),
+    time: '14:30 - 15:30',
+    specialty: 'Ngoại tổng quát',
+    status: 'Chờ xác nhận',
+    fee: '350.000',
+    symptoms: 'Đau khớp cổ tay',
+    symptom: 'Đau khớp cổ tay',
+    fullSymptom: 'Đau mỏi khớp cổ tay khi vận động nhiều',
+    gender: 'Nam',
+    dob: '14-07-1990',
+    phone: '0988776655'
   }
 ];
 
@@ -430,7 +676,11 @@ const INITIAL_PATIENTS = [
   ] },
   { id: 'P004', name: 'Lương Hương Giang', dob: '05-05-2000', gender: 'Nữ', phone: '0123456789', email: 'giang.luong@gmail.com', address: 'Cầu Giấy, Hà Nội', insurance: 'HN4015052000', blood: 'O', height: 165, weight: 52, notes: 'Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.', medicalHistory: [
     { date: '22-04-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'Bs. Huy', treatment: 'Thuốc giảm tiết acid dịch vị (Esomeprazole 20mg), kiêng ăn đồ chua cay nóng.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng', 'Xét nghiệm HP qua hơi thở'], rated: true, rating: 5, comment: 'rất ổn' },
-    { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'] }
+    { date: '05-02-2026', diagnosis: 'Cảm cúm thông thường', doctor: 'BS. Nguyễn Văn B', treatment: 'Nghỉ ngơi tĩnh dưỡng, uống nhiều nước ấm, súc họng nước muối sinh lý.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'] },
+    { date: '12-11-2025', diagnosis: 'Nhiễm trùng đường tiết niệu', doctor: 'Bs. Huy', treatment: 'Kháng sinh Ciprofloxacin 500mg (10 viên) - Ngày uống 2 viên; uống nhiều nước.', cost: '320.000 VND', tests: ['Xét nghiệm nước tiểu', 'Siêu âm hệ tiết niệu'] },
+    { date: '10-09-2025', diagnosis: 'Viêm họng hạt cấp tính', doctor: 'Bs. C', treatment: 'Kháng viêm Alphachymotrypsin, súc họng nước muối sát khuẩn ngày 3 lần.', cost: '140.000 VND', tests: ['Nội soi họng thanh quản'] },
+    { date: '15-07-2025', diagnosis: 'Rối loạn tiền đình nhẹ', doctor: 'BS. Nguyễn Văn B', treatment: 'Uống thuốc tuần hoàn não Betahistine 16mg trong 10 ngày, nghỉ ngơi hợp lý.', cost: '210.000 VND', tests: ['Đo lưu huyết não'] },
+    { date: '20-05-2025', diagnosis: 'Kiểm tra sức khỏe định kỳ', doctor: 'Bs. Huy', treatment: 'Các chỉ số sinh hóa bình thường, khuyên duy trì tập luyện thể thao đều đặn.', cost: '600.000 VND', tests: ['Xét nghiệm công thức máu', 'Siêu âm tổng quát'] }
   ] },
   { id: 'P005', name: 'Trần Văn Hùng', dob: '14-07-1990', gender: 'Nam', phone: '0988776655', email: 'hung.tran@gmail.com', address: 'Hai Bà Trưng, Hà Nội', insurance: 'HN4012019920', blood: 'A', height: 175, weight: 70, notes: 'Không có bệnh nền.', medicalHistory: [
     { date: '24-05-2026', diagnosis: 'Cảm cúm mùa', doctor: 'Bs. Huy', treatment: 'Nghỉ ngơi, uống Paracetamol khi sốt.', cost: '150.000 VND', tests: ['Xét nghiệm nhanh cúm A/B'], rated: true, rating: 5, comment: 'Bác sĩ tư vấn nhiệt tình, đặt lịch rất nhanh chóng.' }
@@ -440,14 +690,28 @@ const INITIAL_PATIENTS = [
   ] },
   { id: 'P007', name: 'Phan Anh Tuấn', dob: '03-03-1985', gender: 'Nam', phone: '0966554433', email: 'tuan.phan@gmail.com', address: 'Thanh Xuân, Hà Nội', insurance: 'HN4018829910', blood: 'O', height: 170, weight: 65, notes: 'Không có tiền sử dị ứng.', medicalHistory: [
     { date: '22-05-2026', diagnosis: 'Viêm dạ dày cấp', doctor: 'BS. Nguyễn Văn B', treatment: 'Thuốc kháng acid dịch vị.', cost: '450.000 VND', tests: ['Nội soi dạ dày tá tràng'], rated: true, rating: 4, comment: 'Dịch vụ tốt, chatbot tư vấn ban đầu khá chính xác.' }
+  ] },
+  { id: 'P008', name: 'Vũ Anh Long', dob: '10-10-1990', gender: 'Nam', phone: '0981112222', email: 'long.vu@gmail.com', address: 'Hoàn Kiếm, Hà Nội', insurance: 'HN4019901010', blood: 'B', height: 178, weight: 75, notes: 'Tiền sử dị ứng phấn hoa.', medicalHistory: [
+    { date: '03-06-2026', diagnosis: 'Viêm tai ngoài cấp tính', doctor: 'Bs. Huy', treatment: 'Nhỏ thuốc tai kháng sinh, kiêng nước vào tai.', cost: '250.000 VND', tests: ['Nội soi tai'] }
+  ] },
+  { id: 'P009', name: 'Lê Thị Mai', dob: '18-09-1992', gender: 'Nữ', phone: '0971239988', email: 'mai.le@gmail.com', address: 'Tây Hồ, Hà Nội', insurance: 'HN4019921809', blood: 'O', height: 160, weight: 49, notes: 'Không dị ứng.', medicalHistory: [
+    { date: '15-05-2026', diagnosis: 'Thiếu máu nhẹ', doctor: 'BS. Nguyễn Văn B', treatment: 'Bổ sung viên sắt và Acid Folic trong 1 tháng.', cost: '300.000 VND', tests: ['Xét nghiệm sắt huyết thanh'] }
+  ] },
+  { id: 'P010', name: 'Phan Quốc Bảo', dob: '12-12-1993', gender: 'Nam', phone: '0979888777', email: 'bao.phan@gmail.com', address: 'Thanh Xuân, Hà Nội', insurance: 'HN4019931212', blood: 'AB', height: 170, weight: 63, notes: 'Không.', medicalHistory: [
+    { date: '05-06-2026', diagnosis: 'Viêm phế quan co thắt', doctor: 'Bs. Huy', treatment: 'Thuốc giãn phế quản đường uống, tránh lạnh.', cost: '280.000 VND', tests: ['Nghe phổi', 'Chụp X-quang phổi'] }
+  ] },
+  { id: 'P011', name: 'Hoàng Đức Minh', dob: '22-02-1988', gender: 'Nam', phone: '0903334455', email: 'minh.hoang@gmail.com', address: 'Đống Đa, Hà Nội', insurance: 'HN4019880222', blood: 'A', height: 173, weight: 67, notes: 'Mỡ máu cao nhẹ.', medicalHistory: [
+    { date: '10-04-2026', diagnosis: 'Rối loạn lipid máu', doctor: 'BS. Nguyễn Văn B', treatment: 'Hạn chế dầu mỡ động vật, bổ sung omega-3, tái khám sau 3 tháng.', cost: '400.000 VND', tests: ['Xét nghiệm mỡ máu'] }
   ] }
 ];
 
 // Initial Mock Doctors
 const INITIAL_DOCTORS = [
-  { id: 'DOC001', name: 'Bs. Huy', specialty: 'Ngoại tổng quát', phone: '0966112233', email: 'huy.ngoai@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', biography: 'Hơn 10 năm kinh nghiệm phẫu thuật ngoại khoa và nội soi tiêu hóa tại bệnh viện Bạch Mai.' },
-  { id: 'DOC002', name: 'BS. Nguyễn Văn B', specialty: 'Khoa Nội tổng quát', phone: '0977223344', email: 'binh.nhi@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', biography: 'Hơn 10 năm kinh nghiệm khám chữa bệnh nội tổng quát tại bệnh viện Bạch Mai.' },
-  { id: 'DOC003', name: 'Bs. C', specialty: 'Tai mũi họng', phone: '0988334455', email: 'cuc.tmh@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ chuyên khoa II', biography: 'Chuyên gia điều trị các bệnh lý đường hô hấp trên, viêm tai giữa trẻ em.' }
+  { id: 'DOC001', name: 'BS. Nguyễn Văn A', specialty: 'Khoa Nội tổng quát', phone: '0966112211', email: 'a.noi@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội', biography: 'Hơn 15 năm kinh nghiệm điều trị các bệnh nội khoa, từng là Phó trưởng khoa tại BV Bạch Mai.' },
+  { id: 'DOC002', name: 'BS. Nguyễn Văn B', specialty: 'Khoa Nội tổng quát', phone: '0977223344', email: 'b.noi@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', fee: '350.000', location: 'Tầng 6, Tòa nhà K1, Khoa Nội tổng quát, Bệnh viện Bạch Mai, Giải Phóng, Hà Nội', biography: 'Hơn 10 năm kinh nghiệm khám chữa bệnh nội tổng quát, chuyên điều trị cúm, sốt và bệnh đường hô hấp.' },
+  { id: 'DOC003', name: 'Bs. Huy', specialty: 'Khoa Ngoại tổng quát', phone: '0988334455', email: 'huy.ngoai@mediconsult.vn', status: 'Đang làm việc', degree: 'Thạc sĩ Bác sĩ', fee: '300.000', location: 'Tầng 2, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Chuyên gia ngoại tiêu hóa, nội soi dạ dày, đại tràng và điều trị viêm dạ dày tá tràng.' },
+  { id: 'DOC004', name: 'Bs. B (Bình)', specialty: 'Khoa Nhi', phone: '0955443322', email: 'binh.nhi@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ CK I', fee: '250.000', location: 'Tầng 3, Tòa nhà B, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Bác sĩ Nhi khoa tận tâm, giàu kinh nghiệm khám và tư vấn các bệnh lý trẻ em.' },
+  { id: 'DOC005', name: 'Bs. C (Cúc)', specialty: 'Khoa Tai mũi họng', phone: '0944556677', email: 'cuc.tmh@mediconsult.vn', status: 'Đang làm việc', degree: 'Bác sĩ CK II', fee: '300.000', location: 'Tầng 4, Tòa nhà A, Phòng khám Đa khoa MediConsult, Cầu Giấy, Hà Nội', biography: 'Hơn 12 năm kinh nghiệm điều trị viêm tai giữa, viêm họng, viêm mũi xoang trẻ em và người lớn.' }
 ];
 
 // Initial Mock Reminders
@@ -593,6 +857,10 @@ function App() {
   const [doctorThreads, setDoctorThreads] = useState(INITIAL_DOCTOR_THREADS);
   const [activeDoctorThreadId, setActiveDoctorThreadId] = useState('MSG101');
 
+  // Hoisted consultation session states
+  const [isConsultingDoctor, setIsConsultingDoctor] = useState(false);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(120); // 2 minutes (120s) for demo auto-expiry
+
   // Popup Toast Notification State
   const [toasts, setToasts] = useState([]);
 
@@ -623,11 +891,23 @@ function App() {
   // Database states to make forms functional
   const [diseases, setDiseases] = useState(() => {
     const cached = localStorage.getItem('diseases');
-    return cached ? JSON.parse(cached) : INITIAL_DISEASES;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.length >= 12) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_DISEASES;
   });
   const [medicines, setMedicines] = useState(() => {
     const cached = localStorage.getItem('medicines');
-    return cached ? JSON.parse(cached) : INITIAL_MEDICINES;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.length >= 10) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_MEDICINES;
   });
   const [conversations, setConversations] = useState(() => {
     const cached = localStorage.getItem('conversations');
@@ -718,14 +998,21 @@ function App() {
   // Manager Specific State databases
   const [appointments, setAppointments] = useState(() => {
     const cached = localStorage.getItem('appointments');
-    return cached ? JSON.parse(cached) : INITIAL_APPOINTMENTS;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.length >= 20) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_APPOINTMENTS;
   });
   const [patients, setPatients] = useState(() => {
     const cached = localStorage.getItem('patients');
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (parsed.some(p => p.name === 'Trần Văn Hùng')) {
+        const giang = parsed.find(p => p.id === 'P004');
+        if (parsed.length >= 11 && giang && giang.medicalHistory && giang.medicalHistory.length >= 6) {
           return parsed;
         }
       } catch (e) {}
@@ -757,7 +1044,13 @@ function App() {
   });
   const [doctors, setDoctors] = useState(() => {
     const cached = localStorage.getItem('doctors');
-    return cached ? JSON.parse(cached) : INITIAL_DOCTORS;
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed.length >= 5) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_DOCTORS;
   });
   const [reminders, setReminders] = useState(() => {
     const cached = localStorage.getItem('reminders');
@@ -773,6 +1066,72 @@ function App() {
     return cached ? JSON.parse(cached) : INITIAL_PATIENT_CONVS;
   });
   const [activePatientConvId, setActivePatientConvId] = useState('PCONV001');
+
+  // Unified Consultation Timer in App.jsx
+  useEffect(() => {
+    let timer;
+    if (isConsultingDoctor) {
+      timer = setInterval(() => {
+        setSessionTimeLeft(prev => {
+          if (prev <= 1) {
+            setIsConsultingDoctor(false);
+            
+            // 1. Patient Side updates: activeDoctorConsult = false
+            setPatientConversations(prevConvs => prevConvs.map(c => {
+              if (c.id === activePatientConvId) {
+                // Check if the expiry bot message is already added
+                const alreadyExpired = c.messages.some(m => m.sender === 'bot' && m.text.includes('Phiên kết nối trực tiếp với bác sĩ đã kết thúc'));
+                if (alreadyExpired) {
+                  return { ...c, activeDoctorConsult: false };
+                }
+                return {
+                  ...c,
+                  activeDoctorConsult: false,
+                  messages: [
+                    ...c.messages,
+                    { 
+                      sender: 'bot', 
+                      text: 'Phiên kết nối trực tiếp với bác sĩ đã kết thúc (giới hạn demo 2 phút). Tôi là Trợ lý sức khỏe AI, bạn có cần tôi giúp đỡ gì thêm về triệu chứng sức khỏe nữa không?', 
+                      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) 
+                    }
+                  ]
+                };
+              }
+              return c;
+            }));
+
+            // 2. Doctor Side updates: isLocked = true, and append system message
+            setDoctorThreads(prevThreads => prevThreads.map(t => {
+              if (t.id === 'MSG101') {
+                const alreadyExpired = t.messages.some(m => m.sender === 'system' && m.text.includes('Phiên tư vấn chuyên sâu đã kết thúc'));
+                if (alreadyExpired) {
+                  return { ...t, isLocked: true };
+                }
+                return {
+                  ...t,
+                  isLocked: true,
+                  messages: [
+                    ...t.messages,
+                    { 
+                      sender: 'system', 
+                      text: '🔒 Phiên tư vấn chuyên sâu đã kết thúc (Demo 2 phút). Cuộc trò chuyện đã bị khóa.', 
+                      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) 
+                    }
+                  ]
+                };
+              }
+              return t;
+            }));
+
+            triggerToast('Phiên tư vấn chuyên sâu đã hết hạn (giới hạn demo 2 phút). Bệnh nhân đã chuyển lại Chatbot AI.', 'info');
+            return 120;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isConsultingDoctor, activePatientConvId]);
 
   // Synchronize state changes to localStorage
   useEffect(() => {
@@ -1314,6 +1673,11 @@ function App() {
               syncPatientConversation={handleSyncPatientConversation}
               isGuest={isGuest}
               onOpenLoginModal={handleOpenLoginModal}
+              setDoctorThreads={setDoctorThreads}
+              isConsultingDoctor={isConsultingDoctor}
+              setIsConsultingDoctor={setIsConsultingDoctor}
+              sessionTimeLeft={sessionTimeLeft}
+              setSessionTimeLeft={setSessionTimeLeft}
             />
           )}
 
@@ -1338,6 +1702,7 @@ function App() {
               </div>
             ) : (
               <PatientSchedule
+                doctors={doctors}
                 appointments={appointments}
                 setAppointments={setAppointments}
                 triggerToast={triggerToast}
@@ -1603,6 +1968,12 @@ function App() {
               setThreads={setDoctorThreads}
               activeThreadId={activeDoctorThreadId}
               setActiveThreadId={setActiveDoctorThreadId}
+              isEscalatedSessionActive={isConsultingDoctor}
+              setIsEscalatedSessionActive={setIsConsultingDoctor}
+              sessionTimeLeft={sessionTimeLeft}
+              setSessionTimeLeft={setSessionTimeLeft}
+              setPatientConversations={setPatientConversations}
+              activePatientConvId={activePatientConvId}
             />
           )}
 

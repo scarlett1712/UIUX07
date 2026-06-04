@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Search, Filter, Trash2, Edit3, ArrowLeft, Camera, Undo2, Calendar, Clock, AlertTriangle, Check, X, ShieldAlert } from 'lucide-react';
 
 const getStatusBadgeStyle = (status) => {
@@ -137,12 +138,15 @@ export default function DoctorCoordinator({
     });
   };
 
-  // --- CALENDAR GRID SHIFTS DATA (DYNAMIC BASED ON CURRENT MONTH) ---
+  // --- CALENDAR GRID SHIFTS DATA (DYNAMIC BASED ON STATE) ---
   const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth(); // 0-indexed
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Sunday=0, Monday=1
+  const [calendarYear, setCalendarYear] = useState(2026);
+  const [calendarMonth, setCalendarMonth] = useState(5); // June (0-indexed 5)
+  const [calendarView, setCalendarView] = useState('month'); // 'day', 'week', 'month'
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(today.getDate());
+
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay(); // Sunday=0, Monday=1
   const startDayOffset = firstDay; // Sunday is index 0
   const calendarCells = [];
   for (let i = 0; i < startDayOffset; i++) {
@@ -152,16 +156,21 @@ export default function DoctorCoordinator({
     calendarCells.push(i);
   }
 
+  const selectedDayIndex = calendarCells.findIndex(d => d === selectedCalendarDay);
+  const weekIndex = selectedDayIndex !== -1 ? Math.floor(selectedDayIndex / 7) : 0;
+  const weekCells = calendarCells.slice(weekIndex * 7, (weekIndex + 1) * 7);
+
   const generateInitialShifts = () => {
     const initialShifts = [];
     let idCounter = 1;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      const dayOfWeek = date.getDay(); // 0 is Sunday, 1 is Monday, etc.
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // Base shifts generated for June 2026
+    const baseDays = 30;
+    for (let day = 1; day <= baseDays; day++) {
+      const date = new Date(2026, 5, day);
+      const dayOfWeek = date.getDay();
+      const dateStr = `2026-06-${String(day).padStart(2, '0')}`;
 
       if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
-        // Mon, Wed, Fri: Bs. Huy is on duty
         initialShifts.push({
           id: idCounter++,
           date: dateStr,
@@ -173,7 +182,6 @@ export default function DoctorCoordinator({
         });
       }
       if (dayOfWeek === 2 || dayOfWeek === 4) {
-        // Tue, Thu: Bs. B is on duty
         initialShifts.push({
           id: idCounter++,
           date: dateStr,
@@ -185,7 +193,6 @@ export default function DoctorCoordinator({
         });
       }
       if (dayOfWeek === 6) {
-        // Sat: Bs. C is on duty
         initialShifts.push({
           id: idCounter++,
           date: dateStr,
@@ -200,26 +207,163 @@ export default function DoctorCoordinator({
     return initialShifts;
   };
 
+  const generateShiftsForMonth = (year, month) => {
+    const days = new Date(year, month + 1, 0).getDate();
+    const initialShifts = [];
+    let idCounter = 1;
+    for (let day = 1; day <= days; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      if (dayOfWeek === 1 || dayOfWeek === 3 || dayOfWeek === 5) {
+        initialShifts.push({
+          id: `shift-${year}-${month}-${idCounter++}`,
+          date: dateStr,
+          title: 'Bs. Huy',
+          time: '08:00 - 12:00',
+          type: 'duty',
+          color: '#4ade80',
+          bg: '#f0fdf4'
+        });
+      }
+      if (dayOfWeek === 2 || dayOfWeek === 4) {
+        initialShifts.push({
+          id: `shift-${year}-${month}-${idCounter++}`,
+          date: dateStr,
+          title: 'Bs. B',
+          time: '08:00 - 12:00',
+          type: 'duty',
+          color: '#c084fc',
+          bg: '#f3e8ff'
+        });
+      }
+      if (dayOfWeek === 6) {
+        initialShifts.push({
+          id: `shift-${year}-${month}-${idCounter++}`,
+          date: dateStr,
+          title: 'Bs. C',
+          time: '09:00 - 12:00',
+          type: 'duty',
+          color: '#facc15',
+          bg: '#fef9c3'
+        });
+      }
+    }
+    return initialShifts;
+  };
+
   const [shifts, setShifts] = useState(generateInitialShifts());
+
+  // Proactively generate mock shifts for other months/years if navigate
+  useEffect(() => {
+    const monthKey = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+    const hasShifts = shifts.some(s => s.date.startsWith(monthKey));
+    if (!hasShifts) {
+      const newShifts = generateShiftsForMonth(calendarYear, calendarMonth);
+      setShifts(prev => [...prev, ...newShifts]);
+    }
+  }, [calendarYear, calendarMonth]);
+
+  const handlePrev = () => {
+    if (calendarView === 'day') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() - 1);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else if (calendarView === 'week') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() - 7);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else {
+      // month
+      let newMonth = calendarMonth - 1;
+      let newYear = calendarYear;
+      if (newMonth < 0) {
+        newMonth = 11;
+        newYear -= 1;
+      }
+      setCalendarYear(newYear);
+      setCalendarMonth(newMonth);
+      const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+      if (selectedCalendarDay > maxDays) {
+        setSelectedCalendarDay(maxDays);
+      }
+    }
+  };
+
+  const handleNext = () => {
+    if (calendarView === 'day') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() + 1);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else if (calendarView === 'week') {
+      const d = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      d.setDate(d.getDate() + 7);
+      setCalendarYear(d.getFullYear());
+      setCalendarMonth(d.getMonth());
+      setSelectedCalendarDay(d.getDate());
+    } else {
+      // month
+      let newMonth = calendarMonth + 1;
+      let newYear = calendarYear;
+      if (newMonth > 11) {
+        newMonth = 0;
+        newYear += 1;
+      }
+      setCalendarYear(newYear);
+      setCalendarMonth(newMonth);
+      const maxDays = new Date(newYear, newMonth + 1, 0).getDate();
+      if (selectedCalendarDay > maxDays) {
+        setSelectedCalendarDay(maxDays);
+      }
+    }
+  };
+
+  const getCalendarHeaderLabel = () => {
+    if (calendarView === 'day') {
+      return `Ngày ${selectedCalendarDay} Tháng ${calendarMonth + 1}, ${calendarYear}`;
+    } else if (calendarView === 'week') {
+      const currentSelected = new Date(calendarYear, calendarMonth, selectedCalendarDay);
+      const dayOfWeek = currentSelected.getDay(); // 0 = Sunday, 1 = Monday
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      
+      const monday = new Date(currentSelected);
+      monday.setDate(currentSelected.getDate() + diffToMonday);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      const formatShortDate = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return `Tuần ${formatShortDate(monday)} - ${formatShortDate(sunday)}, ${sunday.getFullYear()}`;
+    } else {
+      return `Tháng ${calendarMonth + 1}, ${calendarYear}`;
+    }
+  };
 
   // Clash Alerts matching bottom of Image 3
   const clashAlerts = [
-    { id: 1, doctor: 'Bs. Huy', date: `06/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 2 },
-    { id: 2, doctor: 'Bs. B', date: `07/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 3 },
-    { id: 3, doctor: 'Bs. C', date: `09/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, count: 2 }
+    { id: 1, doctor: 'Bs. Huy', date: `06/${String(calendarMonth + 1).padStart(2, '0')}/${calendarYear}`, count: 2 },
+    { id: 2, doctor: 'Bs. B', date: `07/${String(calendarMonth + 1).padStart(2, '0')}/${calendarYear}`, count: 3 },
+    { id: 3, doctor: 'Bs. C', date: `09/${String(calendarMonth + 1).padStart(2, '0')}/${calendarYear}`, count: 2 }
   ];
 
   const getShiftsForDay = (day) => {
     if (!day) return [];
-    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     return shifts.filter(s => s.date === dateStr);
   };
 
   const getClashesForDay = (day) => {
     if (!day) return [];
     const dayStr = day.toString().padStart(2, '0');
-    const monthStr = String(currentMonth + 1).padStart(2, '0');
-    const dateStr = `${dayStr}/${monthStr}/${currentYear}`;
+    const monthStr = String(calendarMonth + 1).padStart(2, '0');
+    const dateStr = `${dayStr}/${monthStr}/${calendarYear}`;
     return clashAlerts.filter(c => c.date === dateStr);
   };
 
@@ -242,7 +386,7 @@ export default function DoctorCoordinator({
 
   const handleDeleteShift = () => {
     if (!editingShift) return;
-    showConfirm(`Bạn có chắc chắn muốn xóa ca trực của ${editingShift.title} ngày ${selectedShiftDay}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}?`, () => {
+    showConfirm(`Bạn có chắc chắn muốn xóa ca trực của ${editingShift.title} ngày ${selectedShiftDay}/${String(calendarMonth + 1).padStart(2, '0')}/${calendarYear}?`, () => {
       setShifts(shifts.filter(sh => sh.id !== editingShift.id));
       triggerToast('Đã xóa ca trực thành công!', 'success');
       setShowShiftModal(false);
@@ -264,29 +408,53 @@ export default function DoctorCoordinator({
       bg = '#fef9c3';
     }
 
-    if (editingShift) {
-      setShifts(shifts.map(sh => sh.id === editingShift.id ? {
-        ...sh,
-        title: modalDoctor,
-        time: modalTime,
-        color,
-        bg
-      } : sh));
-      triggerToast(`Đã cập nhật ca trực cho ${modalDoctor} thành công!`, 'success');
+    const targetDate = editingShift 
+      ? editingShift.date 
+      : `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${selectedShiftDay.toString().padStart(2, '0')}`;
+    
+    const hasConflict = shifts.some(sh => 
+      sh.title === modalDoctor && 
+      sh.date === targetDate && 
+      (!editingShift || sh.id !== editingShift.id)
+    );
+
+    const performSave = () => {
+      if (editingShift) {
+        setShifts(shifts.map(sh => sh.id === editingShift.id ? {
+          ...sh,
+          title: modalDoctor,
+          time: modalTime,
+          color,
+          bg
+        } : sh));
+        triggerToast(`Đã cập nhật ca trực cho ${modalDoctor} thành công!`, 'success');
+      } else {
+        const newShift = {
+          id: Date.now(),
+          date: targetDate,
+          title: modalDoctor,
+          time: modalTime,
+          type: 'duty',
+          color,
+          bg
+        };
+        setShifts([...shifts, newShift]);
+        triggerToast(`Đã xếp ca trực cho ${modalDoctor} ngày ${selectedShiftDay}/${String(calendarMonth + 1).padStart(2, '0')}/${calendarYear}`, 'success');
+      }
+      setShowShiftModal(false);
+    };
+
+    if (hasConflict) {
+      showConfirm(
+        `Cảnh báo: Bác sĩ ${modalDoctor} đã có ca trực vào ngày này rồi. Bạn có chắc chắn muốn xếp trùng lịch ca trực này không?`,
+        () => {
+          performSave();
+        },
+        'Cảnh báo trùng lịch ca trực'
+      );
     } else {
-      const newShift = {
-        id: Date.now(),
-        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${selectedShiftDay.toString().padStart(2, '0')}`,
-        title: modalDoctor,
-        time: modalTime,
-        type: 'duty',
-        color,
-        bg
-      };
-      setShifts([...shifts, newShift]);
-      triggerToast(`Đã xếp ca trực cho ${modalDoctor} ngày ${selectedShiftDay}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`, 'success');
+      performSave();
     }
-    setShowShiftModal(false);
   };
 
   // --- RENDERING SUBVIEWS ---
@@ -471,104 +639,199 @@ export default function DoctorCoordinator({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>Lịch trực bác sĩ</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontWeight: '600', fontSize: '0.85rem' }}>&lt; Tháng {currentMonth + 1}, {currentYear} &gt;</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button 
+                    type="button" 
+                    onClick={handlePrev} 
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)', padding: '2px 6px' }}
+                  >
+                    &lt;
+                  </button>
+                  <span style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--text-dark)' }}>{getCalendarHeaderLabel()}</span>
+                  <button 
+                    type="button" 
+                    onClick={handleNext} 
+                    style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '1rem', color: 'var(--text-dark)', padding: '2px 6px' }}
+                  >
+                    &gt;
+                  </button>
+                </div>
                 <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#fff' }}>
-                  <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Ngày</button>
-                  <button className="btn btn-outline" style={{ padding: '4px 8px', border: 'none', fontSize: '0.75rem' }}>Tuần</button>
-                  <button className="btn btn-primary" style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}>Tháng</button>
+                  <button 
+                    type="button"
+                    onClick={() => setCalendarView('day')} 
+                    className={`btn ${calendarView === 'day' ? 'btn-primary' : 'btn-outline'}`} 
+                    style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                  >
+                    Ngày
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setCalendarView('week')} 
+                    className={`btn ${calendarView === 'week' ? 'btn-primary' : 'btn-outline'}`} 
+                    style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                  >
+                    Tuần
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setCalendarView('month')} 
+                    className={`btn ${calendarView === 'month' ? 'btn-primary' : 'btn-outline'}`} 
+                    style={{ padding: '4px 8px', border: 'none', borderRadius: 0, fontSize: '0.75rem' }}
+                  >
+                    Tháng
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Grid */}
-            <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '700', fontSize: '0.72rem', padding: '6px 0', color: 'var(--text-muted)', flexShrink: 0 }}>
-                <div>CN</div>
-                <div>T2</div>
-                <div>T3</div>
-                <div>T4</div>
-                <div>T5</div>
-                <div>T6</div>
-                <div>T7</div>
+            {/* Grid or Day View */}
+            {calendarView === 'day' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', backgroundColor: '#fff', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, color: 'var(--primary)', fontWeight: '700', fontSize: '0.88rem' }}>Ca trực ngày {selectedCalendarDay} Tháng {calendarMonth + 1}, {calendarYear}</h4>
+                  <button 
+                    type="button"
+                    className="btn btn-primary" 
+                    style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                    onClick={() => handleAddShift(selectedCalendarDay)}
+                  >
+                    + Xếp ca trực
+                  </button>
+                </div>
+                {getShiftsForDay(selectedCalendarDay).length === 0 ? (
+                  <div style={{ padding: '30px', fontStyle: 'italic', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    Không có ca trực nào được xếp cho ngày này. Nhấp vào "+ Xếp ca trực" để phân công.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {getShiftsForDay(selectedCalendarDay).map(s => (
+                      <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderLeft: `4px solid ${s.color}`, backgroundColor: s.bg, borderRadius: '6px', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}>
+                        <div>
+                          <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>{s.title}</strong>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Thời gian ca trực: {s.time}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.72rem' }} onClick={() => handleEditShift(s, selectedCalendarDay)}>
+                            Sửa ca
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            ) : (
+              /* Grid View (Month or Week) */
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'center', fontWeight: '700', fontSize: '0.72rem', padding: '6px 0', color: 'var(--text-muted)', flexShrink: 0 }}>
+                  <div>CN</div>
+                  <div>T2</div>
+                  <div>T3</div>
+                  <div>T4</div>
+                  <div>T5</div>
+                  <div>T6</div>
+                  <div>T7</div>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${Math.ceil(calendarCells.length / 7)}, 1fr)`, backgroundColor: '#e2e8f0', gap: '1px', flex: 1 }}>
-                {calendarCells.map((day, idx) => {
-                  const dayShifts = getShiftsForDay(day);
-                  const dayClashes = getClashesForDay(day);
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => handleAddShift(day)}
-                      style={{ 
-                        backgroundColor: '#fff', 
-                        padding: '4px', 
-                        position: 'relative', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: '2px', 
-                        cursor: day ? 'pointer' : 'default',
-                        minWidth: 0,
-                        minHeight: 0,
-                        overflow: 'hidden'
-                      }}
-                    >
-                      {day && <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '1px' }}>{day}</span>}
-                      {dayShifts.map((s) => (
-                        <div
-                          key={s.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditShift(s, day);
-                          }}
-                          style={{
-                            padding: '2px 4px',
-                            borderRadius: '3px',
-                            backgroundColor: s.bg,
-                            color: s.color,
-                            fontSize: '0.65rem',
-                            fontWeight: '600',
-                            borderLeft: `2px solid ${s.color}`,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          <div style={{ fontWeight: 700 }}>{s.title}</div>
-                          <div style={{ fontSize: '0.55rem', opacity: 0.8 }}>{s.time}</div>
-                        </div>
-                      ))}
-                      {dayClashes.map((c) => (
-                        <div
-                          key={`clash-${c.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            padding: '2px 4px',
-                            borderRadius: '3px',
-                            backgroundColor: '#fee2e2',
-                            color: '#dc2626',
-                            fontSize: '0.62rem',
-                            fontWeight: '700',
-                            border: '1px solid #fca5a5',
-                            marginTop: '1px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                          title={`${c.doctor} bị trùng ${c.count} ca trực`}
-                        >
-                          <AlertTriangle size={10} style={{ flexShrink: 0, color: '#dc2626' }} />
-                          <span>Trùng: {c.doctor}</span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: calendarView === 'week' ? '1fr' : `repeat(${Math.ceil(calendarCells.length / 7)}, 1fr)`, backgroundColor: '#e2e8f0', gap: '1px', flex: 1 }}>
+                  {(calendarView === 'week' ? weekCells : calendarCells).map((day, idx) => {
+                    const dayShifts = getShiftsForDay(day);
+                    const dayClashes = getClashesForDay(day);
+                    const isDaySelected = selectedCalendarDay === day;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          if (day) {
+                            setSelectedCalendarDay(day);
+                          }
+                        }}
+                        style={{ 
+                          backgroundColor: '#fff', 
+                          padding: '4px', 
+                          position: 'relative', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: '2px', 
+                          cursor: day ? 'pointer' : 'default',
+                          minWidth: 0,
+                          minHeight: 0,
+                          overflow: 'hidden',
+                          boxShadow: isDaySelected ? 'inset 0 0 0 2px var(--primary-light)' : 'none'
+                        }}
+                      >
+                        {day && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: '700', color: isDaySelected ? 'var(--primary)' : 'var(--text-muted)' }}>{day}</span>
+                            <span 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddShift(day);
+                              }}
+                              style={{ fontSize: '0.7rem', color: 'var(--primary-light)', padding: '0 4px', fontWeight: 'bold' }}
+                              title="Thêm ca trực"
+                            >
+                              +
+                            </span>
+                          </div>
+                        )}
+                        {dayShifts.map((s) => (
+                          <div
+                            key={s.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditShift(s, day);
+                            }}
+                            style={{
+                              padding: '2px 4px',
+                              borderRadius: '3px',
+                              backgroundColor: s.bg,
+                              color: s.color,
+                              fontSize: '0.65rem',
+                              fontWeight: '600',
+                              borderLeft: `2px solid ${s.color}`,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700 }}>{s.title}</div>
+                            <div style={{ fontSize: '0.55rem', opacity: 0.8 }}>{s.time}</div>
+                          </div>
+                        ))}
+                        {dayClashes.map((c) => (
+                          <div
+                            key={`clash-${c.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              padding: '2px 4px',
+                              borderRadius: '3px',
+                              backgroundColor: '#fee2e2',
+                              color: '#dc2626',
+                              fontSize: '0.62rem',
+                              fontWeight: '700',
+                              border: '1px solid #fca5a5',
+                              marginTop: '1px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                            title={`${c.doctor} bị trùng ${c.count} ca trực`}
+                          >
+                            <AlertTriangle size={10} style={{ flexShrink: 0, color: '#dc2626' }} />
+                            <span>Trùng: {c.doctor}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Clash Alerts matching bottom of Image 3 */}
             <div style={{ marginTop: '6px', flexShrink: 0 }}>
@@ -606,7 +869,7 @@ export default function DoctorCoordinator({
             </div>
 
           {/* Modal for adding/editing shift */}
-          {showShiftModal && (
+          {showShiftModal && createPortal(
             <div className="shift-modal-backdrop" onClick={() => setShowShiftModal(false)}>
               <div className="shift-modal-card" onClick={(e) => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
@@ -662,7 +925,8 @@ export default function DoctorCoordinator({
                   </div>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       )}
@@ -678,7 +942,7 @@ export default function DoctorCoordinator({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ năng lực bác sĩ</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Hồ sơ năng lực bác sĩ</h2>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: '20px', marginTop: '16px' }}>
@@ -714,7 +978,7 @@ export default function DoctorCoordinator({
     return (
       <div className="card animate-fade-in" style={{ padding: '20px' }}>
         <div className="details-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {currentView === 'doctor-add' ? 'Thêm bác sĩ mới' : 'Chỉnh sửa hồ sơ bác sĩ'}
           </h2>
         </div>

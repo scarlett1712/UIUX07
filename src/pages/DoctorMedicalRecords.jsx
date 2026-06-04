@@ -471,7 +471,7 @@ export default function DoctorMedicalRecords({
         
         {/* Header toolbar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700', color: 'var(--text-dark)' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '700', color: 'var(--primary)' }}>
             Hồ sơ bệnh án bệnh nhân
           </h2>
         </div>
@@ -608,7 +608,7 @@ export default function DoctorMedicalRecords({
         
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Hồ sơ chi tiết bệnh nhân</h2>
         </div>
 
         {/* Profile Card & Details Grid */}
@@ -837,7 +837,7 @@ export default function DoctorMedicalRecords({
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 700, color: 'var(--text-dark)' }}>
+          <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 700, color: 'var(--primary)' }}>
             Chẩn đoán & Kê đơn thuốc
           </h2>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
