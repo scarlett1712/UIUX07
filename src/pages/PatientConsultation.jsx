@@ -43,6 +43,43 @@ export default function PatientConsultation({
 
   const activeConv = conversations.find(c => c.id === activeConvId) || conversations[0];
 
+  const getPatientInfo = () => {
+    let name = 'Giang';
+    let notes = '';
+    let blood = '';
+    let gender = '';
+    let dob = '';
+    try {
+      const stored = localStorage.getItem('patientData');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed) {
+          name = parsed.name || 'Giang';
+          notes = parsed.notes || '';
+          blood = parsed.blood || '';
+          gender = parsed.gender || '';
+          dob = parsed.dob || '';
+        }
+      }
+    } catch (e) {}
+    return { name, notes, blood, gender, dob };
+  };
+
+  const getActiveQuickReplies = () => {
+    if (!activeConv || !activeConv.messages || activeConv.messages.length === 0) {
+      return ['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt'];
+    }
+    
+    // Find the latest message from the bot
+    const messages = activeConv.messages;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender === 'bot') {
+        return messages[i].quickReplies || ['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt'];
+      }
+    }
+    return ['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt'];
+  };
+
   useEffect(() => {
     if (activeConv) {
       setSelectedStars(activeConv.ratingNum || 0);
@@ -92,6 +129,16 @@ export default function PatientConsultation({
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'vi-VN';
       utterance.rate = 1.0;
+      
+      // Tìm giọng đọc tiếng Việt hệ thống để gán trực tiếp
+      if (window.speechSynthesis.getVoices) {
+        const voices = window.speechSynthesis.getVoices();
+        const viVoice = voices.find(v => v.lang && (v.lang.toLowerCase() === 'vi-vn' || v.lang.toLowerCase().startsWith('vi')));
+        if (viVoice) {
+          utterance.voice = viVoice;
+        }
+      }
+      
       utterance.onend = () => {
         setSpeakingMsgIndex(null);
       };
@@ -271,24 +318,51 @@ export default function PatientConsultation({
 
     // Simulate AI response
     let botResponse = '';
+    let quickReplies = [];
     let newSymptoms = [...activeConv.symptoms];
     let newDiagnosis = [...activeConv.diagnosis];
     
+    const { name, notes } = getPatientInfo();
     const lowerText = text.toLowerCase();
-    if (lowerText.includes('đau đầu') || lowerText.includes('buồn nôn') || lowerText.includes('chóng mặt') || lowerText.includes('sốt')) {
-      botResponse = 'Tôi ghi nhận thêm các triệu chứng này. Sốt cao kèm mệt mỏi có thể do virus. Bạn có muốn kết nối với bác sĩ chuyên khoa ngay lập tức để tư vấn sâu không?';
-      if (lowerText.includes('chóng mặt') && !newSymptoms.includes('Chóng mặt')) newSymptoms.push('Chóng mặt');
-      if (lowerText.includes('buồn nôn') && !newSymptoms.includes('Buồn nôn')) newSymptoms.push('Buồn nôn');
-      if (lowerText.includes('sốt') && !newSymptoms.includes('Sốt')) newSymptoms.push('Sốt');
+    
+    if (lowerText.includes('sốt') || lowerText.includes('nhiệt độ')) {
+      if (!newSymptoms.includes('Sốt')) newSymptoms.push('Sốt');
       if (!newDiagnosis.includes('Nghi cúm / nhiễm virus')) {
         newDiagnosis.push('Nghi cúm / nhiễm virus');
         newDiagnosis.push('Nên đi khám');
       }
+      botResponse = `Chào ${name}. Tôi ghi nhận bạn đang bị sốt. Nhiệt độ cơ thể của bạn hiện tại đo được là bao nhiêu? ${notes ? `Hồ sơ y tế có tiền sử lưu ý: "${notes}". Bạn hãy chú ý tránh các thuốc gây kích ứng hoặc phản ứng phụ.` : 'Bạn có cảm thấy mệt mỏi hay đau nhức toàn thân không?'}`;
+      quickReplies = ['Sốt nhẹ dưới 38 độ C', 'Sốt cao trên 38.5 độ C', 'Sốt kèm ho và đau họng', 'Kết nối tư vấn Bác sĩ'];
+    } else if (lowerText.includes('dạ dày') || lowerText.includes('đau bụng') || lowerText.includes('tiêu hóa') || lowerText.includes('buồn nôn')) {
+      if (lowerText.includes('buồn nôn') && !newSymptoms.includes('Buồn nôn')) newSymptoms.push('Buồn nôn');
+      if (!newSymptoms.includes('Đau bụng')) newSymptoms.push('Đau bụng');
+      if (!newDiagnosis.includes('Rối loạn tiêu hóa / Dạ dày')) {
+        newDiagnosis.push('Rối loạn tiêu hóa / Dạ dày');
+      }
+      botResponse = `Chào ${name}. Cơn đau bụng/dạ dày của bạn xuất hiện trước hay sau khi ăn? ${notes ? `Trong hồ sơ có lưu ý bệnh sử dạ dày/dị ứng: "${notes}". Bạn nên nghỉ ngơi và hạn chế dùng các thuốc kích ứng dạ dày khi đói.` : 'Cơn đau có kèm theo đầy hơi hay ợ chua không?'}`;
+      quickReplies = ['Đau âm ỉ trước khi ăn', 'Đau quặn sau khi ăn cay', 'Có kèm ợ chua và buồn nôn', 'Đặt lịch khám chuyên khoa Tiêu hóa'];
+    } else if (lowerText.includes('ho') || lowerText.includes('họng') || lowerText.includes('phế quản')) {
+      if (!newSymptoms.includes('Đau họng')) newSymptoms.push('Đau họng');
+      if (lowerText.includes('ho') && !newSymptoms.includes('Ho')) newSymptoms.push('Ho');
+      if (!newDiagnosis.includes('Viêm họng / Viêm phế quản')) {
+        newDiagnosis.push('Viêm họng / Viêm phế quản');
+      }
+      botResponse = `Chào ${name}. Bạn bị đau họng/ho bao lâu rồi? Bạn ho khan hay ho có đờm? ${notes ? `Hồ sơ bệnh án ghi nhận: "${notes}". Hãy súc họng nước muối sinh lý ấm thường xuyên.` : 'Có kèm sổ mũi hay ngạt mũi không?'}`;
+      quickReplies = ['Ho khan ngứa cổ họng', 'Ho có đờm đặc xanh/vàng', 'Đau rát cổ họng khi nuốt', 'Tư vấn khám Tai Mũi Họng'];
+    } else if (lowerText.includes('đau đầu') || lowerText.includes('chóng mặt') || lowerText.includes('hoa mắt')) {
+      if (lowerText.includes('đau đầu') && !newSymptoms.includes('Đau đầu')) newSymptoms.push('Đau đầu');
+      if (lowerText.includes('chóng mặt') && !newSymptoms.includes('Chóng mặt')) newSymptoms.push('Chóng mặt');
+      if (!newDiagnosis.includes('Theo dõi huyết áp / Căng thẳng')) {
+        newDiagnosis.push('Theo dõi huyết áp / Căng thẳng');
+      }
+      botResponse = `Chào ${name}. Bạn bị đau đầu/chóng mặt khi thay đổi tư thế hay diễn ra âm ỉ suốt cả ngày? ${notes ? `Hồ sơ ghi chú sức khỏe: "${notes}". Bạn hãy nằm nghỉ nơi yên tĩnh.` : 'Bạn có gặp khó khăn về giấc ngủ gần đây không?'}`;
+      quickReplies = ['Chóng mặt lúc sáng sớm', 'Đau nửa đầu khi căng thẳng', 'Đau đầu kèm mất ngủ', 'Đặt hẹn đo huyết áp & khám Nội'];
     } else {
-      botResponse = 'Tôi đã nhận được thông tin. Để giúp bạn nhanh chóng chẩn đoán chuyên sâu, hãy cân nhắc đặt lịch khám trực tiếp với bác sĩ hoặc kết nối tư vấn trực tuyến có trả phí với chúng tôi.';
+      botResponse = `Chào ${name}. Trợ lý AI đã ghi nhận phản hồi của bạn về: "${text}". Bạn có cần tư vấn sâu hơn về các triệu chứng y tế khác hay muốn kết nối nhanh với bác sĩ chuyên khoa không?`;
+      quickReplies = ['Đặt lịch khám trực tiếp', 'Kết nối tư vấn trực tuyến', 'Tra cứu thông tin thuốc', 'Nhập thêm triệu chứng khác'];
     }
 
-    const nextMessages = [...updatedMessages, { sender: 'bot', text: botResponse, time: 'Vừa xong' }];
+    const nextMessages = [...updatedMessages, { sender: 'bot', text: botResponse, time: 'Vừa xong', quickReplies }];
 
     const updatedConvs = conversations.map(c => {
       if (c.id === activeConvId) {
@@ -307,19 +381,25 @@ export default function PatientConsultation({
     setInputText('');
   };
 
-  const handleQuickReply = (symptom) => {
-    handleSendMessage(`Tôi có triệu chứng ${symptom.toLowerCase()}`);
+  const handleQuickReply = (text) => {
+    handleSendMessage(text);
   };
 
   const handleStartNewChat = () => {
     const newId = `PCONV${Date.now()}`;
+    const { name } = getPatientInfo();
     const newChat = {
       id: newId,
       topic: 'Cuộc trò chuyện mới',
       date: 'Vừa xong',
       status: 'Đang tư vấn',
       messages: [
-        { sender: 'bot', text: 'Chào bạn, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe?', time: 'Vừa xong' }
+        { 
+          sender: 'bot', 
+          text: `Chào ${name}, tôi là Trợ lý sức khỏe AI. Bạn đang gặp vấn đề gì về sức khỏe hôm nay?`, 
+          time: 'Vừa xong',
+          quickReplies: ['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt']
+        }
       ],
       symptoms: [],
       diagnosis: [],
@@ -841,8 +921,8 @@ export default function PatientConsultation({
 
         {/* Quick Suggestions */}
         {!isConsultingDoctor && (
-          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflow: 'hidden', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
-            {['Sốt', 'Đau đầu', 'Buồn nôn', 'Chóng mặt', 'Đau họng', 'Ho'].map(s => (
+          <div style={{ display: 'flex', gap: '8px', padding: '8px 16px', overflowX: 'auto', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+            {getActiveQuickReplies().map(s => (
               <button
                 key={s}
                 onClick={() => handleQuickReply(s)}

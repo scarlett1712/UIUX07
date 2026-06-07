@@ -23,7 +23,7 @@ export default function ReminderAlerts({
   const [channelFilter, setChannelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Reset page when filters change
   useEffect(() => {
@@ -85,7 +85,13 @@ export default function ReminderAlerts({
   };
 
   const isFieldModified = (fieldName) => {
-    if (!originalData) return false;
+    if (!originalData) {
+      const val = formData ? formData[fieldName] : null;
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      if (Array.isArray(val)) return val.length > 0;
+      return !!val;
+    }
     return formData[fieldName] !== originalData[fieldName];
   };
 
@@ -126,6 +132,33 @@ export default function ReminderAlerts({
   };
 
   if (currentView === 'reminder-list') {
+    const draftReminders = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_reminder-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftReminders.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              title: draftVal.title ? `${draftVal.title} (Bản nháp)` : 'Nhắc lịch chưa đặt tên (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDrafts = draftReminders.filter(r => {
+      const matchSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchTarget = targetFilter ? r.target === targetFilter : true;
+      const matchChannel = channelFilter ? r.channel === channelFilter : true;
+      const matchStatus = statusFilter ? r.status === statusFilter : true;
+      return matchSearch && matchTarget && matchChannel && matchStatus;
+    });
+
     const filtered = reminders.filter(r => {
       const matchSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchTarget = targetFilter ? r.target === targetFilter : true;
@@ -134,10 +167,14 @@ export default function ReminderAlerts({
       return matchSearch && matchTarget && matchChannel && matchStatus;
     });
 
-    const totalItems = filtered.length;
+    const draftIds = new Set(filteredDrafts.map(r => r.id));
+    const cleanFiltered = filtered.filter(r => !draftIds.has(r.id));
+    const allReminders = [...filteredDrafts, ...cleanFiltered];
+
+    const totalItems = allReminders.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedReminders = filtered.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedReminders = allReminders.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
@@ -226,10 +263,22 @@ export default function ReminderAlerts({
             </thead>
             <tbody>
               {paginatedReminders.map(r => (
-                <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => {
-                  onSelectId(r.id);
-                  onNavigate('reminder-details');
-                }}>
+                <tr 
+                  key={r.id} 
+                  style={r.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : { cursor: 'pointer' }}
+                  onClick={r.isDraft ? () => {
+                    if (r.draftKey.includes('-add_')) {
+                      onSelectId(null);
+                      onNavigate('reminder-add');
+                    } else {
+                      onSelectId(r.id);
+                      onNavigate('reminder-edit');
+                    }
+                  } : () => {
+                    onSelectId(r.id);
+                    onNavigate('reminder-details');
+                  }}
+                >
                   <td style={{ fontWeight: 600 }}>{r.title}</td>
                   <td>{r.target}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{r.time}</td>
@@ -255,25 +304,33 @@ export default function ReminderAlerts({
                     </span>
                   </td>
                   <td onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleToggle(r.id)}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: r.status === 'Đang hoạt động' ? '#10b981' : '#cbd5e1' }}
-                    >
-                      {r.status === 'Đang hoạt động' ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
-                    </button>
+                    {r.isDraft ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>N/A</span>
+                    ) : (
+                      <button
+                        onClick={() => handleToggle(r.id)}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: r.status === 'Đang hoạt động' ? '#10b981' : '#cbd5e1' }}
+                      >
+                        {r.status === 'Đang hoạt động' ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                      </button>
+                    )}
                   </td>
                   <td onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
-                        onSelectId(r.id);
-                        onNavigate('reminder-edit');
-                      }}>
-                        <Edit3 size={12} />
-                      </button>
-                      <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDelete(r.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
+                    {r.isDraft ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
+                          onSelectId(r.id);
+                          onNavigate('reminder-edit');
+                        }}>
+                          <Edit3 size={12} />
+                        </button>
+                        <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDelete(r.id)}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -283,10 +340,29 @@ export default function ReminderAlerts({
 
         {/* Pagination Bar */}
         <div className="list-pagination-bar">
-          <span>
-            Hiển thị {Math.min(startIndex + 1, totalItems)}-
-            {Math.min(startIndex + paginatedReminders.length, totalItems)} trong tổng số {totalItems}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>
+              Hiển thị {Math.min(startIndex + 1, totalItems)}-
+              {Math.min(startIndex + paginatedReminders.length, totalItems)} trong tổng số {totalItems}
+            </span>
+            <span style={{ margin: '0 8px' }}>|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Số bản ghi:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="filter-select"
+                style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </span>
+          </div>
           <div className="pagination-nav-group">
             <button
               className="pagination-nav-btn"

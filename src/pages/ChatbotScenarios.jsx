@@ -78,6 +78,7 @@ export default function ChatbotScenarios({
   const [nodes, setNodes] = useState(INITIAL_NODES);
   const [connections, setConnections] = useState(INITIAL_CONNECTIONS);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [connectingSourceId, setConnectingSourceId] = useState(null);
   const [draggingNodeId, setDraggingNodeId] = useState(null);
   const dragOffset = useRef({ x: 0, y: 0 });
   const canvasRef = useRef(null);
@@ -88,17 +89,61 @@ export default function ChatbotScenarios({
 
   useEffect(() => {
     if (currentView === 'chatbot-scenario-add') {
-      setNodes([
-        { id: 'start', type: 'start', label: 'Bắt đầu', x: 450, y: 50, content: 'Bắt đầu luồng kịch bản' },
-        { id: 'welcome', type: 'bot', label: 'Chào mừng', x: 450, y: 140, content: 'Xin chào! Tôi có thể giúp gì cho bạn?' }
-      ]);
-      setConnections([
-        { from: 'start', to: 'welcome' }
-      ]);
-      setScenarioName('Kịch bản mới');
-      setScenarioStatus('Nháp');
+      const draftKey = 'draft_chatbot-scenario-add_new';
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setScenarioName(parsed.name || 'Kịch bản mới');
+          setScenarioStatus(parsed.status || 'Nháp');
+          setNodes(parsed.nodes || [
+            { id: 'start', type: 'start', label: 'Bắt đầu', x: 450, y: 50, content: 'Bắt đầu luồng kịch bản' },
+            { id: 'welcome', type: 'bot', label: 'Chào mừng', x: 450, y: 140, content: 'Xin chào! Tôi có thể giúp gì cho bạn?' }
+          ]);
+          setConnections(parsed.connections || [
+            { from: 'start', to: 'welcome' }
+          ]);
+          triggerToast('Đã khôi phục bản nháp chưa lưu', 'info');
+        } catch (e) {}
+      } else {
+        setNodes([
+          { id: 'start', type: 'start', label: 'Bắt đầu', x: 450, y: 50, content: 'Bắt đầu luồng kịch bản' },
+          { id: 'welcome', type: 'bot', label: 'Chào mừng', x: 450, y: 140, content: 'Xin chào! Tôi có thể giúp gì cho bạn?' }
+        ]);
+        setConnections([
+          { from: 'start', to: 'welcome' }
+        ]);
+        setScenarioName('Kịch bản mới');
+        setScenarioStatus('Nháp');
+      }
       setSelectedNodeId(null);
-    } else if (selectedId) {
+      setConnectingSourceId(null);
+    } else if (currentView === 'chatbot-scenario-edit' && selectedId) {
+      const draftKey = `draft_chatbot-scenario-edit_${selectedId}`;
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setScenarioName(parsed.name || '');
+          setScenarioStatus(parsed.status || 'Nháp');
+          setNodes(parsed.nodes || []);
+          setConnections(parsed.connections || []);
+          triggerToast('Đã khôi phục bản nháp chưa lưu', 'info');
+        } catch (e) {}
+      } else {
+        const activeSc = scenarios.find((s) => s.id === selectedId);
+        if (activeSc) {
+          setScenarioName(activeSc.name);
+          setScenarioStatus(activeSc.status);
+          if (activeSc.nodes) {
+            setNodes(activeSc.nodes);
+          }
+          if (activeSc.connections) {
+            setConnections(activeSc.connections);
+          }
+        }
+      }
+    } else if (currentView === 'chatbot-scenario-details' && selectedId) {
       const activeSc = scenarios.find((s) => s.id === selectedId);
       if (activeSc) {
         setScenarioName(activeSc.name);
@@ -113,11 +158,29 @@ export default function ChatbotScenarios({
     }
   }, [selectedId, currentView]);
 
+  // Save draft state on designer changes
+  useEffect(() => {
+    const isAdd = currentView === 'chatbot-scenario-add';
+    const isEdit = currentView === 'chatbot-scenario-edit';
+    if (!isAdd && !isEdit) return;
+    if (nodes.length === 0) return;
+
+    const draftKey = isAdd ? 'draft_chatbot-scenario-add_new' : `draft_chatbot-scenario-edit_${selectedId}`;
+    const draftData = {
+      id: isEdit ? selectedId : `SC${Date.now()}`,
+      name: scenarioName,
+      status: scenarioStatus,
+      nodes,
+      connections
+    };
+    localStorage.setItem(draftKey, JSON.stringify(draftData));
+  }, [scenarioName, scenarioStatus, nodes, connections, currentView, selectedId]);
+
   // --- FILTERS & PAGINATION ---
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Reset page when filters change
   useEffect(() => {
@@ -161,13 +224,20 @@ export default function ChatbotScenarios({
   const handleNodeMouseDown = (e, nodeId) => {
     if (isSimulatorRunning || currentView.includes('details')) return;
     e.stopPropagation();
-    setSelectedNodeId(nodeId);
-    setDraggingNodeId(nodeId);
-    const rect = e.currentTarget.getBoundingClientRect();
-    dragOffset.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    
+    if (connectingSourceId && connectingSourceId !== nodeId) {
+      handleConnectNodes(connectingSourceId, nodeId);
+      setConnectingSourceId(null);
+      setSelectedNodeId(nodeId);
+    } else {
+      setSelectedNodeId(nodeId);
+      setDraggingNodeId(nodeId);
+      const rect = e.currentTarget.getBoundingClientRect();
+      dragOffset.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    }
   };
 
   const handleCanvasMouseMove = (e) => {
@@ -228,6 +298,10 @@ export default function ChatbotScenarios({
 
   // --- Lifted state CRUD backend mapping ---
   const handleSaveScenario = (statusOverride) => {
+    const isAdd = currentView === 'chatbot-scenario-add';
+    const draftKey = isAdd ? 'draft_chatbot-scenario-add_new' : `draft_chatbot-scenario-edit_${selectedId}`;
+    localStorage.removeItem(draftKey);
+
     const scenarioId = selectedId || `SC${Date.now()}`;
     const updatedScenarios = [...scenarios];
     const existingIdx = scenarios.findIndex((s) => s.id === scenarioId);
@@ -358,6 +432,32 @@ export default function ChatbotScenarios({
 
   // --- BOT SIMULATION ENGINE ---
 
+  const getPersonalizedText = (text) => {
+    let name = 'Giang';
+    let notes = 'Không có bệnh nền nghiêm trọng. Thỉnh thoảng bị cảm cúm theo mùa.';
+    try {
+      const patientDataStr = localStorage.getItem('patientData');
+      if (patientDataStr) {
+        const patient = JSON.parse(patientDataStr);
+        if (patient) {
+          name = patient.name || 'Giang';
+          notes = patient.notes || '';
+        }
+      }
+    } catch (e) {}
+    let personalized = text;
+    personalized = personalized.replace(/{patientName}/g, name);
+    personalized = personalized.replace(/ bạn /g, ` ${name} `);
+    personalized = personalized.replace(/ bạn,/g, ` ${name},`);
+    personalized = personalized.replace(/ bạn\./g, ` ${name}.`);
+    personalized = personalized.replace(/Bạn /g, `${name} `);
+    
+    if (notes && (text.toLowerCase().includes('thuốc') || text.toLowerCase().includes('uống') || text.toLowerCase().includes('paracetamol'))) {
+      personalized += `\n\n*Lưu ý từ hồ sơ: ${notes}*`;
+    }
+    return personalized;
+  };
+
   const startSimulation = () => {
     setIsSimulatorRunning(true);
     setCurrentNodeId('start');
@@ -381,7 +481,7 @@ export default function ChatbotScenarios({
         setTimeout(() => {
           setChatMessages((prev) => [
             ...prev,
-            { sender: 'bot', text: botNode.content }
+            { sender: 'bot', text: getPersonalizedText(botNode.content) }
           ]);
           triggerNextBotStep(botNode.id);
         }, 1000);
@@ -400,7 +500,7 @@ export default function ChatbotScenarios({
       setCurrentNodeId(nextNode.id);
       setChatMessages((prev) => [
         ...prev,
-        { sender: 'bot', text: nextNode.content }
+        { sender: 'bot', text: getPersonalizedText(nextNode.content) }
       ]);
       if (nextNode.type === 'bot' || nextNode.type === 'action') {
         triggerNextBotStep(nextNode.id);
@@ -433,7 +533,7 @@ export default function ChatbotScenarios({
       setCurrentNodeId(targetNodeId);
       setChatMessages((prev) => [
         ...prev,
-        { sender: 'bot', text: nextNode.content }
+        { sender: 'bot', text: getPersonalizedText(nextNode.content) }
       ]);
       if (nextNode.type === 'bot' || nextNode.type === 'action') {
         triggerNextBotStep(nextNode.id);
@@ -456,7 +556,7 @@ export default function ChatbotScenarios({
       setTimeout(() => {
         setChatMessages((prev) => [
           ...prev,
-          { sender: 'bot', text: `Tôi đã tìm kiếm thông tin về thuốc "${userText}".\n\nĐây là loại thuốc giảm đau hạ sốt rất phổ biến. Vui lòng tham khảo chi tiết trong Dữ liệu y tế để biết liều lượng chính xác.` }
+          { sender: 'bot', text: getPersonalizedText(`Tôi đã tìm kiếm thông tin về thuốc "${userText}".\n\nĐây là loại thuốc giảm đau hạ sốt rất phổ biến. Vui lòng tham khảo chi tiết trong Dữ liệu y tế để biết liều lượng chính xác.`) }
         ]);
         triggerToast('Bot truy xuất cơ sở dữ liệu thuốc thành công!', 'success');
       }, 1200);
@@ -481,16 +581,47 @@ export default function ChatbotScenarios({
   // --- VIEWS ---
 
   if (currentView === 'chatbot-scenarios') {
+    const draftScenarios = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_chatbot-scenario-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftScenarios.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              name: draftVal.name ? `${draftVal.name} (Bản nháp)` : 'Kịch bản chưa đặt tên (Bản nháp)',
+              nodeCount: draftVal.nodes ? draftVal.nodes.length : 0,
+              lastUpdated: 'Bản nháp chưa lưu'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDrafts = draftScenarios.filter(sc => {
+      const matchSearch = sc.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchStatus = statusFilter ? sc.status === statusFilter : true;
+      return matchSearch && matchStatus;
+    });
+
     const filtered = scenarios.filter(sc => {
       const matchSearch = sc.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = statusFilter ? sc.status === statusFilter : true;
       return matchSearch && matchStatus;
     });
 
-    const totalItems = filtered.length;
+    const draftIds = new Set(filteredDrafts.map(s => s.id));
+    const cleanFiltered = filtered.filter(s => !draftIds.has(s.id));
+    const allScenarios = [...filteredDrafts, ...cleanFiltered];
+
+    const totalItems = allScenarios.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedScenarios = filtered.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedScenarios = allScenarios.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
@@ -557,9 +688,21 @@ export default function ChatbotScenarios({
             </thead>
             <tbody>
               {paginatedScenarios.map((sc) => (
-                <tr key={sc.id}>
+                <tr 
+                  key={sc.id}
+                  style={sc.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : {}}
+                  onClick={sc.isDraft ? () => {
+                    if (sc.draftKey.includes('-add_')) {
+                      onSelectId(null);
+                      onNavigate('chatbot-scenario-add');
+                    } else {
+                      onSelectId(sc.id);
+                      onNavigate('chatbot-scenario-edit');
+                    }
+                  } : undefined}
+                >
                   <td
-                    onClick={() => {
+                    onClick={sc.isDraft ? undefined : () => {
                       onSelectId(sc.id);
                       onNavigate('chatbot-scenario-details');
                     }}
@@ -575,40 +718,47 @@ export default function ChatbotScenarios({
                   <td>{sc.nodeCount}</td>
                   <td style={{ color: 'var(--text-muted)' }}>{sc.lastUpdated}</td>
                   <td>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          onSelectId(sc.id);
-                          onNavigate('chatbot-scenario-test');
-                        }}
-                        className="btn btn-outline"
-                        style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.8rem', color: 'var(--primary)' }}
-                      >
-                        <Play size={12} fill="currentColor" /> Chạy thử
-                      </button>
-                      <button
-                        onClick={() => {
-                          onSelectId(sc.id);
-                          onNavigate('chatbot-scenario-edit');
-                        }}
-                        className="btn btn-outline"
-                        style={{ padding: '4px' }}
-                      >
-                        <Edit3 size={12} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          showConfirm('Bạn có chắc muốn xóa kịch bản này?', () => {
-                            setScenarios(scenarios.filter((s) => s.id !== sc.id));
-                            triggerToast('Đã xóa kịch bản', 'info');
-                          });
-                        }}
-                        className="btn btn-outline"
-                        style={{ padding: '4px', color: 'red' }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
+                    {sc.isDraft ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectId(sc.id);
+                            onNavigate('chatbot-scenario-test');
+                          }}
+                          className="btn btn-outline"
+                          style={{ padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.8rem', color: 'var(--primary)' }}
+                        >
+                          <Play size={12} fill="currentColor" /> Chạy thử
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectId(sc.id);
+                            onNavigate('chatbot-scenario-edit');
+                          }}
+                          className="btn btn-outline"
+                          style={{ padding: '4px' }}
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showConfirm('Bạn có chắc muốn xóa kịch bản này?', () => {
+                              setScenarios(scenarios.filter((s) => s.id !== sc.id));
+                              triggerToast('Đã xóa kịch bản', 'info');
+                            });
+                          }}
+                          className="btn btn-outline"
+                          style={{ padding: '4px', color: 'red' }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -618,10 +768,29 @@ export default function ChatbotScenarios({
 
         {/* Pagination Bar */}
         <div className="list-pagination-bar">
-          <span>
-            Hiển thị {Math.min(startIndex + 1, totalItems)}-
-            {Math.min(startIndex + paginatedScenarios.length, totalItems)} trong tổng số {totalItems}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>
+              Hiển thị {Math.min(startIndex + 1, totalItems)}-
+              {Math.min(startIndex + paginatedScenarios.length, totalItems)} trong tổng số {totalItems}
+            </span>
+            <span style={{ margin: '0 8px' }}>|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Số bản ghi:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="filter-select"
+                style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </span>
+          </div>
           <div className="pagination-nav-group">
             <button
               className="pagination-nav-btn"
@@ -734,6 +903,23 @@ export default function ChatbotScenarios({
           </div>
 
           <div className="flex gap-2">
+            <button className="btn btn-cancel" onClick={() => {
+              triggerToast('Đã thoát thiết kế (giữ bản nháp)', 'info');
+              onNavigate('chatbot-scenarios');
+            }}>
+              Thoát
+            </button>
+            {localStorage.getItem(currentView === 'chatbot-scenario-add' ? 'draft_chatbot-scenario-add_new' : `draft_chatbot-scenario-edit_${selectedId}`) && (
+              <button className="btn btn-outline" style={{ color: 'red', borderColor: 'red' }} onClick={() => {
+                const isAdd = currentView === 'chatbot-scenario-add';
+                const draftKey = isAdd ? 'draft_chatbot-scenario-add_new' : `draft_chatbot-scenario-edit_${selectedId}`;
+                localStorage.removeItem(draftKey);
+                triggerToast('Đã hủy và xóa bản nháp', 'info');
+                onNavigate('chatbot-scenarios');
+              }}>
+                Hủy nháp
+              </button>
+            )}
             <button className="btn btn-outline" onClick={() => {
               setNodes(INITIAL_NODES);
               setConnections(INITIAL_CONNECTIONS);
@@ -809,6 +995,10 @@ export default function ChatbotScenarios({
             className="canvas-area"
             onMouseMove={handleCanvasMouseMove}
             onMouseUp={handleCanvasMouseUp}
+            onMouseDown={() => {
+              setSelectedNodeId(null);
+              setConnectingSourceId(null);
+            }}
           >
             <svg className="flow-svg-connections">
               {renderConnections()}
@@ -829,8 +1019,11 @@ export default function ChatbotScenarios({
                     className="node-port port-input"
                     title="Cổng kết nối vào"
                     onMouseUp={() => {
-                      if (selectedNodeId && selectedNodeId !== node.id) {
-                        handleConnectNodes(selectedNodeId, node.id);
+                      const sourceId = connectingSourceId || selectedNodeId;
+                      if (sourceId && sourceId !== node.id) {
+                        handleConnectNodes(sourceId, node.id);
+                        setConnectingSourceId(null);
+                        setSelectedNodeId(node.id);
                       }
                     }}
                   />
@@ -864,8 +1057,9 @@ export default function ChatbotScenarios({
                     title="Cổng kết nối ra (Bấm để chọn cổng nguồn)"
                     onMouseDown={(e) => {
                       e.stopPropagation();
+                      setConnectingSourceId(node.id);
                       setSelectedNodeId(node.id);
-                      triggerToast(`Đã chọn cổng ra của "${node.label}"`, 'info');
+                      triggerToast(`Đã chọn cổng ra của "${node.label}". Nhấp vào một nút khác để tạo kết nối.`, 'info');
                     }}
                   />
                 )}

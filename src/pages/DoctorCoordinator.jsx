@@ -30,7 +30,7 @@ export default function DoctorCoordinator({
 
   // --- PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // --- SHIFT MODAL STATE ---
   const [showShiftModal, setShowShiftModal] = useState(false);
@@ -109,7 +109,13 @@ export default function DoctorCoordinator({
   }, [currentView]);
 
   const isFieldModified = (fieldName) => {
-    if (!originalData) return false;
+    if (!originalData) {
+      const val = formData ? formData[fieldName] : null;
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      if (Array.isArray(val)) return val.length > 0;
+      return !!val;
+    }
     return formData[fieldName] !== originalData[fieldName];
   };
 
@@ -461,12 +467,43 @@ export default function DoctorCoordinator({
 
   // 1. DOCTOR LIST & SHIFTS VIEW
   if (currentView === 'doctor-list' || currentView === 'doctor-shifts') {
+    const draftDoctors = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_doctor-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftDoctors.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              name: draftVal.name ? `${draftVal.name} (Bản nháp)` : 'Bác sĩ chưa đặt tên (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDraftDocs = draftDoctors.filter(d => {
+      const matchSearch = d.name.toLowerCase().includes(docSearch.toLowerCase()) || d.specialty.toLowerCase().includes(docSearch.toLowerCase());
+      const matchSpecialty = docSpecialty ? d.specialty === docSpecialty : true;
+      return matchSearch && matchSpecialty;
+    });
+
     const filteredDocs = doctors.filter(d => {
       const matchSearch = d.name.toLowerCase().includes(docSearch.toLowerCase()) || d.specialty.toLowerCase().includes(docSearch.toLowerCase());
       const matchSpecialty = docSpecialty ? d.specialty === docSpecialty : true;
       return matchSearch && matchSpecialty;
     });
-    const totalPages = Math.ceil(filteredDocs.length / itemsPerPage) || 1;
+
+    const draftDocIds = new Set(filteredDraftDocs.map(d => d.id));
+    const cleanFilteredDocs = filteredDocs.filter(d => !draftDocIds.has(d.id));
+    const allDocs = [...filteredDraftDocs, ...cleanFilteredDocs];
+
+    const totalPages = Math.ceil(allDocs.length / itemsPerPage) || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
 
     return (
       <div className="animate-fade-in">
@@ -568,15 +605,23 @@ export default function DoctorCoordinator({
                   </tr>
                 </thead>
                 <tbody>
-                  {doctors.filter(d => {
-                    const matchSearch = d.name.toLowerCase().includes(docSearch.toLowerCase()) || d.specialty.toLowerCase().includes(docSearch.toLowerCase());
-                    const matchSpecialty = docSpecialty ? d.specialty === docSpecialty : true;
-                    return matchSearch && matchSpecialty;
-                  }).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(d => (
-                    <tr key={d.id} style={{ cursor: 'pointer' }} onClick={() => {
-                      onSelectId(d.id);
-                      onNavigate('doctor-details');
-                    }}>
+                  {allDocs.slice(startIndex, startIndex + itemsPerPage).map(d => (
+                    <tr 
+                      key={d.id} 
+                      style={d.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : { cursor: 'pointer' }}
+                      onClick={d.isDraft ? () => {
+                        if (d.draftKey.includes('-add_')) {
+                          onSelectId(null);
+                          onNavigate('doctor-add');
+                        } else {
+                          onSelectId(d.id);
+                          onNavigate('doctor-edit');
+                        }
+                      } : () => {
+                        onSelectId(d.id);
+                        onNavigate('doctor-details');
+                      }}
+                    >
                       <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{d.id}</td>
                       <td style={{ fontWeight: 600 }}>{d.name}</td>
                       <td style={{ fontWeight: 500 }}>{d.specialty}</td>
@@ -591,17 +636,21 @@ export default function DoctorCoordinator({
                         </span>
                       </td>
                       <td onClick={e => e.stopPropagation()}>
-                        <div className="flex gap-2">
-                          <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
-                            onSelectId(d.id);
-                            onNavigate('doctor-edit');
-                          }}>
-                            <Edit3 size={12} />
-                          </button>
-                          <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDeleteDoctor(d.id)}>
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
+                        {d.isDraft ? (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
+                              onSelectId(d.id);
+                              onNavigate('doctor-edit');
+                            }}>
+                              <Edit3 size={12} />
+                            </button>
+                            <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDeleteDoctor(d.id)}>
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -611,10 +660,29 @@ export default function DoctorCoordinator({
 
             {/* Pagination Bar */}
             <div className="list-pagination-bar">
-              <span>
-                Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, filteredDocs.length)}-
-                {Math.min(currentPage * itemsPerPage, filteredDocs.length)} trong tổng số {filteredDocs.length}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>
+                  Hiển thị {Math.min(startIndex + 1, allDocs.length)}-
+                  {Math.min(startIndex + itemsPerPage, allDocs.length)} trong tổng số {allDocs.length}
+                </span>
+                <span style={{ margin: '0 8px' }}>|</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Số bản ghi:
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="filter-select"
+                    style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                  </select>
+                </span>
+              </div>
               <div className="pagination-nav-group">
                 <button
                   className="pagination-nav-btn"

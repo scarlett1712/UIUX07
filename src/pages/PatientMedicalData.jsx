@@ -17,6 +17,7 @@ export default function PatientMedicalData({
   const [showGuestLoginModal, setShowGuestLoginModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Reset page and query when tab switches
   useEffect(() => {
@@ -26,7 +27,6 @@ export default function PatientMedicalData({
 
   useEffect(() => {
     if (selectedId) {
-      const itemsPerPage = 5;
       if (selectedId.startsWith('M')) {
         setActiveTab('medicines');
         setSelectedMedicineId(selectedId);
@@ -55,7 +55,7 @@ export default function PatientMedicalData({
     m.activeIngredient.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const itemsPerPage = 5;
+
   const currentDiseases = filteredDiseases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const currentMedicines = filteredMedicines.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = activeTab === 'diseases' 
@@ -221,10 +221,29 @@ export default function PatientMedicalData({
 
           {/* Standardized bottom pagination bar */}
           <div className="list-pagination-bar" style={{ flexShrink: 0, marginTop: 'auto', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span>
-              Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)}-
-              {Math.min(currentPage * itemsPerPage, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)} trong tổng số {activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>
+                Hiển thị {Math.min((currentPage - 1) * itemsPerPage + 1, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)}-
+                {Math.min(currentPage * itemsPerPage, activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length)} trong tổng số {activeTab === 'diseases' ? filteredDiseases.length : filteredMedicines.length}
+              </span>
+              <span style={{ margin: '0 8px' }}>|</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Số bản ghi:
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="filter-select"
+                  style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
+              </span>
+            </div>
             <div className="pagination-nav-group">
               <button
                 type="button"

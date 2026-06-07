@@ -34,7 +34,7 @@ export default function ClinicManagement({
 
   // --- PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Reset page on tab/view changes
   useEffect(() => {
@@ -178,7 +178,13 @@ export default function ClinicManagement({
 
   // Form field modification check
   const isFieldModified = (fieldName) => {
-    if (!originalData) return false;
+    if (!originalData) {
+      const val = formData ? formData[fieldName] : null;
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      if (Array.isArray(val)) return val.length > 0;
+      return !!val;
+    }
     return formData[fieldName] !== originalData[fieldName];
   };
 
@@ -381,7 +387,34 @@ export default function ClinicManagement({
   const getAppointmentsForDay = (day) => {
     if (!day) return [];
     const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    return appointments.filter(a => {
+    
+    // Load drafts
+    const draftAppointments = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_appointment-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal && draftVal.date === dateStr) {
+            draftAppointments.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              patientName: draftVal.patientName ? `${draftVal.patientName} (Bản nháp)` : 'Chưa nhập tên BN (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDrafts = draftAppointments.filter(a => {
+      if (selectedDept !== 'Tất cả chuyên khoa' && a.specialty !== selectedDept) return false;
+      if (!checkedDoctors[a.doctorName]) return false;
+      return true;
+    });
+
+    const filtered = appointments.filter(a => {
       if (a.date !== dateStr) return false;
       // Filter by Specialty
       if (selectedDept !== 'Tất cả chuyên khoa' && a.specialty !== selectedDept) return false;
@@ -389,6 +422,10 @@ export default function ClinicManagement({
       if (!checkedDoctors[a.doctorName]) return false;
       return true;
     });
+
+    const draftIds = new Set(filteredDrafts.map(a => a.id));
+    const cleanFiltered = filtered.filter(a => !draftIds.has(a.id));
+    return [...filteredDrafts, ...cleanFiltered];
   };
 
   // --- RENDER SECTIONS ---
@@ -724,11 +761,23 @@ export default function ClinicManagement({
                       statusColor = '#ef4444';
                       bgColor = '#fee2e2';
                     }
+                    if (apt.isDraft) {
+                      statusColor = '#475569';
+                      bgColor = '#f1f5f9';
+                    }
                     return (
                       <div 
                         key={apt.id} 
-                        onClick={() => setActiveAptPopup(apt)}
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderLeft: `4px solid ${statusColor}`, backgroundColor: bgColor, borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--border-color)', borderLeftWidth: '4px' }}
+                        onClick={apt.isDraft ? () => {
+                          if (apt.draftKey.includes('-add_')) {
+                            onSelectId(null);
+                            onNavigate('appointment-add');
+                          } else {
+                            onSelectId(apt.id);
+                            onNavigate('appointment-edit');
+                          }
+                        } : () => setActiveAptPopup(apt)}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderLeft: `4px solid ${statusColor}`, backgroundColor: bgColor, borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--border-color)', borderLeftWidth: '4px', opacity: apt.isDraft ? 0.6 : 1, fontStyle: apt.isDraft ? 'italic' : 'normal' }}
                       >
                         <div>
                           <strong style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>{apt.patientName}</strong>
@@ -813,12 +862,27 @@ export default function ClinicManagement({
                           bg = '#fee2e2';
                         }
 
+                        if (apt.isDraft) {
+                          color = '#475569';
+                          bg = '#f1f5f9';
+                        }
+
                         return (
                           <div
                             key={apt.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveAptPopup(apt);
+                              if (apt.isDraft) {
+                                if (apt.draftKey.includes('-add_')) {
+                                  onSelectId(null);
+                                  onNavigate('appointment-add');
+                                } else {
+                                  onSelectId(apt.id);
+                                  onNavigate('appointment-edit');
+                                }
+                              } else {
+                                setActiveAptPopup(apt);
+                              }
                             }}
                             style={{
                               padding: '3px 6px',
@@ -831,7 +895,9 @@ export default function ClinicManagement({
                               cursor: 'pointer',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
+                              whiteSpace: 'nowrap',
+                              opacity: apt.isDraft ? 0.6 : 1,
+                              fontStyle: apt.isDraft ? 'italic' : 'normal'
                             }}
                           >
                             <div>{apt.patientName}</div>
@@ -1085,10 +1151,39 @@ export default function ClinicManagement({
       return matchSearch && matchGender;
     });
 
-    const totalPatients = filteredPatients.length;
+    const draftPatients = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_patient-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftPatients.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              name: draftVal.name ? `${draftVal.name} (Bản nháp)` : 'Bệnh nhân chưa đặt tên (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDrafts = draftPatients.filter(p => {
+      const matchSearch = p.name.toLowerCase().includes(patientSearch.toLowerCase()) || (p.phone && p.phone.includes(patientSearch)) || (p.email && p.email.toLowerCase().includes(patientSearch.toLowerCase()));
+      const matchGender = patientGender ? p.gender === patientGender : true;
+      return matchSearch && matchGender;
+    });
+
+    const draftIds = new Set(filteredDrafts.map(p => p.id));
+    const cleanFilteredPatients = filteredPatients.filter(p => !draftIds.has(p.id));
+    const allPatients = [...filteredDrafts, ...cleanFilteredPatients];
+
+    const totalPatients = allPatients.length;
     const totalPatientPages = Math.ceil(totalPatients / itemsPerPage) || 1;
     const patientStartIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedPatients = filteredPatients.slice(patientStartIndex, patientStartIndex + itemsPerPage);
+    const paginatedPatients = allPatients.slice(patientStartIndex, patientStartIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
@@ -1153,11 +1248,23 @@ export default function ClinicManagement({
               </tr>
             </thead>
             <tbody>
-              {paginatedPatients.map(p => (
-                <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => {
-                  onSelectId(p.id);
-                  onNavigate('patient-details');
-                }}>
+               {paginatedPatients.map(p => (
+                <tr 
+                  key={p.id} 
+                  style={p.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : { cursor: 'pointer' }}
+                  onClick={p.isDraft ? () => {
+                    if (p.draftKey.includes('-add_')) {
+                      onSelectId(null);
+                      onNavigate('patient-add');
+                    } else {
+                      onSelectId(p.id);
+                      onNavigate('patient-edit');
+                    }
+                  } : () => {
+                    onSelectId(p.id);
+                    onNavigate('patient-details');
+                  }}
+                >
                   <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.id}</td>
                   <td style={{ fontWeight: 600 }}>{p.name}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>{p.dob}</td>
@@ -1165,17 +1272,21 @@ export default function ClinicManagement({
                   <td>{p.phone}</td>
                   <td>{p.email}</td>
                   <td onClick={e => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
-                        onSelectId(p.id);
-                        onNavigate('patient-edit');
-                      }}>
-                        <Edit3 size={12} />
-                      </button>
-                      <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDeletePatient(p.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
+                    {p.isDraft ? (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button className="btn btn-outline" style={{ padding: '4px' }} onClick={() => {
+                          onSelectId(p.id);
+                          onNavigate('patient-edit');
+                        }}>
+                          <Edit3 size={12} />
+                        </button>
+                        <button className="btn btn-outline" style={{ padding: '4px', color: 'red' }} onClick={() => handleDeletePatient(p.id)}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -1185,10 +1296,29 @@ export default function ClinicManagement({
 
         {/* Pagination Bar */}
         <div className="list-pagination-bar">
-          <span>
-            Hiển thị {Math.min(patientStartIndex + 1, totalPatients)}-
-            {Math.min(patientStartIndex + paginatedPatients.length, totalPatients)} trong tổng số {totalPatients}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>
+              Hiển thị {Math.min(patientStartIndex + 1, totalPatients)}-
+              {Math.min(patientStartIndex + paginatedPatients.length, totalPatients)} trong tổng số {totalPatients}
+            </span>
+            <span style={{ margin: '0 8px' }}>|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Số bản ghi:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="filter-select"
+                style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </span>
+          </div>
           <div className="pagination-nav-group">
             <button
               className="pagination-nav-btn"

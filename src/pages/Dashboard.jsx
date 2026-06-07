@@ -26,6 +26,72 @@ export default function Dashboard({
     { id: 3, action: 'Chỉnh sửa kịch bản', time: '04-05-2026 - 16:17', icon: Bot, type: 'chatbot-scenario-edit', idRef: null },
   ];
 
+  // Dynamic drafts synchronization for Recent Activities
+  const getDraftActivities = () => {
+    const draftActivities = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (!draftVal) continue;
+          
+          let action = '';
+          let type = '';
+          let idRef = null;
+          let icon = Pill;
+          
+          if (key === 'draft_disease-add_new') {
+            action = `Thêm bệnh mới: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'disease-add';
+            icon = Activity;
+          } else if (key.startsWith('draft_disease-edit_')) {
+            const id = key.replace('draft_disease-edit_', '');
+            action = `Chỉnh sửa bệnh: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'disease-edit';
+            idRef = id;
+            icon = Activity;
+          } else if (key === 'draft_medicine-add_new') {
+            action = `Thêm thuốc mới: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'medicine-add';
+            icon = Pill;
+          } else if (key.startsWith('draft_medicine-edit_')) {
+            const id = key.replace('draft_medicine-edit_', '');
+            action = `Chỉnh sửa thuốc: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'medicine-edit';
+            idRef = id;
+            icon = Pill;
+          } else if (key === 'draft_chatbot-scenario-add_new') {
+            action = `Thêm kịch bản mới: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'chatbot-scenario-add';
+            icon = Bot;
+          } else if (key.startsWith('draft_chatbot-scenario-edit_')) {
+            const id = key.replace('draft_chatbot-scenario-edit_', '');
+            action = `Chỉnh sửa kịch bản: ${draftVal.name || 'Chưa đặt tên'} (Nháp)`;
+            type = 'chatbot-scenario-edit';
+            idRef = id;
+            icon = Bot;
+          }
+          
+          if (action) {
+            draftActivities.push({
+              id: `draft-${key}`,
+              action,
+              time: 'Bản nháp chưa lưu',
+              icon,
+              type,
+              idRef,
+              isDraft: true
+            });
+          }
+        } catch (e) {}
+      }
+    }
+    return draftActivities;
+  };
+
+  const allActivities = [...getDraftActivities(), ...activities];
+
   const totalConvs = conversations.length || 1;
   const starCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   conversations.forEach(c => {
@@ -186,15 +252,20 @@ export default function Dashboard({
         <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '8px', marginTop: 0 }}>Hoạt động gần đây</h3>
           <div className="recent-activity-list" style={{ flex: 1 }}>
-            {activities.map((act) => {
+            {allActivities.map((act) => {
               const Icon = act.icon;
               return (
-                <div key={act.id} className="activity-item" onClick={() => handleActivityClick(act)}>
+                <div 
+                  key={act.id} 
+                  className="activity-item" 
+                  onClick={() => handleActivityClick(act)}
+                  style={act.isDraft ? { opacity: 0.7, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : {}}
+                >
                   <div className="activity-icon-wrapper">
                     <Icon size={16} />
                   </div>
                   <div className="activity-details">
-                    <div className="activity-title">{act.action}</div>
+                    <div className="activity-title" style={act.isDraft ? { fontWeight: '600', color: 'var(--text-muted)' } : {}}>{act.action}</div>
                     <div className="activity-time">{act.time}</div>
                   </div>
                 </div>

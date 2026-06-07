@@ -1226,12 +1226,71 @@ function App() {
 
   // Floating Chatbot Widget states (Patient specific)
   const [showFloatingChat, setShowFloatingChat] = useState(false);
-  const [floatingMessages, setFloatingMessages] = useState([
-    { sender: 'bot', text: 'Chào Giang! Mình có thể giúp gì cho bạn hôm nay?' }
-  ]);
+  const [floatingMessages, setFloatingMessages] = useState(() => {
+    let name = 'Giang';
+    try {
+      const cached = localStorage.getItem('patientData');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.name) name = parsed.name;
+      }
+    } catch (e) {}
+    return [
+      { sender: 'bot', text: `Chào ${name}! Mình có thể giúp gì cho bạn hôm nay?` }
+    ];
+  });
+  const [floatingQuickReplies, setFloatingQuickReplies] = useState(['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt']);
   const [floatingInput, setFloatingInput] = useState('');
   
   const floatingChatScrollRef = useRef(null);
+
+  const handleSendFloatingMessage = (text) => {
+    if (!text.trim()) return;
+
+    const newMsgs = [...floatingMessages, { sender: 'user', text }];
+    setFloatingMessages(newMsgs);
+    setFloatingInput('');
+
+    // AI Response simulation
+    setTimeout(() => {
+      let botResponse = '';
+      let nextReplies = [];
+      
+      let name = 'Giang';
+      let notes = '';
+      try {
+        const cached = localStorage.getItem('patientData');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed) {
+            name = parsed.name || 'Giang';
+            notes = parsed.notes || '';
+          }
+        }
+      } catch (e) {}
+
+      const lowerText = text.toLowerCase();
+      if (lowerText.includes('sốt') || lowerText.includes('nhiệt độ')) {
+        botResponse = `Chào ${name}. Bạn bị sốt từ khi nào? ${notes ? `Hồ sơ có lưu ý: "${notes}".` : ''} Hãy phóng to (zoom) khung chat ở góc trên để kết nối với bác sĩ ngay nhé!`;
+        nextReplies = ['Sốt dưới 38 độ', 'Sốt trên 38.5 độ', 'Kết nối bác sĩ ngay', 'Tra cứu hạ sốt'];
+      } else if (lowerText.includes('dạ dày') || lowerText.includes('đau bụng') || lowerText.includes('tiêu hóa') || lowerText.includes('buồn nôn')) {
+        botResponse = `Chào ${name}. Bạn đang bị đau bụng/dạ dày. ${notes ? `Tiền sử ghi nhận: "${notes}".` : ''} Bạn hãy nhấp vào nút zoom ở trên để tư vấn bác sĩ Tiêu hóa nhé!`;
+        nextReplies = ['Đau khi đói', 'Đau sau khi ăn', 'Có buồn nôn, ợ chua', 'Tìm bác sĩ Tiêu hóa'];
+      } else if (lowerText.includes('ho') || lowerText.includes('họng')) {
+        botResponse = `Chào ${name}. Bạn bị ho, đau họng lâu chưa? Có kèm sổ mũi không? Hãy phóng to chat để xem hướng dẫn tự chăm sóc nhé!`;
+        nextReplies = ['Ho khan ngứa họng', 'Ho có đờm đặc', 'Đau rát họng khi nuốt', 'Tư vấn Tai Mũi Họng'];
+      } else if (lowerText.includes('đau đầu') || lowerText.includes('chóng mặt')) {
+        botResponse = `Chào ${name}. Triệu chứng đau đầu/chóng mặt có thể do huyết áp hoặc căng thẳng. ${notes ? `Hồ sơ lưu ý: "${notes}".` : ''} Bạn nên nghỉ ngơi và zoom chat để được trợ lý AI chẩn đoán chi tiết.`;
+        nextReplies = ['Chóng mặt sáng sớm', 'Đau nửa đầu', 'Đo huyết áp dao động', 'Tìm bác sĩ Nội'];
+      } else {
+        botResponse = `Chào ${name}. Mình ghi nhận thông tin về: "${text}". Hãy phóng to (zoom) khung chat ở trên để tôi thu thập đầy đủ triệu chứng và kết nối bác sĩ giúp bạn nhé!`;
+        nextReplies = ['Sốt & Mệt mỏi', 'Đau dạ dày & Đầy bụng', 'Đau họng & Ho', 'Đau đầu & Chóng mặt'];
+      }
+
+      setFloatingMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
+      setFloatingQuickReplies(nextReplies);
+    }, 1000);
+  };
 
   // Auto scroll to the bottom of the floating chat window
   useEffect(() => {
@@ -2132,6 +2191,31 @@ function App() {
                   ))}
                 </div>
 
+                {/* Quick suggestions for Floating Chat */}
+                <div style={{ display: 'flex', gap: '6px', padding: '6px 12px', overflowX: 'auto', borderTop: '1px solid var(--border-color)', backgroundColor: '#f8fafc', flexShrink: 0 }}>
+                  {floatingQuickReplies.map(r => (
+                    <button
+                      key={r}
+                      onClick={() => handleSendFloatingMessage(r)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: '#fff',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        color: 'var(--text-dark)',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-light)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
                 {/* Input bar */}
                 <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '6px' }}>
                   <input
@@ -2141,19 +2225,7 @@ function App() {
                     onChange={(e) => setFloatingInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && floatingInput.trim()) {
-                        const userText = floatingInput.trim();
-                        const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
-                        setFloatingMessages(newMsgs);
-                        setFloatingInput('');
-                        
-                        // AI Response simulation
-                        setTimeout(() => {
-                          let botResponse = 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!';
-                          if (userText.toLowerCase().includes('sốt')) {
-                            botResponse = 'Bạn bị sốt từ khi nào và có cặp nhiệt độ cụ thể chưa? Hãy phóng to khung chat để tôi thu thập đầy đủ triệu chứng và kết nối bác sĩ giúp bạn nhé!';
-                          }
-                          setFloatingMessages([...newMsgs, { sender: 'bot', text: botResponse }]);
-                        }, 1000);
+                        handleSendFloatingMessage(floatingInput.trim());
                       }
                     }}
                     style={{
@@ -2168,13 +2240,7 @@ function App() {
                   <button
                     onClick={() => {
                       if (floatingInput.trim()) {
-                        const userText = floatingInput.trim();
-                        const newMsgs = [...floatingMessages, { sender: 'user', text: userText }];
-                        setFloatingMessages(newMsgs);
-                        setFloatingInput('');
-                        setTimeout(() => {
-                          setFloatingMessages([...newMsgs, { sender: 'bot', text: 'Mình có thể giúp bạn giải đáp các vấn đề sức khỏe. Bạn hãy thử bấm nút phóng to (zoom) ở trên để cuộc hội thoại chi tiết hơn và dễ dàng chuyển kết nối tới bác sĩ nhé!' }]);
-                        }, 1000);
+                        handleSendFloatingMessage(floatingInput.trim());
                       }
                     }}
                     style={{

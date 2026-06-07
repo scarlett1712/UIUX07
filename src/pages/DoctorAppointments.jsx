@@ -10,7 +10,7 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
-  const itemsPerPage = 4;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const handleApprove = (id) => {
     setAppointments(appointments.map(apt => apt.id === id ? { ...apt, status: 'Đã xác nhận' } : apt));
@@ -246,10 +246,29 @@ export default function DoctorAppointments({ onNavigate, appointments = [], setA
 
             {/* Pagination Bar */}
             <div className="list-pagination-bar">
-              <span>
-                Hiển thị {Math.min(startIndex + 1, totalItems)}-
-                {Math.min(startIndex + paginatedApts.length, totalItems)} trong tổng số {totalItems}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>
+                  Hiển thị {Math.min(startIndex + 1, totalItems)}-
+                  {Math.min(startIndex + paginatedApts.length, totalItems)} trong tổng số {totalItems}
+                </span>
+                <span style={{ margin: '0 8px' }}>|</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Số bản ghi:
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="filter-select"
+                    style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                  </select>
+                </span>
+              </div>
               <div className="pagination-nav-group">
                 <button
                   className="pagination-nav-btn"

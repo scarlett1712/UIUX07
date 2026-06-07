@@ -23,7 +23,7 @@ export default function MedicalData({
 
   // Page States
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Active item state for Add/Edit Form
   const [formData, setFormData] = useState(null);
@@ -118,13 +118,26 @@ export default function MedicalData({
 
   // UI status helpers: Check if field is modified from original
   const isFieldModified = (fieldName) => {
-    if (!originalData) return false; // Add mode displays normal text inputs
+    if (!originalData) {
+      const val = formData ? formData[fieldName] : null;
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      if (Array.isArray(val)) return val.length > 0;
+      return !!val;
+    }
     return formData[fieldName] !== originalData[fieldName];
   };
 
   // Symptom row specific change checker
   const isSymptomFieldModified = (index, fieldName) => {
-    if (!originalData || !originalData.symptoms) return false;
+    if (!originalData || !originalData.symptoms) {
+      const row = formData && formData.symptoms ? formData.symptoms[index] : null;
+      if (!row) return false;
+      const val = row[fieldName];
+      if (val === null || val === undefined) return false;
+      if (typeof val === 'string') return val.trim() !== '';
+      return !!val;
+    }
     const origRow = originalData.symptoms[index];
     if (!origRow) return true; // Newly added symptom row is bold/highlighted
     return formData.symptoms[index][fieldName] !== origRow[fieldName];
@@ -230,7 +243,45 @@ export default function MedicalData({
 
   // --- RENDERING DISEASES VIEWS ---
 
+  const handleDraftClick = (d, type) => {
+    if (d.draftKey.includes('-add_')) {
+      onSelectId(null);
+      onNavigate(`${type}-add`);
+    } else {
+      onSelectId(d.id);
+      onNavigate(`${type}-edit`);
+    }
+  };
+
   if (currentView === 'disease-list') {
+    const draftDiseases = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_disease-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftDiseases.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              name: draftVal.name ? `${draftVal.name} (Bản nháp)` : 'Bệnh chưa đặt tên (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDraftDiseases = draftDiseases.filter(d => {
+      const matchSearch =
+        d.name.toLowerCase().includes(diseaseSearch.toLowerCase()) ||
+        (d.desc && d.desc.toLowerCase().includes(diseaseSearch.toLowerCase()));
+      const matchDanger = diseaseDangerFilter ? d.danger === diseaseDangerFilter : true;
+      const matchDept = diseaseDeptFilter ? d.department === diseaseDeptFilter : true;
+      return matchSearch && matchDanger && matchDept;
+    });
+
     const filteredDiseases = diseases.filter((d) => {
       const matchSearch =
         d.name.toLowerCase().includes(diseaseSearch.toLowerCase()) ||
@@ -240,10 +291,14 @@ export default function MedicalData({
       return matchSearch && matchDanger && matchDept;
     });
 
-    const totalItems = filteredDiseases.length;
+    const draftIds = new Set(filteredDraftDiseases.map(d => d.id));
+    const cleanFilteredDiseases = filteredDiseases.filter(d => !draftIds.has(d.id));
+    const allDiseasesList = [...filteredDraftDiseases, ...cleanFilteredDiseases];
+
+    const totalItems = allDiseasesList.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedDiseases = filteredDiseases.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedDiseases = allDiseasesList.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
@@ -327,11 +382,15 @@ export default function MedicalData({
             <tbody>
               {paginatedDiseases.length > 0 ? (
                 paginatedDiseases.map((d) => {
-                  const symptomsSummary = d.symptoms.map((s) => s.name).join(', ') || 'Không có triệu chứng';
+                  const symptomsSummary = d.symptoms && d.symptoms.map((s) => s.name).join(', ') || 'Không có triệu chứng';
                   return (
-                    <tr key={d.id} style={{ cursor: 'pointer' }}>
+                    <tr 
+                      key={d.id} 
+                      style={d.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : { cursor: 'pointer' }}
+                      onClick={d.isDraft ? () => handleDraftClick(d, 'disease') : undefined}
+                    >
                       <td
-                        onClick={() => {
+                        onClick={d.isDraft ? undefined : () => {
                           onSelectId(d.id);
                           onNavigate('disease-details');
                         }}
@@ -340,7 +399,7 @@ export default function MedicalData({
                         {d.name}
                       </td>
                       <td
-                        onClick={() => {
+                        onClick={d.isDraft ? undefined : () => {
                           onSelectId(d.id);
                           onNavigate('disease-details');
                         }}
@@ -349,7 +408,7 @@ export default function MedicalData({
                         {d.desc}
                       </td>
                       <td
-                        onClick={() => {
+                        onClick={d.isDraft ? undefined : () => {
                           onSelectId(d.id);
                           onNavigate('disease-details');
                         }}
@@ -358,7 +417,7 @@ export default function MedicalData({
                         {symptomsSummary}
                       </td>
                       <td
-                        onClick={() => {
+                        onClick={d.isDraft ? undefined : () => {
                           onSelectId(d.id);
                           onNavigate('disease-details');
                         }}
@@ -376,7 +435,7 @@ export default function MedicalData({
                         </span>
                       </td>
                       <td
-                        onClick={() => {
+                        onClick={d.isDraft ? undefined : () => {
                           onSelectId(d.id);
                           onNavigate('disease-details');
                         }}
@@ -385,29 +444,33 @@ export default function MedicalData({
                         {d.department}
                       </td>
                       <td>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelectId(d.id);
-                              onNavigate('disease-edit');
-                            }}
-                            className="btn btn-outline"
-                            style={{ padding: '4px' }}
-                          >
-                            <Edit3 size={12} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete('disease', d.id);
-                            }}
-                            className="btn btn-outline"
-                            style={{ padding: '4px', color: 'red' }}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
+                        {d.isDraft ? (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectId(d.id);
+                                onNavigate('disease-edit');
+                              }}
+                              className="btn btn-outline"
+                              style={{ padding: '4px' }}
+                            >
+                              <Edit3 size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete('disease', d.id);
+                              }}
+                              className="btn btn-outline"
+                              style={{ padding: '4px', color: 'red' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -425,7 +488,26 @@ export default function MedicalData({
 
         {/* Pagination bar */}
         <div className="list-pagination-bar">
-          <span>{`Hiển thị ${startIndex + 1}-${Math.min(startIndex + paginatedDiseases.length, totalItems)} trong tổng số ${totalItems}`}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{`Hiển thị ${startIndex + 1}-${Math.min(startIndex + paginatedDiseases.length, totalItems)} trong tổng số ${totalItems}`}</span>
+            <span style={{ margin: '0 8px' }}>|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Số bản ghi:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="filter-select"
+                style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </span>
+          </div>
           <div className="pagination-nav-group">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -754,6 +836,34 @@ export default function MedicalData({
   // --- RENDERING MEDICINES VIEWS ---
 
   if (currentView === 'medicine-list') {
+    const draftMedicines = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('draft_medicine-')) {
+        try {
+          const draftVal = JSON.parse(localStorage.getItem(key));
+          if (draftVal) {
+            draftMedicines.push({
+              ...draftVal,
+              isDraft: true,
+              draftKey: key,
+              id: draftVal.id || (key.includes('-edit_') ? key.split('-edit_')[1] : 'new'),
+              name: draftVal.name ? `${draftVal.name} (Bản nháp)` : 'Thuốc chưa đặt tên (Bản nháp)'
+            });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const filteredDraftMedicines = draftMedicines.filter(m => {
+      const matchSearch =
+        m.name.toLowerCase().includes(medicineSearch.toLowerCase()) ||
+        (m.indication && m.indication.toLowerCase().includes(medicineSearch.toLowerCase())) ||
+        (m.activeIngredient && m.activeIngredient.toLowerCase().includes(medicineSearch.toLowerCase()));
+      const matchClass = medicineClassFilter ? m.activeIngredient.includes(medicineClassFilter) : true;
+      return matchSearch && matchClass;
+    });
+
     const filteredMedicines = medicines.filter((m) => {
       const matchSearch =
         m.name.toLowerCase().includes(medicineSearch.toLowerCase()) ||
@@ -763,10 +873,14 @@ export default function MedicalData({
       return matchSearch && matchClass;
     });
 
-    const totalItems = filteredMedicines.length;
+    const draftMedIds = new Set(filteredDraftMedicines.map(m => m.id));
+    const cleanFilteredMedicines = filteredMedicines.filter(m => !draftMedIds.has(m.id));
+    const allMedicinesList = [...filteredDraftMedicines, ...cleanFilteredMedicines];
+
+    const totalItems = allMedicinesList.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedMedicines = filteredMedicines.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedMedicines = allMedicinesList.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="animate-fade-in">
@@ -834,9 +948,13 @@ export default function MedicalData({
             <tbody>
               {paginatedMedicines.length > 0 ? (
                 paginatedMedicines.map((m) => (
-                  <tr key={m.id} style={{ cursor: 'pointer' }}>
+                  <tr 
+                    key={m.id} 
+                    style={m.isDraft ? { cursor: 'pointer', opacity: 0.6, fontStyle: 'italic', borderLeft: '3px solid var(--primary-light)' } : { cursor: 'pointer' }}
+                    onClick={m.isDraft ? () => handleDraftClick(m, 'medicine') : undefined}
+                  >
                     <td
-                      onClick={() => {
+                      onClick={m.isDraft ? undefined : () => {
                         onSelectId(m.id);
                         onNavigate('medicine-details');
                       }}
@@ -845,7 +963,7 @@ export default function MedicalData({
                       <span>{m.name}</span>
                     </td>
                     <td
-                      onClick={() => {
+                      onClick={m.isDraft ? undefined : () => {
                         onSelectId(m.id);
                         onNavigate('medicine-details');
                       }}
@@ -853,7 +971,7 @@ export default function MedicalData({
                       {m.activeIngredient}
                     </td>
                     <td
-                      onClick={() => {
+                      onClick={m.isDraft ? undefined : () => {
                         onSelectId(m.id);
                         onNavigate('medicine-details');
                       }}
@@ -862,7 +980,7 @@ export default function MedicalData({
                       {m.indication}
                     </td>
                     <td
-                      onClick={() => {
+                      onClick={m.isDraft ? undefined : () => {
                         onSelectId(m.id);
                         onNavigate('medicine-details');
                       }}
@@ -870,29 +988,33 @@ export default function MedicalData({
                       {m.dosage}
                     </td>
                     <td>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectId(m.id);
-                            onNavigate('medicine-edit');
-                          }}
-                          className="btn btn-outline"
-                          style={{ padding: '4px' }}
-                        >
-                          <Edit3 size={12} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete('medicine', m.id);
-                          }}
-                          className="btn btn-outline"
-                          style={{ padding: '4px', color: 'red' }}
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+                      {m.isDraft ? (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Bản nháp</span>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectId(m.id);
+                              onNavigate('medicine-edit');
+                            }}
+                            className="btn btn-outline"
+                            style={{ padding: '4px' }}
+                          >
+                            <Edit3 size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete('medicine', m.id);
+                            }}
+                            className="btn btn-outline"
+                            style={{ padding: '4px', color: 'red' }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -908,7 +1030,26 @@ export default function MedicalData({
         </div>
 
         <div className="list-pagination-bar">
-          <span>{`Hiển thị ${startIndex + 1}-${Math.min(startIndex + paginatedMedicines.length, totalItems)} trong tổng số ${totalItems}`}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{`Hiển thị ${startIndex + 1}-${Math.min(startIndex + paginatedMedicines.length, totalItems)} trong tổng số ${totalItems}`}</span>
+            <span style={{ margin: '0 8px' }}>|</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Số bản ghi:
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="filter-select"
+                style={{ padding: '2px 8px', height: 'auto', fontSize: '0.85rem' }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+            </span>
+          </div>
           <div className="pagination-nav-group">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
